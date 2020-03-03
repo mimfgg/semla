@@ -1,0 +1,49 @@
+package io.semla.inject;
+
+import graphql.GraphQL;
+import graphql.schema.DataFetchingEnvironment;
+import io.semla.graphql.GraphQLProvider;
+import io.semla.persistence.EntityManagerFactory;
+import io.semla.util.Lists;
+
+import javax.enterprise.util.TypeLiteral;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+
+public class GraphQLModule implements Module {
+
+    public static final String GRAPHQL_ADDITIONAL_QUERIES = "GraphQLProvider.additionalQueries";
+    public static final String GRAPHQL_ADDITIONAL_MUTATIONS = "GraphQLProvider.additionalMutations";
+    public static final String GRAPHQL_ADDITIONAL_TYPES = "GraphQLProvider.additionalTypes";
+
+    private final Map<String, BiFunction<EntityManagerFactory, DataFetchingEnvironment, ?>> additionalQueries = new LinkedHashMap<>();
+    private final Map<String, BiFunction<EntityManagerFactory, DataFetchingEnvironment, ?>> additionalMutations = new LinkedHashMap<>();
+    private final List<String> additionalTypes = new ArrayList<>();
+
+    @Override
+    public void configure(Binder binder) {
+        binder
+            .bind(new TypeLiteral<Map<String, BiFunction<EntityManagerFactory, DataFetchingEnvironment, ?>>>() {}).named(GRAPHQL_ADDITIONAL_QUERIES).to(additionalQueries)
+            .bind(new TypeLiteral<Map<String, BiFunction<EntityManagerFactory, DataFetchingEnvironment, ?>>>() {}).named(GRAPHQL_ADDITIONAL_MUTATIONS).to(additionalMutations)
+            .bind(new TypeLiteral<List<String>>() {}).named(GRAPHQL_ADDITIONAL_TYPES).to(additionalTypes)
+            .bind(GraphQL.class).toProvider(GraphQLProvider.class);
+    }
+
+    public GraphQLModule withQuery(String query, BiFunction<EntityManagerFactory, DataFetchingEnvironment, ?> handler) {
+        additionalQueries.put(query, handler);
+        return this;
+    }
+
+    public GraphQLModule withTypes(String... types) {
+        additionalTypes.addAll(Lists.fromArray(types));
+        return this;
+    }
+
+    public GraphQLModule withMutation(String query, BiFunction<EntityManagerFactory, DataFetchingEnvironment, ?> handler) {
+        additionalMutations.put(query, handler);
+        return this;
+    }
+}

@@ -1,0 +1,8 @@
+<configuration>
+    <appender name="NOP" class="ch.qos.logback.core.helpers.NOPAppender"/>
+    <root level="OFF">
+        <appender-ref ref="NOP"/>
+    </root>
+
+    <logger name="io.semla" level="ALL"/>
+</configuration>

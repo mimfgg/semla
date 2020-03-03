@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>io.semla</groupId>
+    <artifactId>test-project</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.semla</groupId>
+                <artifactId>method-runner-maven-plugin</artifactId>
+                <version>1.0.0</version>
+                <configuration>
+                    <classname>io.semla.maven.plugin.MethodRunnerMojoTest</classname>
+                    <methodname>someMethod</methodname>
+                    <parameters>
+                        <arg0>test</arg0>
+                        <arg1>extra</arg1>
+                    </parameters>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
