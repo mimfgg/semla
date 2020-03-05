@@ -3,19 +3,16 @@ package io.semla.model;
 import io.semla.persistence.annotations.Indexed;
 import io.semla.persistence.annotations.Managed;
 
-import javax.annotation.Generated;
-import javax.enterprise.inject.Default;
-import javax.persistence.*;
 import javax.persistence.Column;
-import javax.validation.constraints.Max;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Calendar;
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This is a test object containing most of the types and annotations supported by semla.io

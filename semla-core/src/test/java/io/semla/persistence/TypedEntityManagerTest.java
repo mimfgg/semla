@@ -136,9 +136,9 @@ public class TypedEntityManagerTest {
         );
 
         Calendar calendar = Calendar.getInstance();
-        calendar.setTimeInMillis(-1);
+        calendar.setTimeInMillis(315532800000L);
         Calendar lastLogin = Calendar.getInstance();
-        lastLogin.setTimeInMillis(1);
+        lastLogin.setTimeInMillis(3600);
         LocalDateTime localDateTime = LocalDateTime.now();
 
         User user = users.newUser("bob", new Date(347155200000L))
@@ -159,7 +159,7 @@ public class TypedEntityManagerTest {
             .bigInteger(BigInteger.ONE)
             .bigDecimal(BigDecimal.valueOf(10.1))
             .calendar(calendar)
-            .instant(Instant.ofEpochMilli(1))
+            .instant(Instant.ofEpochSecond(1))
             .localDateTime(localDateTime)
             .nickname(Optional.of("zogzog"))
             .type(User.Type.user)
@@ -187,7 +187,7 @@ public class TypedEntityManagerTest {
         assertThat(users.where().bigInteger().is(BigInteger.ONE).first().get().id).isEqualTo(user.id);
         assertThat(users.where().bigDecimal().is(BigDecimal.valueOf(10.1)).first().get().id).isEqualTo(user.id);
         assertThat(users.where().calendar().is(calendar).first().get().id).isEqualTo(user.id);
-        assertThat(users.where().instant().is(Instant.ofEpochMilli(1)).first().get().id).isEqualTo(user.id);
+        assertThat(users.where().instant().is(Instant.ofEpochSecond(1)).first().get().id).isEqualTo(user.id);
         assertThat(users.where().localDateTime().is(localDateTime).first().get().id).isEqualTo(user.id);
         assertThat(users.where().nickname().is(Optional.of("zogzog")).first().get().id).isEqualTo(user.id);
         assertThat(users.where().type().is(User.Type.user).first().get().id).isEqualTo(user.id);
