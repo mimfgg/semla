@@ -5,6 +5,16 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.semla</groupId>
     <artifactId>semla</artifactId>
+    <name>semla</name>
+    <description>simple entity management library of awesomeness</description>
+    <url>https://semla.io</url>
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
     <version>1.0.0</version>
     <packaging>pom</packaging>
     <modules>
@@ -22,6 +32,12 @@
         <module>semla-testing</module>
         <module>report</module>
     </modules>
+    <scm>
+        <connection>scm:git:git://github.com/mimfgg/semla.git</connection>
+        <developerConnection>scm:git:git@github.com:mimfgg/semla.git</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/mimfgg/semla/</url>
+    </scm>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
