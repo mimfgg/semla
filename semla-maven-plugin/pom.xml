@@ -10,9 +10,6 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>semla-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
-    <properties>
-        <maven.version>3.5.2</maven.version>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>org.apache.maven</groupId>
@@ -54,6 +51,10 @@
                 <exclusion>
                     <groupId>commons-io</groupId>
                     <artifactId>commons-io</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
