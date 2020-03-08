@@ -25,7 +25,7 @@ It is fully extensible but comes with those maven modules:
 
 ## Get started
 
-Get it **soon** from maven central:
+Get it from maven central:
 ```xml
 <dependency>
     <groupId>io.semla</groupId>
@@ -566,3 +566,6 @@ See the tests for the [queries](https://github.com/mimfgg/semla/blob/master/seml
 and the [configuration](https://github.com/mimfgg/semla/blob/master/semla-graphql/src/test/java/io/semla/graphql/GraphQLProviderTest.java)
 for more examples or for how to add your own queries, types and mutations. 
 
+## Examples
+
+check https://github.com/mimfgg/semla-examples for more examples!
