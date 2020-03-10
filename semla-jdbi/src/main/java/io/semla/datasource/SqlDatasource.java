@@ -146,9 +146,11 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
         extend();
         if (dbi != null && dbi.getConfig(SemlaJdbiConfig.class).autoCreateTable) {
             try {
-                dbi.withHandle(handle -> handle.createQuery("SELECT COUNT(*) FROM " + ddl().escape(ddl().tablename())))
+                dbi.withHandle(handle -> handle
+                    .createQuery("SELECT COUNT(*) FROM " + ddl().escape(ddl().tablename()))
                     .mapTo(Long.class)
-                    .findOne();
+                    .findOne()
+                );
             } catch (Exception e) {
                 dbi.withHandle(handle -> ddl().create().stream().map(command -> handle.execute(command)).reduce(Integer::sum));
             }
