@@ -516,7 +516,7 @@ Finally, polymorphism is supported via the `@TypeInfo(property = "type")` and `@
  }
 
  @TypeName("hero")
- public static class Hero implements Character {
+ public class Hero extends Character {
  }
 ```
 
