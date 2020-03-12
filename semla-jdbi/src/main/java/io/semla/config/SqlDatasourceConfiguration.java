@@ -11,7 +11,6 @@ import io.semla.serialization.annotations.When;
 import io.semla.util.Singleton;
 import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
-import org.jdbi.v3.core.statement.SqlLogger;
 
 import java.time.Duration;
 
