@@ -53,7 +53,7 @@ public class ManyToManyRelation<ParentType, JoinType, ChildType> extends Abstrac
                     "@ManyToMany.mappedBy on " + member + " defines a member '" + manyToMany.mappedBy() + "' on " + childClass + " " +
                         "that also defines a member '" + reverse.mappedBy() + "'. Only one of the two class can own this relationship!");
             }
-            relationClass = Singleton.lazy(((ManyToManyRelation<?, JoinType, ?>) EntityModel.of(childClass).relationByFieldName(manyToMany.mappedBy()))::relationClass);
+            relationClass = Singleton.lazy(((ManyToManyRelation<?, JoinType, ?>) EntityModel.of(childClass).getRelation(manyToMany.mappedBy()))::relationClass);
         } else {
             // look for the reverse if any
             Fields.of(childClass)

@@ -5,6 +5,8 @@ import io.semla.reflect.Getter;
 import io.semla.reflect.Member;
 import io.semla.reflect.Properties;
 import io.semla.reflect.Types;
+import io.semla.serialization.Deserializer;
+import io.semla.serialization.json.Json;
 import io.semla.util.Plural;
 import io.semla.util.Singleton;
 import io.semla.util.Strings;
@@ -104,9 +106,7 @@ public class Model<T> {
     }
 
     public T newInstanceWithValues(Map<String, Object> values) {
-        T instance = newInstance();
-        values.forEach((name, value) -> member(name).setOn(instance, value));
-        return instance;
+        return Json.read(Json.write(values), getType(), Deserializer.UNWRAP_STRINGS);
     }
 
     @Override

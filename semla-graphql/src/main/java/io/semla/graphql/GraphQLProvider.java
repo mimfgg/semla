@@ -17,7 +17,6 @@ import io.semla.query.Include;
 import io.semla.query.Pagination;
 import io.semla.query.Predicates;
 import io.semla.query.Select;
-import io.semla.reflect.Member;
 import io.semla.reflect.Types;
 import io.semla.relation.Relation;
 import io.semla.util.Arrays;
@@ -29,6 +28,7 @@ import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+import javax.persistence.CascadeType;
 import javax.persistence.Id;
 import javax.validation.constraints.NotNull;
 import java.lang.reflect.Type;
@@ -37,12 +37,15 @@ import java.math.BigInteger;
 import java.time.temporal.Temporal;
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 import static io.semla.inject.GraphQLModule.*;
 import static io.semla.util.Strings.capitalize;
+import static javax.persistence.CascadeType.MERGE;
+import static javax.persistence.CascadeType.PERSIST;
 
 public class GraphQLProvider implements Provider<GraphQL> {
 
@@ -139,7 +142,7 @@ public class GraphQLProvider implements Provider<GraphQL> {
         return builder.build();
     }
 
-    protected <T, R> void addQueries(EntityModel<T> model, TypeRuntimeWiring.Builder queries) {
+    protected <T> void addQueries(EntityModel<T> model, TypeRuntimeWiring.Builder queries) {
         EntityManager<T> entityManager = factory.of(model.getType());
         queries
             .dataFetcher("get" + capitalize(model.singularName()), environment ->
@@ -214,12 +217,10 @@ public class GraphQLProvider implements Provider<GraphQL> {
 
         builder.append("\ntype Mutation {\n");
         models.forEach(model -> {
-            String name = model.getType().getSimpleName();
-            name = name.replaceAll("\\$", "_");
-            addCreate(model, name, builder);
+            addCreate(model, builder);
             addBulkCreate(model, builder);
             if (model.columns().stream().anyMatch(Column::updatable)) {
-                addUpdate(model, name, builder);
+                addUpdate(model, builder);
                 addBulkUpdate(model, builder);
                 addPatch(model, builder);
             }
@@ -258,7 +259,7 @@ public class GraphQLProvider implements Provider<GraphQL> {
 
     protected void addGetOneQuery(EntityModel<?> model, StringBuilder builder) {
         builder.append("    get").append(capitalize(model.singularName())).append("(")
-            .append(model.key().member().getName()).append(": ").append(getGraphQLType(model.key().member().getGenericType(), false))
+            .append(model.key().member().getName()).append(": ").append(getGraphQLType(model.key().member().getGenericType()))
             .append("!): ").append(model.getType().getSimpleName()).append('\n');
     }
 
@@ -271,7 +272,7 @@ public class GraphQLProvider implements Provider<GraphQL> {
 
     protected void addGetManyQuery(EntityModel<?> model, StringBuilder builder) {
         builder.append("    get").append(capitalize(model.pluralName())).append("(")
-            .append(Plural.of(model.key().member().getName())).append(": [").append(getGraphQLType(model.key().member().getGenericType(), false)).append("!]!")
+            .append(Plural.of(model.key().member().getName())).append(": [").append(getGraphQLType(model.key().member().getGenericType())).append("!]!")
             .append("): [").append(model.getType().getSimpleName()).append("!]!\n");
     }
 
@@ -291,7 +292,7 @@ public class GraphQLProvider implements Provider<GraphQL> {
 
     // Mutations
 
-    protected void addCreate(EntityModel<?> model, String name, StringBuilder builder) {
+    protected void addCreate(EntityModel<?> model, StringBuilder builder) {
         builder.append("    create").append(capitalize(model.singularName())).append("(")
             .append(model.singularName()).append(": _").append(capitalize(model.singularName()))
             .append("Create!): ").append(model.getType().getSimpleName()).append("!\n");
@@ -303,7 +304,7 @@ public class GraphQLProvider implements Provider<GraphQL> {
             .append("Create!]!): [").append(model.getType().getSimpleName()).append("!]!\n");
     }
 
-    protected void addUpdate(EntityModel<?> model, String name, StringBuilder builder) {
+    protected void addUpdate(EntityModel<?> model, StringBuilder builder) {
         builder.append("    update").append(capitalize(model.singularName())).append("(")
             .append(model.singularName()).append(": _").append(capitalize(model.singularName()))
             .append("Update!): ").append(model.getType().getSimpleName()).append("!\n");
@@ -317,13 +318,13 @@ public class GraphQLProvider implements Provider<GraphQL> {
 
     protected void addDelete(EntityModel<?> model, StringBuilder builder) {
         builder.append("    delete").append(capitalize(model.singularName())).append("(")
-            .append(model.key().member().getName()).append(": ").append(getGraphQLType(model.key().member().getGenericType(), false))
+            .append(model.key().member().getName()).append(": ").append(getGraphQLType(model.key().member().getGenericType()))
             .append("!): Boolean\n");
     }
 
     protected void addBulkDelete(EntityModel<?> model, StringBuilder builder) {
         builder.append("    delete").append(capitalize(model.pluralName())).append("(")
-            .append(Plural.of(model.key().member().getName())).append(": [").append(getGraphQLType(model.key().member().getGenericType(), false))
+            .append(Plural.of(model.key().member().getName())).append(": [").append(getGraphQLType(model.key().member().getGenericType()))
             .append("!]!): Int!\n");
     }
 
@@ -335,26 +336,47 @@ public class GraphQLProvider implements Provider<GraphQL> {
             .append("Sorts, startAt: Int, limitTo: Int): Int!\n");
     }
 
-    protected void addFields(EntityModel<?> model, String name, boolean isUpdate, StringBuilder builder) {
-        builder.append(model.columns().stream()
-            .filter(isUpdate ? Column::updatable : Column::insertable)
-            .map(Column::member)
-            .map(member -> {
-                String graphQLType = isUpdate ? getGraphQLType(member.getGenericType(), true) : getGraphQLType(member, true);
-                if (member.getType().getDeclaringClass() != null) {
-                    graphQLType = name + "_" + graphQLType;
+    protected <T> void addFields(EntityModel<T> model, String name, boolean isUpdate, StringBuilder builder) {
+        builder.append(model.members().stream().map(member -> {
+                if (model.isRelation(member)) {
+                    Relation<T, Object> relation = model.getRelation(member);
+                    CascadeType cascadeType = isUpdate ? MERGE : PERSIST;
+                    if (relation.defaultIncludeType().should(cascadeType)) {
+                        return member.getName() + ": "
+                            + getGraphQLType(member.getGenericType(), type -> "_" + type.getSimpleName() + (cascadeType == MERGE ? "Update" : "Create"));
+                    }
                 }
-                return member.getName() + ": " + graphQLType;
-            }).collect(Collectors.joining("\n    "))
+                if (model.isColumn(member)) {
+                    Column<T> column = model.getColumn(member);
+                    if (isUpdate ? column.updatable() : column.insertable()) {
+                        String graphQLType = getGraphQLType(member.getGenericType(),
+                            type -> getGraphQLType(EntityModel.of(Types.rawTypeOf(type)).key().member().getType())
+                        );
+                        if (member.getType().getDeclaringClass() != null) {
+                            graphQLType = name + "_" + graphQLType;
+                        }
+                        if (!isUpdate && member.isAnnotatedWithOneOf(Arrays.of(Nonnull.class, NotNull.class, Id.class))) {
+                            graphQLType += "!";
+                        }
+                        return member.getName() + ": " + graphQLType;
+                    } else {
+                        return "";
+                    }
+                }
+                return "";
+            }).filter(Strings::notNullOrEmpty).collect(Collectors.joining("\n    "))
         );
     }
 
-    protected void addType(Model<?> model, String name, StringBuilder builder) {
+    protected <T> void addType(Model<T> model, String name, StringBuilder builder) {
         builder.append("\ntype ").append(name).append(" {\n");
         model.members().forEach(member -> {
-            String graphQLType = getGraphQLType(member, false);
+            String graphQLType = getGraphQLType(member.getGenericType());
             if (member.getType().getDeclaringClass() != null) {
                 graphQLType = name + "_" + graphQLType;
+            }
+            if (member.isAnnotatedWithOneOf(Arrays.of(Nonnull.class, NotNull.class, Id.class))) {
+                graphQLType += "!";
             }
             builder.append("    ").append(member.getName()).append(": ")
                 .append(graphQLType)
@@ -394,7 +416,7 @@ public class GraphQLProvider implements Provider<GraphQL> {
     protected void addUpdateInputType(EntityModel<?> model, String name, StringBuilder builder) {
         if (model.columns().stream().anyMatch(Column::updatable)) {
             builder.append("\ninput _").append(name).append("Update {\n    ")
-                .append(model.key().member().getName()).append(": ").append(getGraphQLType(model.key().member().getGenericType(), false))
+                .append(model.key().member().getName()).append(": ").append(getGraphQLType(model.key().member().getGenericType()))
                 .append("!\n    ");
             addFields(model, name, true, builder);
             builder.append("\n}\n");
@@ -415,16 +437,12 @@ public class GraphQLProvider implements Provider<GraphQL> {
         builder.append("}\n");
     }
 
-    protected String getGraphQLType(Member<?> member, boolean isInput) {
-        String type = getGraphQLType(member.getGenericType(), isInput);
-        if (member.isAnnotatedWithOneOf(Arrays.of(Nonnull.class, NotNull.class, Id.class))) {
-            return type + "!";
-        }
-        return type;
+    protected String getGraphQLType(Type genericType) {
+        return getGraphQLType(genericType, Class::getSimpleName);
     }
 
-    protected String getGraphQLType(Type genericType, boolean isInput) {
-        Class<?> type = Types.rawTypeOf(genericType);
+    protected <T> String getGraphQLType(Type genericType, Function<Class<T>, String> entityHandler) {
+        Class<T> type = Types.rawTypeOf(genericType);
         if (Types.isAssignableToOneOf(type, Integer.class, Long.class, Short.class, Byte.class)) {
             return "Int";
         } else if (Types.isAssignableToOneOf(type, Float.class, Double.class)) {
@@ -432,17 +450,17 @@ public class GraphQLProvider implements Provider<GraphQL> {
         } else if (type.isEnum()) {
             return type.getSimpleName();
         } else if (Types.isAssignableTo(type, Collection.class)) {
-            return "[" + getGraphQLType(Types.typeArgumentOf(genericType), isInput) + "!]";
+            return "[" + getGraphQLType(Types.typeArgumentOf(genericType), entityHandler) + "!]";
         } else if (Types.isAssignableTo(type, Boolean.class)) {
             return "Boolean";
         } else if (type.isArray()) {
-            return "[" + getGraphQLType(type.getComponentType(), isInput) + "!]";
+            return "[" + getGraphQLType(type.getComponentType(), entityHandler) + "!]";
         } else if (Types.isAssignableToOneOf(type, String.class, Date.class, BigInteger.class, BigDecimal.class, Temporal.class, Calendar.class, Character.class)) {
             return "String";
         } else if (type.equals(Optional.class)) {
-            return getGraphQLType(Types.typeArgumentOf(genericType), isInput);
-        } else if (isInput && EntityModel.isEntity(type)) {
-            return getGraphQLType(EntityModel.of(type).key().member().getType(), true);
+            return getGraphQLType(Types.typeArgumentOf(genericType), entityHandler);
+        } else if (EntityModel.isEntity(type)) {
+            return entityHandler.apply(type);
         }
         return type.getSimpleName();
     }

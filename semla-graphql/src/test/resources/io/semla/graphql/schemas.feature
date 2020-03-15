@@ -495,6 +495,179 @@ Feature: semla graphql generated schemas from entities
     }
     """
 
+  Scenario: bi-directional onetomany relationship with generated ids and cascadeType PERSIST and MERGE
+    Given the classes:
+    """
+    @Entity
+    public class Parent {
+
+        @Id
+        @GeneratedValue
+        public int id;
+
+        public String name;
+
+        @OneToMany(mappedBy = "parent", cascade = CascadeType.PERSIST)
+        public List<Child> children;
+
+    }
+    ---
+    @Entity
+    public class Child {
+
+        @Id
+        @GeneratedValue
+        public int id;
+
+        public String name;
+
+        @ManyToOne(cascade = CascadeType.MERGE)
+        public Parent parent;
+
+    }
+    """
+    Then the graphql schema is equal to:
+    """
+    type Query {
+        getChild(id: Int!): Child
+        firstChild(where: _ChildPredicates, orderBy: _ChildSorts, startAt: Int): Child
+        getChildren(ids: [Int!]!): [Child!]!
+        listChildren(where: _ChildPredicates, orderBy: _ChildSorts, startAt: Int, limitTo: Int): [Child!]!
+        countChildren(where: _ChildPredicates, orderBy: _ChildSorts, startAt: Int, limitTo: Int): Int!
+        getParent(id: Int!): Parent
+        firstParent(where: _ParentPredicates, orderBy: _ParentSorts, startAt: Int): Parent
+        getParents(ids: [Int!]!): [Parent!]!
+        listParents(where: _ParentPredicates, orderBy: _ParentSorts, startAt: Int, limitTo: Int): [Parent!]!
+        countParents(where: _ParentPredicates, orderBy: _ParentSorts, startAt: Int, limitTo: Int): Int!
+    }
+
+    type Mutation {
+        createChild(child: _ChildCreate!): Child!
+        createChildren(children: [_ChildCreate!]!): [Child!]!
+        updateChild(child: _ChildUpdate!): Child!
+        updateChildren(children: [_ChildUpdate!]!): [Child!]!
+        patchChildren(values: _ChildPatch!, where: _ChildPredicates, orderBy: _ChildSorts, startAt: Int, limitTo: Int): Int!
+        deleteChild(id: Int!): Boolean
+        deleteChildren(ids: [Int!]!): Int!
+        createParent(parent: _ParentCreate!): Parent!
+        createParents(parents: [_ParentCreate!]!): [Parent!]!
+        updateParent(parent: _ParentUpdate!): Parent!
+        updateParents(parents: [_ParentUpdate!]!): [Parent!]!
+        patchParents(values: _ParentPatch!, where: _ParentPredicates, orderBy: _ParentSorts, startAt: Int, limitTo: Int): Int!
+        deleteParent(id: Int!): Boolean
+        deleteParents(ids: [Int!]!): Int!
+    }
+
+    type Child {
+        id: Int!
+        name: String
+        parent: Parent
+    }
+
+    input _ChildCreate {
+        name: String
+        parent: Int
+    }
+
+    input _ChildPredicates {
+        id: [_IntPredicates!]
+        name: [_StringPredicates!]
+        parent: [_IntPredicates!]
+    }
+
+    input _ChildSorts {
+        id: _Sort
+        name: _Sort
+        parent: _Sort
+    }
+
+    input _ChildUpdate {
+        id: Int!
+        name: String
+        parent: _ParentUpdate
+    }
+
+    input _ChildPatch {
+        name: String
+        parent: _ParentUpdate
+    }
+
+    type Parent {
+        id: Int!
+        name: String
+        children: [Child!]
+    }
+
+    input _ParentCreate {
+        name: String
+        children: [_ChildCreate!]
+    }
+
+    input _ParentPredicates {
+        id: [_IntPredicates!]
+        name: [_StringPredicates!]
+    }
+
+    input _ParentSorts {
+        id: _Sort
+        name: _Sort
+    }
+
+    input _ParentUpdate {
+        id: Int!
+        name: String
+    }
+
+    input _ParentPatch {
+        name: String
+    }
+
+    input _IntPredicates {
+        is: Int
+        not: Int
+        in: [Int!]
+        notIn: [Int!]
+        greaterOrEquals: Int
+        greaterThan: Int
+        lessOrEquals: Int
+        lessThan: Int
+    }
+
+    input _FloatPredicates {
+        is: Float
+        not: Float
+        in: [Float!]
+        notIn: [Float!]
+        greaterOrEquals: Float
+        greaterThan: Float
+        lessOrEquals: Float
+        lessThan: Float
+    }
+
+    input _StringPredicates {
+        is: String
+        not: String
+        in: [String!]
+        notIn: [String!]
+        like: String
+        notLike: String
+        contains: String
+        doesNotContain: String
+        containedIn: String
+        notContainedIn: String
+    }
+
+    input _BooleanPredicates {
+        is: Boolean
+        not: Boolean
+    }
+
+    enum _Sort {
+        asc
+        desc
+    }
+    """
+
   Scenario: bi-directional manytomany lazy relationship
     Given the classes:
     """

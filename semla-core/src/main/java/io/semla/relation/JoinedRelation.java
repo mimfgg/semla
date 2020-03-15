@@ -31,6 +31,6 @@ public interface JoinedRelation<ParentType, JoinType, ChildType> extends Relatio
     }
 
     default UnaryOperator<Includes<JoinType>> with(Include<ParentType, ChildType> include) {
-        return includes -> includes.include(relationModel().relationByFieldName(childFieldName()), include.type(), include.includes());
+        return includes -> includes.include(relationModel().getRelation(childFieldName()), include.type(), include.includes());
     }
 }

@@ -113,9 +113,12 @@ Feature: a graphql translation layer for semla
     public class Parent {
 
         @Id
+        @GeneratedValue
         public int id;
 
-        @OneToMany(mappedBy = "parent")
+        public String name;
+
+        @OneToMany(mappedBy = "parent", cascade = CascadeType.PERSIST)
         public List<Child> children;
     }
     ---
@@ -123,7 +126,10 @@ Feature: a graphql translation layer for semla
     public class Child {
 
         @Id
+        @GeneratedValue
         public int id;
+
+        public String name;
 
         @ManyToOne
         public Parent parent;
@@ -133,11 +139,14 @@ Feature: a graphql translation layer for semla
     And that we query graphql with:
     """
     mutation {
-      createParent(parent: {id: 1} ) {
-        id
-      }
-
-      createChildren(children: [{id: 1, parent: 1}, {id: 2, parent: 1}]) {
+      createParent(parent: {
+        name: "parent1",
+        children: [{
+          name: "child1"
+        },{
+          name: "child2"
+        }]
+      }){
         id
       }
     }
@@ -224,7 +233,7 @@ Feature: a graphql translation layer for semla
     When we query graphql with:
     """
     mutation {
-      createParent(parent: {id: 2} ) {
+      createParent(parent: {name: "parent2"} ) {
         id
       }
       updateChildren(children: [{

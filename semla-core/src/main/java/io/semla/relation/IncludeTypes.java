@@ -4,7 +4,6 @@ import javax.persistence.CascadeType;
 import javax.persistence.FetchType;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import static io.semla.relation.IncludeType.*;

@@ -14,10 +14,12 @@ public interface ForeignNToOneRelation<ParentType, ChildType> extends NToOneRela
     @Override
     default Optional<ChildType> getFor(ParentType parent, PersistenceContext context, Include<ParentType, ChildType> include) {
         return Optional.ofNullable(member().<ChildType>getOn(parent))
-            .filter(EntityModel::isReference)
-            .map(child -> context.entityContext().getCached(child).orElseGet(() ->
-                context.get(childModel().key().member().<Object>getOn(child), include.includes()).orElse(null)
-            ));
+            .map(child ->
+                !EntityModel.isReference(child)
+                    ? child
+                    : context.entityContext().getCached(child).orElseGet(() ->
+                    context.get(childModel().key().member().<Object>getOn(child), include.includes()).orElse(null)
+                ));
     }
 
     @Override
@@ -30,6 +32,8 @@ public interface ForeignNToOneRelation<ParentType, ChildType> extends NToOneRela
                 parentsByChildKey
                     .computeIfAbsent(childModel().key().member().getOn(child), k -> new ArrayList<>())
                     .add(parent);
+            } else {
+                result.put(parent, child);
             }
         });
         if (!parentsByChildKey.isEmpty()) {

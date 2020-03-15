@@ -29,7 +29,7 @@ public class JoinedOneToOneRelation<ParentType, JoinType, ChildType> extends Abs
         parentFieldName = Strings.decapitalize(parentModel.getType().getSimpleName());
         childFieldName = Strings.decapitalize(childClass.getSimpleName());
         if (!oneToOne.mappedBy().equals("")) {
-            relationClass = Singleton.lazy(((JoinedOneToOneRelation<ParentType, JoinType, ChildType>) EntityModel.of(childClass).relationByFieldName(oneToOne.mappedBy()))::relationClass);
+            relationClass = Singleton.lazy(((JoinedOneToOneRelation<ParentType, JoinType, ChildType>) EntityModel.of(childClass).getRelation(oneToOne.mappedBy()))::relationClass);
         } else {
             relationClass = JoinTables.create(parentFieldName, childFieldName, member, parentModel, childClass);
         }

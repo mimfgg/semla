@@ -42,13 +42,13 @@ public class Includes<T> {
                     if (sb.length() == 0) {
                         throw new IllegalArgumentException("unexpected ',' encountered in \"" + include + "\"");
                     }
-                    relations.computeIfAbsent(model.relationByFieldName(sb.toString()), Include::anyOf);
+                    relations.computeIfAbsent(model.getRelation(sb.toString()), Include::anyOf);
                     sb = new StringBuilder();
                     break;
                 case '{':
                     int closingBracket = Strings.getClosingBracketIndex(include, i, '{', '}');
                     if (closingBracket > -1) {
-                        relations.computeIfAbsent(model.relationByFieldName(sb.toString()), Include::anyOf)
+                        relations.computeIfAbsent(model.getRelation(sb.toString()), Include::anyOf)
                             .includes().include(include.substring(i + 1, closingBracket));
                         sb = new StringBuilder();
                         i = closingBracket;
@@ -62,7 +62,7 @@ public class Includes<T> {
                         IncludeType[] includeTypes = Yaml.getDeserializer()
                             .<List<IncludeType>>read(include.substring(i, closingBracket), Types.parameterized(List.class, IncludeType.class))
                             .toArray(new IncludeType[0]);
-                        relations.computeIfAbsent(model.relationByFieldName(sb.toString()), relation -> new Include<>(relation, new IncludeTypes(includeTypes)));
+                        relations.computeIfAbsent(model.getRelation(sb.toString()), relation -> new Include<>(relation, new IncludeTypes(includeTypes)));
                         i = closingBracket;
                         break;
                     } else {
@@ -77,7 +77,7 @@ public class Includes<T> {
             }
         }
         if (sb.length() > 0) {
-            relations.computeIfAbsent(model.relationByFieldName(sb.toString()), Include::anyOf);
+            relations.computeIfAbsent(model.getRelation(sb.toString()), Include::anyOf);
         }
         return this;
     }
@@ -93,7 +93,7 @@ public class Includes<T> {
     }
 
     public <R> Includes<T> include(String relationName, Function<Include<T, R>, Include<T, R>> function) {
-        Relation<T, R> relation = model.relationByFieldName(relationName);
+        Relation<T, R> relation = model.getRelation(relationName);
         return include(relation, Include.anyOf(relation), function);
     }
 
@@ -125,7 +125,7 @@ public class Includes<T> {
     }
 
     public Include<T, ?> get(String fieldName) {
-        return get(model.relationByFieldName(fieldName));
+        return get(model.getRelation(fieldName));
     }
 
     public Include<T, ?> get(Relation<T, ?> relation) {

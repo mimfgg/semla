@@ -373,7 +373,9 @@ public abstract class Deserializer<ContextType extends Deserializer<ContextType>
         protected void pop(Token token) {
             Token last = structure.removeLast();
             if (!last.equals(token)) {
-                throw new DeserializationException("was expecting token " + last + " to be popped, but was " + token);
+                if (!(unwrapStrings && token.equals(STRING))) {
+                    throw new DeserializationException("was expecting token " + last + " to be popped, but was " + token);
+                }
             }
             if (logger.isTraceEnabled()) {
                 logger.trace("popping: {}", last);

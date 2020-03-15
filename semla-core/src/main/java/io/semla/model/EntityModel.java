@@ -178,19 +178,34 @@ public class EntityModel<T> extends Model<T> {
         return indices.stream().map(index -> index.columns().stream().map(Column::member)).flatMap(identity()).collect(toSet()).contains(member);
     }
 
+    public Collection<Column<T>> columns() {
+        return columnsByFieldName.values();
+    }
+
     public Column<T> getColumn(Member<T> member) {
         return columnsByFieldName.get(member.getName());
     }
 
-    public Collection<Column<T>> columns() {
-        return columnsByFieldName.values();
+    public boolean isColumn(Member<T> member) {
+        return columns().stream().anyMatch(c -> c.member().equals(member));
     }
 
     public List<Relation<T, ?>> relations() {
         return relations;
     }
 
-    public <R> Relation<T, R> relationByFieldName(String fieldName) {
+    public <R> Relation<T, R> getRelation(Member<T> member) {
+        return (Relation<T, R>) relations.stream()
+            .filter(r -> r.member().equals(member))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException(member + " is not a relation on " + getType()));
+    }
+
+    public boolean isRelation(Member<T> member) {
+        return relations.stream().anyMatch(r -> r.member().equals(member));
+    }
+
+    public <R> Relation<T, R> getRelation(String fieldName) {
         return (Relation<T, R>) relations.stream()
             .filter(r -> r.member().getName().equals(fieldName))
             .findFirst()
@@ -343,4 +358,5 @@ public class EntityModel<T> extends Model<T> {
         }
         return copy;
     }
+
 }
