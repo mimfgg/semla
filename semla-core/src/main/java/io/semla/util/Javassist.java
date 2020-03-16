@@ -58,7 +58,7 @@ public class Javassist {
         }
 
         public ClassBuilder extending(Class<?> superClass) {
-            return extending(superClass.getCanonicalName());
+            return extending(superClass.getName());
         }
 
         public ClassBuilder extending(String name) {
@@ -67,7 +67,7 @@ public class Javassist {
         }
 
         public ClassBuilder implementing(Class<?>... interfaceClass) {
-            return implementing(Stream.of(interfaceClass).map(Class::getCanonicalName).toArray(String[]::new));
+            return implementing(Stream.of(interfaceClass).map(Class::getName).toArray(String[]::new));
         }
 
         public ClassBuilder implementing(String... interfaceClass) {
@@ -94,7 +94,7 @@ public class Javassist {
 
         public ClassBuilder addField(String fieldName, Class<?> fieldType, UnaryOperator<MemberBuilder<CtField>> function) {
             unchecked(() -> {
-                CtField ctField = new CtField(ClassPool.getDefault().get(fieldType.getCanonicalName()), fieldName, ctClass);
+                CtField ctField = new CtField(ClassPool.getDefault().get(fieldType.getName()), fieldName, ctClass);
                 ctClass.addField(function.apply(new MemberBuilder<>(ctField, ctField.getFieldInfo()::addAttribute)).get());
             });
             return this;
@@ -214,7 +214,7 @@ public class Javassist {
                 return new DoubleMemberValue((Double) value, constPool);
             } else if (value.getClass().isEnum()) {
                 EnumMemberValue enumMemberValue = new EnumMemberValue(constPool);
-                enumMemberValue.setType(value.getClass().getCanonicalName());
+                enumMemberValue.setType(value.getClass().getName());
                 enumMemberValue.setValue(String.valueOf(value));
                 return enumMemberValue;
             } else if (Types.isAssignableTo(value.getClass(), Float.class)) {
