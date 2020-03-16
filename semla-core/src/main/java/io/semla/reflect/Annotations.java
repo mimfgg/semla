@@ -1,12 +1,16 @@
 package io.semla.reflect;
 
+import io.semla.util.Arrays;
 import io.semla.util.Maps;
+import io.semla.util.Unchecked;
 
 import javax.inject.Named;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Annotations {
 
@@ -38,5 +42,16 @@ public class Annotations {
 
     public static Named named(String name) {
         return proxyOf(Named.class, Maps.of("value", name));
+    }
+
+    public static boolean isAnnotation(Object value) {
+        Class<?> clazz = value.getClass();
+        return clazz.isAnnotation() || (Types.isAssignableTo(clazz, java.lang.reflect.Proxy.class) && clazz.getInterfaces()[0].isAnnotation());
+    }
+
+    public static Map<String, Object> valuesOf(Object value) {
+        return Stream.of(value.getClass().getDeclaredMethods())
+            .filter(method -> !Arrays.in(method.getName(), "equals", "toString", "hashCode", "annotationType")) // no method inherited from Annotation
+            .collect(Maps.collect(Method::getName, method -> Unchecked.unchecked(() -> method.invoke(value))));
     }
 }
