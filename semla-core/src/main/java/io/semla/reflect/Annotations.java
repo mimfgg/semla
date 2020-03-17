@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.semla.util.Unchecked.unchecked;
+
 public class Annotations {
 
     private Annotations() {}
@@ -52,6 +54,6 @@ public class Annotations {
     public static Map<String, Object> valuesOf(Object value) {
         return Stream.of(value.getClass().getDeclaredMethods())
             .filter(method -> !Arrays.in(method.getName(), "equals", "toString", "hashCode", "annotationType")) // no method inherited from Annotation
-            .collect(Maps.collect(Method::getName, method -> Unchecked.unchecked(() -> method.invoke(value))));
+            .collect(Maps.collect(Method::getName, method -> unchecked(() -> method.invoke(value))));
     }
 }

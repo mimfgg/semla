@@ -21,6 +21,7 @@
         <module>method-runner-maven-plugin</module>
         <module>semla-logging</module>
         <module>semla-core</module>
+        <module>semla-jackson</module>
         <module>semla-graphql</module>
         <module>semla-jdbi</module>
         <module>semla-mysql</module>
