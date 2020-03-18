@@ -8,6 +8,7 @@ import io.semla.serialization.annotations.TypeName;
 public class PostgresqlDatasourceConfiguration extends SqlDatasourceConfiguration<PostgresqlDatasourceConfiguration> {
 
     public PostgresqlDatasourceConfiguration() {
+        withDriverClassName("org.postgresql.Driver");
         withConnectionTestQuery("SELECT 1");
     }
 

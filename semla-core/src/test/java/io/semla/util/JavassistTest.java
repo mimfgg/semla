@@ -1,19 +1,21 @@
 package io.semla.util;
 
 import io.semla.model.Player;
-import io.semla.reflect.Fields;
-import io.semla.reflect.Methods;
-import io.semla.reflect.Modifier;
-import io.semla.reflect.Types;
+import io.semla.reflect.*;
 import org.junit.Test;
 
 import javax.inject.Inject;
 import javax.persistence.*;
+import javax.validation.constraints.Max;
 import java.io.Serializable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -95,18 +97,82 @@ public class JavassistTest {
 
     @Test
     public void annotations() {
-        Class<?> someTypeWithAnAnnotationWithAnEnum =
-            Javassist.getOrCreate("SomeTypeWithAnAnnotationWithAnEnum",
-                clazz -> clazz.addField("player", Player.class,
-                    field -> field.addAnnotation(OneToOne.class,
-                        oneToOne -> oneToOne.set("fetch", FetchType.LAZY))));
-        assertThat(Fields.getField(someTypeWithAnAnnotationWithAnEnum, "player").getAnnotation(OneToOne.class).fetch()).isEqualTo(FetchType.LAZY);
+        Max maximum = Annotations.proxyOf(Max.class, Maps.of("value", 1L));
+        Max[] maxima = Arrays.of(Annotations.proxyOf(Max.class, Maps.of("value", 2L)));
+
+        Class<?> someAnnotatedType =
+            Javassist.getOrCreate("SomeTypeAnnotatedWithAllMemberValues",
+                clazz -> clazz
+                    .addAnnotation(Entity.class)
+                    .addAnnotation(AllMemberValues.class, annotation -> annotation
+                        .set("maximum", maximum)
+                        .set("maxima", maxima)
+                        .set("test", true)
+                        .set("b", (byte) 1)
+                        .set("c", 'p')
+                        .set("clazz", Entity.class)
+                        .set("d", 1d)
+                        .set("fetchType", FetchType.EAGER)
+                        .set("f", 1f)
+                        .set("i", 1)
+                        .set("l", 1L)
+                        .set("s", (short) 1)
+                        .set("value", "test")
+                    ));
+        AllMemberValues allMemberValues = someAnnotatedType.getAnnotation(AllMemberValues.class);
+        assertThat(allMemberValues.maximum()).isEqualTo(maximum);
+        assertThat(allMemberValues.maxima()).isEqualTo(maxima);
+        assertThat(allMemberValues.test()).isEqualTo(true);
+        assertThat(allMemberValues.b()).isEqualTo((byte) 1);
+        assertThat(allMemberValues.c()).isEqualTo('p');
+        assertThat(allMemberValues.clazz()).isEqualTo(Entity.class);
+        assertThat(allMemberValues.d()).isEqualTo(1d);
+        assertThat(allMemberValues.fetchType()).isEqualTo(FetchType.EAGER);
+        assertThat(allMemberValues.f()).isEqualTo(1f);
+        assertThat(allMemberValues.i()).isEqualTo(1);
+        assertThat(allMemberValues.l()).isEqualTo(1L);
+        assertThat(allMemberValues.s()).isEqualTo((short) 1);
+        assertThat(allMemberValues.value()).isEqualTo("test");
+
         assertThatThrownBy(() ->
             Javassist.getOrCreate("SomeTypeThatWontCompile",
                 clazz -> clazz.addField("player", Player.class,
                     field -> field.addAnnotation(OneToOne.class,
-                        oneToOne -> oneToOne.set("fetch", 1))))
-        ).hasMessage("cannot create a ctMember value out of 1");
+                        oneToOne -> oneToOne.set("fetch", Lists.of(1)))))
+        ).hasMessage("cannot create a ctMember value out of class java.util.ArrayList");
+    }
+
+    @Target(TYPE)
+    @Retention(RUNTIME)
+    public @interface AllMemberValues {
+
+        Max maximum() default @Max(value = 0L); // Annotation
+
+        Max[] maxima() default {}; // Array
+
+        boolean test() default false; // Boolean
+
+        byte b() default -1; // Byte
+
+        char c() default '0'; // Char
+
+        Class<?> clazz() default Void.class; // Class
+
+        double d() default 0d;// Double
+
+        FetchType fetchType() default FetchType.LAZY; // Enum
+
+        float f() default 0f; // Float
+
+        int i() default 0; // Integer
+
+        long l() default 0L; // Long
+
+        short s() default 0; // Short
+
+        String value() default ""; // String
+
+
     }
 
 

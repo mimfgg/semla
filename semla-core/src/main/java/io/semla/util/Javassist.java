@@ -1,12 +1,12 @@
 package io.semla.util;
 
+import io.semla.reflect.Annotations;
 import io.semla.reflect.Modifier;
+import io.semla.reflect.Types;
 import javassist.*;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.ConstPool;
-import javassist.bytecode.annotation.Annotation;
-import javassist.bytecode.annotation.EnumMemberValue;
-import javassist.bytecode.annotation.StringMemberValue;
+import javassist.bytecode.annotation.*;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -58,7 +58,7 @@ public class Javassist {
         }
 
         public ClassBuilder extending(Class<?> superClass) {
-            return extending(superClass.getCanonicalName());
+            return extending(superClass.getName());
         }
 
         public ClassBuilder extending(String name) {
@@ -67,7 +67,7 @@ public class Javassist {
         }
 
         public ClassBuilder implementing(Class<?>... interfaceClass) {
-            return implementing(Stream.of(interfaceClass).map(Class::getCanonicalName).toArray(String[]::new));
+            return implementing(Stream.of(interfaceClass).map(Class::getName).toArray(String[]::new));
         }
 
         public ClassBuilder implementing(String... interfaceClass) {
@@ -94,7 +94,7 @@ public class Javassist {
 
         public ClassBuilder addField(String fieldName, Class<?> fieldType, UnaryOperator<MemberBuilder<CtField>> function) {
             unchecked(() -> {
-                CtField ctField = new CtField(ClassPool.getDefault().get(fieldType.getCanonicalName()), fieldName, ctClass);
+                CtField ctField = new CtField(ClassPool.getDefault().get(fieldType.getName()), fieldName, ctClass);
                 ctClass.addField(function.apply(new MemberBuilder<>(ctField, ctField.getFieldInfo()::addAttribute)).get());
             });
             return this;
@@ -186,22 +186,50 @@ public class Javassist {
         private static AnnotationsAttribute toAnnotationsAttribute(ConstPool constPool, Map<Class<?>, Map<String, Object>> annotations) {
             AnnotationsAttribute annotationsAttribute = new AnnotationsAttribute(constPool, AnnotationsAttribute.visibleTag);
             annotations.forEach((annotationType, values) -> {
-                Annotation annotation = new Annotation(annotationType.getCanonicalName(), constPool);
-                values.forEach((name, value) -> {
-                    if (value instanceof String) {
-                        annotation.addMemberValue(name, new StringMemberValue((String) value, constPool));
-                    } else if (value.getClass().isEnum()) {
-                        EnumMemberValue enumMemberValue = new EnumMemberValue(constPool);
-                        enumMemberValue.setType(value.getClass().getCanonicalName());
-                        enumMemberValue.setValue(String.valueOf(value));
-                        annotation.addMemberValue(name, enumMemberValue);
-                    } else {
-                        throw new IllegalArgumentException("cannot create a ctMember value out of " + value);
-                    }
-                });
+                Annotation annotation = new Annotation(annotationType.getName(), constPool);
+                values.forEach((name, value) -> annotation.addMemberValue(name, toMemberValue(constPool, value)));
                 annotationsAttribute.addAnnotation(annotation);
             });
             return annotationsAttribute;
+        }
+
+        private static MemberValue toMemberValue(ConstPool constPool, Object value) {
+            if (Annotations.isAnnotation(value)) {
+                Annotation annotation = new Annotation(value.getClass().getInterfaces()[0].getName(), constPool);
+                Annotations.valuesOf(value).forEach((name, v) -> annotation.addMemberValue(name, toMemberValue(constPool, v)));
+                return new AnnotationMemberValue(annotation, constPool);
+            } else if (value.getClass().isArray()) {
+                ArrayMemberValue arrayMemberValue = new ArrayMemberValue(constPool);
+                arrayMemberValue.setValue(Stream.of((Object[]) value).map(v -> toMemberValue(constPool, v)).toArray(MemberValue[]::new));
+                return arrayMemberValue;
+            } else if (Types.isAssignableTo(value.getClass(), Boolean.class)) {
+                return new BooleanMemberValue((Boolean) value, constPool);
+            } else if (Types.isAssignableTo(value.getClass(), Byte.class)) {
+                return new ByteMemberValue((Byte) value, constPool);
+            } else if (Types.isAssignableTo(value.getClass(), Character.class)) {
+                return new CharMemberValue((Character) value, constPool);
+            } else if (Types.isAssignableTo(value.getClass(), Class.class)) {
+                return new ClassMemberValue(((Class<?>) value).getName(), constPool);
+            } else if (Types.isAssignableTo(value.getClass(), Double.class)) {
+                return new DoubleMemberValue((Double) value, constPool);
+            } else if (value.getClass().isEnum()) {
+                EnumMemberValue enumMemberValue = new EnumMemberValue(constPool);
+                enumMemberValue.setType(value.getClass().getName());
+                enumMemberValue.setValue(String.valueOf(value));
+                return enumMemberValue;
+            } else if (Types.isAssignableTo(value.getClass(), Float.class)) {
+                return new FloatMemberValue((Float) value, constPool);
+            } else if (Types.isAssignableTo(value.getClass(), Integer.class)) {
+                return new IntegerMemberValue(constPool, (Integer) value);
+            } else if (Types.isAssignableTo(value.getClass(), Long.class)) {
+                return new LongMemberValue((Long) value, constPool);
+            } else if (Types.isAssignableTo(value.getClass(), Short.class)) {
+                return new ShortMemberValue((Short) value, constPool);
+            } else if (value instanceof String) {
+                return new StringMemberValue((String) value, constPool);
+            } else {
+                throw new IllegalArgumentException("cannot create a ctMember value out of " + value.getClass());
+            }
         }
     }
 }
