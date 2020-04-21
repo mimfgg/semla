@@ -3,6 +3,8 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.semla/semla-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.semla/semla-core)
 ![Build](https://github.com/mimfgg/semla/workflows/build/badge.svg)
 [![codecov](https://codecov.io/gh/mimfgg/semla/branch/master/graph/badge.svg)](https://codecov.io/gh/mimfgg/semla)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+![lifecycle: beta](https://img.shields.io/badge/lifecycle-beta-509bf5.svg)
 
 Semla is a lightweight library driven by the [Java Persistence API](https://en.wikipedia.org/wiki/Java_Persistence_API) 
 supporting most of the features required to persist, query, serialize/deserialize entities as well as injecting dependencies.
