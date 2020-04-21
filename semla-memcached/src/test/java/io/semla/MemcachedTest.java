@@ -1,19 +1,34 @@
 package io.semla;
 
-import ch.qos.logback.classic.Level;
 import io.semla.cache.Cache;
+import io.semla.cache.CacheTest;
 import io.semla.config.MemcachedDatasourceConfiguration;
 import io.semla.cucumber.steps.EntitySteps;
-import io.semla.datasource.MemcachedDatasource;
-import io.semla.logging.Logging;
+import io.semla.datasource.*;
+import io.semla.persistence.KeyValueCachedEntityManagerTest;
+import io.semla.persistence.KeyValueCachedTypedEntityManagerTest;
+import io.semla.relations.KeyValueRelationsTest;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.runners.Suite;
 import org.testcontainers.containers.GenericContainer;
 
 import static io.semla.config.DatasourceConfiguration.wrapped;
 import static io.semla.config.MemcachedDatasourceConfiguration.DEFAULT_PORT;
 import static io.semla.util.Unchecked.unchecked;
 
+@Suite.SuiteClasses({
+    CacheTest.class,
+    CachedKeyValueDatasourceTest.class,
+    KeyValueDatasourceTest.class,
+    MasterSlaveKeyValueDatasourceTest.class,
+    ReadOneWriteAllKeyValueDatasourceTest.class,
+    ShardedKeyValueDatasourceTest.class,
+    KeyValueCachedEntityManagerTest.class,
+    KeyValueCachedTypedEntityManagerTest.class,
+    KeyValueRelationsTest.class,
+    MemcachedTest.MemcachedDatasourceTest.class
+})
 public class MemcachedTest extends KeyValueDatasourceSuite {
 
     @ClassRule
@@ -29,4 +44,7 @@ public class MemcachedTest extends KeyValueDatasourceSuite {
         EntitySteps.setDefaultDatasource(wrapped(model -> memcached.withKeyspace(getNext("keyspace"))));
         EntitySteps.addCleanup(() -> unchecked(() -> memcached.client().flush().get()));
     }
+
+    public static class MemcachedDatasourceTest extends EphemeralDatasourceTest {}
+
 }

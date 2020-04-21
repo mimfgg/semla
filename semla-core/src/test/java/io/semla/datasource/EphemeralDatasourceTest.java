@@ -30,5 +30,4 @@ public abstract class EphemeralDatasourceTest {
         assertThat(entries.get("key2")).isNotNull().extracting(entry -> entry.value).isEqualTo("value2");
     }
 
-
 }
