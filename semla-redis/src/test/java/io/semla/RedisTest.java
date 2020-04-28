@@ -50,5 +50,5 @@ public class RedisTest extends KeyValueDatasourceSuite {
     }
 
     public static class RedisDatasourceTest extends EphemeralDatasourceTest {}
-    
+
 }

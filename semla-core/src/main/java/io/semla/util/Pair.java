@@ -1,6 +1,7 @@
 package io.semla.util;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -93,5 +94,18 @@ public class Pair<L, R> implements Map.Entry<L, R> {
     @Override
     public String toString() {
         return "(" + Strings.toString(left) + ", " + Strings.toString(right) + ")";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Pair<?, ?> pair = (Pair<?, ?>) o;
+        return left.equals(pair.left) && right.equals(pair.right);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(left, right);
     }
 }
