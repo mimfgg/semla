@@ -5,7 +5,7 @@
     <parent>
         <artifactId>semla</artifactId>
         <groupId>io.semla</groupId>
-        <version>1.0.3</version>
+        <version>1.0.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -14,25 +14,25 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-core</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-testing</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-core</artifactId>
             <classifier>tests</classifier>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.graphql-java</groupId>
             <artifactId>graphql-java</artifactId>
-            <version>2020-02-12T22-54-17-101dc6c</version>
+            <version>2020-05-08T01-07-05-c8de10e</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>

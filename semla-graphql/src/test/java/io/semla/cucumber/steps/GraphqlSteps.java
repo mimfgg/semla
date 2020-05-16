@@ -1,8 +1,8 @@
 package io.semla.cucumber.steps;
 
-import cucumber.api.java.Before;
-import cucumber.api.java.en.Then;
-import cucumber.api.java.en.When;
+import io.cucumber.java.Before;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import io.semla.graphql.GraphQLProvider;

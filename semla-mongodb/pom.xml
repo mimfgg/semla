@@ -5,7 +5,7 @@
     <parent>
         <artifactId>semla</artifactId>
         <groupId>io.semla</groupId>
-        <version>1.0.3</version>
+        <version>1.0.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>semla-mongodb</artifactId>
@@ -13,24 +13,24 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-core</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-            <version>3.11.2</version>
+            <version>3.12.4</version>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-testing</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-core</artifactId>
             <classifier>tests</classifier>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -42,6 +42,10 @@
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

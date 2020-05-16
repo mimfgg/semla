@@ -15,7 +15,7 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-    <version>1.0.3</version>
+    <version>1.0.4</version>
     <packaging>pom</packaging>
     <modules>
         <module>method-runner-maven-plugin</module>
@@ -45,9 +45,9 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.version>3.6.0</maven.version>
-        <sl4fj.version>1.7.28</sl4fj.version>
-        <jdbi.version>3.12.0</jdbi.version>
-        <testcontainers.version>1.12.5</testcontainers.version>
+        <sl4fj.version>1.7.30</sl4fj.version>
+        <jdbi.version>3.13.0</jdbi.version>
+        <testcontainers.version>1.14.1</testcontainers.version>
     </properties>
     <build>
         <pluginManagement>

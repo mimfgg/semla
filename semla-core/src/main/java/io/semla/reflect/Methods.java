@@ -90,7 +90,7 @@ public final class Methods {
         if (name.equals(method.getName()) && method.getParameterTypes().length == parameterTypes.length) {
             boolean isApplicableMethod = true;
             for (int i = 0; i < parameterTypes.length; i++) {
-                if (!method.getParameterTypes()[i].isAssignableFrom(parameterTypes[i])) {
+                if (!Types.isAssignableTo(parameterTypes[i], method.getParameterTypes()[i])) {
                     isApplicableMethod = false;
                     break;
                 }

@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.semla</groupId>
         <artifactId>semla</artifactId>
-        <version>1.0.3</version>
+        <version>1.0.4</version>
     </parent>
     <artifactId>semla-core</artifactId>
     <packaging>jar</packaging>
@@ -48,12 +48,12 @@
         <dependency>
             <groupId>org.javassist</groupId>
             <artifactId>javassist</artifactId>
-            <version>3.26.0-GA</version>
+            <version>3.27.0-GA</version>
         </dependency>
         <dependency>
             <groupId>net.jodah</groupId>
             <artifactId>typetools</artifactId>
-            <version>0.6.1</version>
+            <version>0.6.2</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
@@ -68,7 +68,7 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-testing</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -89,7 +89,7 @@
             <plugin>
                 <groupId>io.semla</groupId>
                 <artifactId>method-runner-maven-plugin</artifactId>
-                <version>1.0.3</version>
+                <version>1.0.4</version>
                 <configuration>
                     <classname>io.semla.persistence.TypedEntityManager</classname>
                     <methodname>preProcessSources</methodname>

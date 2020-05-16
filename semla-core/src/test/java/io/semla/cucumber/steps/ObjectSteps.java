@@ -1,15 +1,15 @@
 package io.semla.cucumber.steps;
 
-import cucumber.api.java.Before;
-import cucumber.api.java.en.Given;
+import io.cucumber.docstring.DocString;
+import io.cucumber.java.Before;
+import io.cucumber.java.en.Given;
 import io.semla.model.EntityModel;
+import io.semla.reflect.Fields;
+import io.semla.reflect.Methods;
 import io.semla.reflect.Types;
 import io.semla.relation.JoinedRelation;
 import io.semla.util.Strings;
-import org.apache.commons.lang3.ClassUtils;
 import org.junit.Assert;
-import se.redmind.utils.Fields;
-import se.redmind.utils.Methods;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -22,8 +22,8 @@ import static io.semla.cucumber.steps.Mapper.deserialize;
 import static io.semla.cucumber.steps.Mapper.serialize;
 import static io.semla.cucumber.steps.Patterns.A;
 import static io.semla.cucumber.steps.Patterns.VARIABLE;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
 
 
 @SuppressWarnings("unchecked")
@@ -57,6 +57,9 @@ public class ObjectSteps {
 
     @Given("^" + A + VARIABLE + "(?: is|are)?:$")
     public void put(String name, Object value) {
+        if(value instanceof DocString) {
+            value = ((DocString) value).getContent();
+        }
         if (value instanceof String) {
             value = resolve((String) value);
         }
@@ -97,7 +100,7 @@ public class ObjectSteps {
                     Object host = get(name.substring(0, split));
                     String property = name.substring(split + 1);
                     Field field = Fields.getField(host.getClass(), property);
-                    if (!ClassUtils.isAssignable(value.getClass(), field.getType())) {
+                    if (!Types.isAssignableTo(value.getClass(), field.getType())) {
                         if (value instanceof String) {
                             value = deserialize((String) value, field.getType());
                         } else {
@@ -105,7 +108,7 @@ public class ObjectSteps {
                         }
                     }
                     field.set(host, value);
-                } catch (NoSuchFieldException | IllegalAccessException e) {
+                } catch (IllegalAccessException e) {
                     throw new AssertionError(e);
                 }
             }
@@ -163,11 +166,11 @@ public class ObjectSteps {
                 if (index != null) {
                     // this is a list
                     Assert.assertTrue(object instanceof Collection);
-                    Assert.assertTrue(((Collection) object).size() > index);
+                    Assert.assertTrue(((Collection<?>) object).size() > index);
                     if (!(object instanceof List)) {
-                        object = new ArrayList<>((Collection) object);
+                        object = new ArrayList<>((Collection<?>) object);
                     }
-                    object = ((List) object).get(index);
+                    object = ((List<?>) object).get(index);
                 }
             }
             if (subProperty != null) {
@@ -179,13 +182,13 @@ public class ObjectSteps {
 
     private static Object findPropertyValue(Object object, String property) {
         String capitalizedProperty = Strings.capitalize(property);
-        if (Methods.findMethod(object.getClass(), property) != null) {
+        if (Methods.findMethod(object.getClass(), property).isPresent()) {
             return Methods.invoke(object, property);
-        } else if (Methods.findMethod(object.getClass(), "get" + capitalizedProperty) != null) {
+        } else if (Methods.findMethod(object.getClass(), "get" + capitalizedProperty).isPresent()) {
             return Methods.invoke(object, "get" + capitalizedProperty);
-        } else if (ClassUtils.isAssignable(object.getClass(), Boolean.class) && Methods.findMethod(object.getClass(), "is" + capitalizedProperty) != null) {
+        } else if (Types.isAssignableTo(object.getClass(), Boolean.class) && Methods.findMethod(object.getClass(), "is" + capitalizedProperty).isPresent()) {
             return Methods.invoke(object, "is" + capitalizedProperty);
-        } else if (Fields.getFieldsByNameOf(object.getClass()).containsKey(property)) {
+        } else if (Fields.byName(object.getClass()).containsKey(property)) {
             return Fields.getValue(object, property);
         } else {
             throw new AssertionError("didn't find any property matching '" + property + "'");

@@ -1,7 +1,7 @@
 package io.semla.cucumber.steps;
 
-import cucumber.api.java.After;
-import cucumber.api.java.en.Then;
+import io.cucumber.java.After;
+import io.cucumber.java.en.Then;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.ThrowableAssert;
 import org.junit.Assert;

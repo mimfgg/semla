@@ -1,10 +1,11 @@
 package io.semla.cucumber.steps;
 
-import cucumber.api.DataTable;
-import cucumber.api.java.After;
-import cucumber.api.java.en.Given;
-import cucumber.api.java.en.Then;
-import cucumber.api.java.en.When;
+import io.cucumber.datatable.DataTable;
+import io.cucumber.docstring.DocString;
+import io.cucumber.java.After;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
 import io.semla.Semla;
 import io.semla.cache.Cache;
 import io.semla.config.DatasourceConfiguration;
@@ -39,8 +40,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class EntitySteps {
 
+    private static final List<Module> modules = new ArrayList<>();
     private static DatasourceConfiguration defaultDatasource = InMemoryDatasource::new;
-    private static List<Module> modules = new ArrayList<>();
     private static Throwables.UnaryOperator<Binder> defaultCache =
         binder -> binder.bind(Cache.class).to(SoftKeyValueDatasource.configure().asCache());
 
@@ -49,7 +50,7 @@ public class EntitySteps {
             .withDefaultDatasource(defaultDatasource)
             .withUUIDGenerator(new Supplier<UUID>() {
 
-                private AtomicInteger counter = new AtomicInteger();
+                private final AtomicInteger counter = new AtomicInteger();
 
                 @Override
                 public UUID get() {
@@ -61,7 +62,7 @@ public class EntitySteps {
             .create()
     );
 
-    private static List<Runnable> cleanups = Lists.of(
+    private static final List<Runnable> cleanups = Lists.of(
         Model::clear,
         modules::clear,
         semla::reset
@@ -146,7 +147,7 @@ public class EntitySteps {
                 manager.create(list.stream().map(values -> manager.model().newInstanceWithValues(values)).collect(Collectors.toList()));
             }
         } else {
-            to_query_with_payload("create the " + entityName, (String) entities);
+            to_query_with_payload("create the " + entityName, entities);
         }
     }
 
@@ -169,6 +170,9 @@ public class EntitySteps {
 
     @Then("^" + THAT + A_USER + "((?:create|creating|update|updating|patch|patching) .*):$")
     public void to_query_with_payload(String query, Object payload) {
+        if (payload instanceof DocString) {
+            payload = ((DocString) payload).getContent();
+        }
         if (query.endsWith("those")) {
             Yaml.<Map<String, Object>>read((String) payload, Map.class).forEach((entityClass, entity) ->
                 to_query_with_payload("create those " + entityClass, Json.write(entity)));
@@ -181,13 +185,17 @@ public class EntitySteps {
     }
 
     private String toYaml(EntityModel<?> model, Object expected) {
+        if (expected instanceof DocString) {
+            expected = ((DocString) expected).getContent();
+        }
         if (expected instanceof String) {
             if (Json.isJson((String) expected)) {
                 return Yaml.write(Json.read((String) expected));
             }
             return (String) expected;
         }
-        List<?> list = ((DataTable) expected).asMaps(String.class, Object.class).stream().map(model::newInstanceWithValues).collect(Collectors.toList());
+        List<?> list = ((DataTable) expected).<String, Object>asMaps(String.class, Object.class)
+            .stream().map(model::newInstanceWithValues).collect(Collectors.toList());
         if (list.size() == 1) {
             return Yaml.write(list.get(0));
         }
@@ -195,13 +203,17 @@ public class EntitySteps {
     }
 
     private String toJson(EntityModel<?> model, Object expected) {
+        if (expected instanceof DocString) {
+            expected = ((DocString) expected).getContent();
+        }
         if (expected instanceof String) {
             if (!Json.isJson((String) expected)) {
                 return Json.write(Yaml.read((String) expected));
             }
             return (String) expected;
         }
-        List<?> list = ((DataTable) expected).asMaps(String.class, Object.class).stream().map(model::newInstanceWithValues).collect(Collectors.toList());
+        List<?> list = ((DataTable) expected).<String, Object>asMaps(String.class, Object.class)
+            .stream().map(model::newInstanceWithValues).collect(Collectors.toList());
         if (list.size() == 1) {
             return Json.write(list.get(0));
         }

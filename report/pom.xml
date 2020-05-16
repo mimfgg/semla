@@ -5,7 +5,7 @@
     <parent>
         <artifactId>semla</artifactId>
         <groupId>io.semla</groupId>
-        <version>1.0.3</version>
+        <version>1.0.4</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -16,52 +16,52 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-core</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-graphql</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-jdbi</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-logging</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-maven-plugin</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-memcached</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-mongodb</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-mysql</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-postgresql</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-redis</artifactId>
-            <version>1.0.3</version>
+            <version>1.0.4</version>
         </dependency>
     </dependencies>
     <build>
