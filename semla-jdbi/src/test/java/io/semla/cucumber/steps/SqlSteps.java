@@ -1,7 +1,7 @@
 package io.semla.cucumber.steps;
 
-import cucumber.api.java.en.Given;
-import cucumber.api.java.en.Then;
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
 import io.semla.datasource.SqlDatasource;
 import io.semla.model.EntityModel;
 import org.jdbi.v3.core.Jdbi;

@@ -10,7 +10,7 @@ import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CachedDatasourceTest extends CompositeDatasourceTest<CachedDatasource<Player>> {
 

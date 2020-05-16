@@ -7,6 +7,7 @@ import io.semla.model.IndexedUser;
 import io.semla.model.IndexedUserManager;
 import io.semla.util.Lists;
 import io.semla.util.Pair;
+import org.junit.After;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -49,5 +50,10 @@ public class PersistenceContextTest {
         Pair<Collection<Author>, Collection<Author>> sorted = EntitySteps.newContext().sortPersisted(Lists.empty());
         assertThat(sorted.left()).isNotNull().isEmpty();
         assertThat(sorted.right()).isNotNull().isEmpty();
+    }
+
+    @After
+    public void after() {
+        EntitySteps.cleanup();
     }
 }
