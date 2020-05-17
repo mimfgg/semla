@@ -267,8 +267,25 @@ public final class Types {
         return (Class<S>) SUB_TYPES.get(clazz).get(property).get(type);
     }
 
-    public static Type parameterized(Class<?> rawType, Type... parameters) {
-        return new ParameterizedTypeImpl(rawType, parameters);
+    public static ParameterizedTypeBuilder parameterized(Class<?> rawType) {
+        return new ParameterizedTypeBuilder(rawType);
+    }
+
+    public static Type parameterized(Class<?> rawType, Type parameter, Type... parameters) {
+        return new ParameterizedTypeImpl(rawType, io.semla.util.Arrays.concat(parameter, parameters));
+    }
+
+    public static class ParameterizedTypeBuilder {
+
+        private final Class<?> rawType;
+
+        public ParameterizedTypeBuilder(Class<?> rawType) {
+            this.rawType = rawType;
+        }
+
+        public Type of(Type parameter, Type... parameters) {
+            return new ParameterizedTypeImpl(rawType, io.semla.util.Arrays.concat(parameter, parameters));
+        }
     }
 
     private static class ParameterizedTypeImpl implements ParameterizedType {
@@ -278,6 +295,12 @@ public final class Types {
 
         private ParameterizedTypeImpl(Class<?> rawType, Type[] actualTypeArguments) {
             this.rawType = rawType;
+            if (rawType.getTypeParameters().length != actualTypeArguments.length) {
+                throw new IllegalArgumentException(
+                    "type " + rawType + " expects " + rawType.getTypeParameters().length
+                        + " argument" + (rawType.getTypeParameters().length > 1 ? "s" : "")
+                        + " but got " + actualTypeArguments.length);
+            }
             this.actualTypeArguments = actualTypeArguments;
         }
 

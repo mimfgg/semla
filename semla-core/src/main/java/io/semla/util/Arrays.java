@@ -218,6 +218,15 @@ public final class Arrays {
         return (E[]) toArray(list, list.get(0).getClass());
     }
 
+    @SafeVarargs
+    public static <E> E[] concat(E first, E[]... others) {
+        List<E> list = Lists.of(first);
+        for (E[] other : others) {
+            list.addAll(Lists.fromArray(other));
+        }
+        return (E[]) toArray(list, list.get(0).getClass());
+    }
+
     public static <E> Stream<E> toStream(Object value) {
         if (!value.getClass().isArray()) {
             throw new IllegalArgumentException(value + " is not an array");

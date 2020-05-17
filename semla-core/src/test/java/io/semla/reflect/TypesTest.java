@@ -18,11 +18,13 @@ public class TypesTest {
     @Test
     public void constructTypes() {
         assertThat(Types.parameterized(Optional.class, String.class).getTypeName()).isEqualTo("java.util.Optional<java.lang.String>");
-        assertThat(Types.parameterized(List.class, String.class).getTypeName()).isEqualTo("java.util.List<java.lang.String>");
+        assertThat(Types.parameterized(List.class).of(String.class).getTypeName()).isEqualTo("java.util.List<java.lang.String>");
         assertThat(Types.parameterized(Map.class, String.class, String.class).getTypeName()).isEqualTo("java.util.Map<java.lang.String, java.lang.String>");
         assertThat(Types.parameterized(EntityManager.class, CacheEntry.class).getTypeName()).isEqualTo("io.semla.persistence.EntityManager<io.semla.persistence.CacheEntry>");
         assertThat(((ParameterizedType) Types.parameterized(Optional.class, String.class)).getOwnerType()).isNull();
         assertThat(((ParameterizedType) Types.parameterized(Map.Entry.class, Integer.class, String.class)).getOwnerType()).isEqualTo(Map.class);
+        assertThatThrownBy(() -> Types.parameterized(Map.class, Integer.class, String.class, String.class))
+            .hasMessage("type interface java.util.Map expects 2 arguments but got 3");
     }
 
     private List<String> list;
