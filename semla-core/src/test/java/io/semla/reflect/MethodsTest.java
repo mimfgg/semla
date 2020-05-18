@@ -21,12 +21,30 @@ public class MethodsTest {
         assertThat(Methods.findMethod(TestClass.class, "privateParentMethod")).isPresent();
         assertThat(Methods.findMethod(TestClass.class, "protectedInheritedMethod")).isPresent();
         assertThat(Methods.findMethod(TestClass.class, "publicInheritedMethod")).isPresent();
+        assertThat(Methods.findMethod(TestClass.class, "init")).isPresent();
+        assertThat(Methods.findMethod(BaseInterface.class, "getName", int.class)).isEmpty();
+        assertThat(Methods.findMethod(BaseInterface.class, "init")).isPresent();
 
         assertThat(Methods.<String>invoke(new TestClass(), "protectedOverridenMethod")).isEqualTo("protectedOverridenMethod");
         assertThat(Methods.<String>invoke(new TestParentClass(), "protectedOverridenMethod")).isEqualTo("protectedOriginalMethod");
+
+        assertThat(Methods.findMethod(Annotations.named("test").getClass(), "value")).isPresent();
     }
 
-    public static class TestParentClass {
+    public interface BaseInterface {
+
+        String getName(int i);
+
+        default void init() {
+        }
+    }
+
+    public static abstract class AbstractClass {
+
+        public abstract String publicInheritedMethod();
+    }
+
+    public static class TestParentClass extends AbstractClass {
 
         private String privateParentMethod() {
             return "privateParentMethod";
@@ -45,8 +63,9 @@ public class MethodsTest {
         }
     }
 
-    public static class TestClass extends TestParentClass {
+    public static class TestClass extends TestParentClass implements BaseInterface {
 
+        @Override
         public String getName(int i) {
             return "";
         }

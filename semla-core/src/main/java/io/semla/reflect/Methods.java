@@ -37,6 +37,7 @@ public final class Methods {
     private static void recursivelyFindAllMethodsOf(Class<?> clazz, Map<String, Method> methods) {
         Stream.of(clazz.getDeclaredMethods())
             .filter(method -> !method.getDeclaringClass().equals(Object.class))
+            .filter(method -> clazz.isAnnotation() || !Modifier.is(method, Modifier.ABSTRACT))
             .filter(method -> !methods.containsValue(method))
             .forEach(method -> {
                 if (!method.isAccessible()) {
@@ -45,6 +46,7 @@ public final class Methods {
                 methods.put(getMethodSignature(clazz, method.getName(), method.getParameterTypes()), method);
                 Optional.ofNullable(clazz.getSuperclass())
                     .ifPresent(superClass -> recursivelyFindAllMethodsOf(superClass, methods));
+                Stream.of(clazz.getInterfaces()).forEach(interfaceClass -> recursivelyFindAllMethodsOf(interfaceClass, methods));
             });
     }
 

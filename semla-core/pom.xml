@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.semla</groupId>
         <artifactId>semla</artifactId>
-        <version>1.0.4</version>
+        <version>1.0.5</version>
     </parent>
     <artifactId>semla-core</artifactId>
     <packaging>jar</packaging>
@@ -68,7 +68,7 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-testing</artifactId>
-            <version>1.0.4</version>
+            <version>1.0.5</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -89,7 +89,7 @@
             <plugin>
                 <groupId>io.semla</groupId>
                 <artifactId>method-runner-maven-plugin</artifactId>
-                <version>1.0.4</version>
+                <version>1.0.5</version>
                 <configuration>
                     <classname>io.semla.persistence.TypedEntityManager</classname>
                     <methodname>preProcessSources</methodname>
