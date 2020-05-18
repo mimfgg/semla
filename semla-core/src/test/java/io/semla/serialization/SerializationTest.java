@@ -282,9 +282,7 @@ public class SerializationTest {
 
     @Test
     public void proxyAndAnnotationsSerialization() {
-        assertThat(Json.write(Annotations.named("test")))
-            .isEqualTo("{\"value\":\"test\"}");
-        assertThat(Json.read("{\"value\":\"test\"}", Named.class))
-            .isEqualTo(Annotations.named("test"));
+        assertThat(Json.write(Annotations.named("test"))).isEqualTo("{\"value\":\"test\"}");
+        assertThat(Json.read("{\"value\":\"test\"}", Named.class)).isEqualTo(Annotations.named("test"));
     }
 }

@@ -345,12 +345,12 @@ public class SemlaInjectorTest {
             .multiBind(Action.class).named("actions").add(ActionA.class)
             .multiBind(Action.class).named("actions").add(Lists.of(ActionB.class, ActionC.class))
         );
-        Set<Action> actions = injector.getInstance(Types.parameterized(Set.class, Action.class), Annotations.named("actions"));
+        Set<Action> actions = injector.getInstance(Types.parameterized(Set.class).of(Action.class), Annotations.named("actions"));
         assertThat(actions).isNotNull().isNotEmpty();
         assertThat(actions.stream().map(Action::getClass).collect(Collectors.toSet()))
             .isEqualTo(ImmutableSet.of(ActionA.class, ActionB.class, ActionC.class));
         Action actionC = actions.stream().filter(action -> action instanceof ActionC).findFirst().get();
-        Set<Action> actions2 = injector.getInstance(Types.parameterized(Set.class, Action.class), Annotations.named("actions"));
+        Set<Action> actions2 = injector.getInstance(Types.parameterized(Set.class).of(Action.class), Annotations.named("actions"));
         Action actionsC2 = actions2
             .stream().filter(action -> action instanceof ActionC).findFirst().get();
         assertThat(actionC).isEqualTo(actionsC2);

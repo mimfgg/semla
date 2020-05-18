@@ -159,7 +159,7 @@ Multibiding can be achieved with:
      )
      .create();
  // actions will contain a new instance of ActionA, of ActionB and the implicit singleton of ActionC
- Set<Action> actions = injector.getInstance(Types.parameterized(Set.class, Action.class), Annotations.named("actions"));
+ Set<Action> actions = injector.getInstance(Types.parameterized(Set.class).of(Action.class), Annotations.named("actions"));
 ```
 
 You can intercept an injection (for debugging or testing purpose):
