@@ -10,7 +10,7 @@ import static io.semla.util.Unchecked.unchecked;
 
 public final class Methods {
 
-    private static Map<Class<?>, Map<Class<? extends Annotation>, List<MethodInvocator>>> ANNOTATED_METHODS = new LinkedHashMap<>();
+    private static final Map<Class<?>, Map<Class<? extends Annotation>, List<MethodInvocator>>> ANNOTATED_METHODS = new LinkedHashMap<>();
     private static final Map<Class<?>, Map<String, Method>> METHOD_CACHE = new LinkedHashMap<>();
 
     private Methods() {
@@ -44,10 +44,10 @@ public final class Methods {
                     method.setAccessible(true);
                 }
                 methods.put(getMethodSignature(clazz, method.getName(), method.getParameterTypes()), method);
-                Optional.ofNullable(clazz.getSuperclass())
-                    .ifPresent(superClass -> recursivelyFindAllMethodsOf(superClass, methods));
-                Stream.of(clazz.getInterfaces()).forEach(interfaceClass -> recursivelyFindAllMethodsOf(interfaceClass, methods));
             });
+        Optional.ofNullable(clazz.getSuperclass())
+            .ifPresent(superClass -> recursivelyFindAllMethodsOf(superClass, methods));
+        Stream.of(clazz.getInterfaces()).forEach(interfaceClass -> recursivelyFindAllMethodsOf(interfaceClass, methods));
     }
 
     @SuppressWarnings("unchecked")

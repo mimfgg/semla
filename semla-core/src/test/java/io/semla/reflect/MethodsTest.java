@@ -16,6 +16,7 @@ public class MethodsTest {
     @Test
     public void findInheritedMethods() {
         assertThat(Methods.findMethod(TestClass.class, "publicLocalMethod")).isPresent();
+        assertThat(Methods.findMethod(EmptyTopClass.class, "publicLocalMethod")).isPresent();
         assertThat(Methods.findMethod(TestClass.class, "protectedOverridenMethod")).isPresent();
         assertThat(Methods.findMethod(TestClass.class, "privateLocalMethod")).isPresent();
         assertThat(Methods.findMethod(TestClass.class, "privateParentMethod")).isPresent();
@@ -83,5 +84,7 @@ public class MethodsTest {
             return "publicLocalMethod";
         }
     }
+
+    public static class EmptyTopClass extends TestClass {}
 
 }
