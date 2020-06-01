@@ -7,6 +7,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.*;
 import io.semla.datasource.Datasource;
 import io.semla.datasource.DatasourceFactory;
+import io.semla.inject.Injector;
 import io.semla.model.Column;
 import io.semla.model.EntityModel;
 import io.semla.model.Model;
@@ -49,18 +50,19 @@ import static javax.persistence.CascadeType.PERSIST;
 
 public class GraphQLProvider implements Provider<GraphQL> {
 
-    private final Map<String, BiFunction<EntityManagerFactory, DataFetchingEnvironment, ?>> additionalQueries = new LinkedHashMap<>();
-    private final Map<String, BiFunction<EntityManagerFactory, DataFetchingEnvironment, ?>> additionalMutations = new LinkedHashMap<>();
+    private final Map<String, BiFunction<Injector, DataFetchingEnvironment, ?>> additionalQueries = new LinkedHashMap<>();
+    private final Map<String, BiFunction<Injector, DataFetchingEnvironment, ?>> additionalMutations = new LinkedHashMap<>();
     private final List<String> additionalTypes = new ArrayList<>();
 
     protected final EntityManagerFactory factory;
+
     private GraphQL graphQL;
     private int modelCounts;
 
     @Inject
     public GraphQLProvider(EntityManagerFactory factory,
-                           @Named(GRAPHQL_ADDITIONAL_QUERIES) Map<String, BiFunction<EntityManagerFactory, DataFetchingEnvironment, ?>> additionalQueries,
-                           @Named(GRAPHQL_ADDITIONAL_MUTATIONS) Map<String, BiFunction<EntityManagerFactory, DataFetchingEnvironment, ?>> additionalMutations,
+                           @Named(GRAPHQL_ADDITIONAL_QUERIES) Map<String, BiFunction<Injector, DataFetchingEnvironment, ?>> additionalQueries,
+                           @Named(GRAPHQL_ADDITIONAL_MUTATIONS) Map<String, BiFunction<Injector, DataFetchingEnvironment, ?>> additionalMutations,
                            @Named(GRAPHQL_ADDITIONAL_TYPES) List<String> additionalTypes) {
         this.factory = factory;
         this.additionalQueries.putAll(additionalQueries);
@@ -92,13 +94,13 @@ public class GraphQLProvider implements Provider<GraphQL> {
         return graphQL;
     }
 
-    public GraphQLProvider addQuery(String query, BiFunction<EntityManagerFactory, DataFetchingEnvironment, ?> handler) {
+    public GraphQLProvider addQuery(String query, BiFunction<Injector, DataFetchingEnvironment, ?> handler) {
         additionalQueries.put(query, handler);
         graphQL = null;
         return this;
     }
 
-    public GraphQLProvider addMutation(String query, BiFunction<EntityManagerFactory, DataFetchingEnvironment, ?> handler) {
+    public GraphQLProvider addMutation(String query, BiFunction<Injector, DataFetchingEnvironment, ?> handler) {
         additionalMutations.put(query, handler);
         graphQL = null;
         return this;
@@ -116,13 +118,13 @@ public class GraphQLProvider implements Provider<GraphQL> {
         TypeRuntimeWiring.Builder queries = newTypeWiring("Query");
         models.forEach(model -> addQueries(model, queries));
         additionalQueries.forEach((query, handler) ->
-            queries.dataFetcher(Strings.until(query, '('), environment -> handler.apply(factory, environment))
+            queries.dataFetcher(Strings.until(query, '('), environment -> handler.apply(factory.injector(), environment))
         );
         builder.type(queries);
         TypeRuntimeWiring.Builder mutations = newTypeWiring("Mutation");
         models.forEach(model -> addMutations(model, mutations));
         additionalMutations.forEach((mutation, handler) ->
-            mutations.dataFetcher(Strings.until(mutation, '('), environment -> handler.apply(factory, environment))
+            mutations.dataFetcher(Strings.until(mutation, '('), environment -> handler.apply(factory.injector(), environment))
         );
         builder.type(mutations);
         models.stream().filter(model -> !model.relations().isEmpty()).forEach(model -> {
