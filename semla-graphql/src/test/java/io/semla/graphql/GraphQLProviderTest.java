@@ -18,14 +18,14 @@ public class GraphQLProviderTest {
     public void addAdditionalMethodsDuringInitialization() {
         Semla semla = Semla.configure()
             .withModules(new GraphQLModule()
-                .withQuery("fibonacci(input: Int!) : Int!", (factory, environment) ->
+                .withQuery("fibonacci(input: Int!) : Int!", (injector, environment) ->
                     fibonacci(environment.getArgument("input"))
                 )
                 .withTypes(
                     "input Request { text: String! } ",
                     "type Response { text: String! } "
                 )
-                .withMutation("ping(request: Request!): Response!", (factory, environment) ->
+                .withMutation("ping(request: Request!): Response!", (injector, environment) ->
                     Maps.of(
                         "text",
                         "hello " + environment.<Map<String, String>>getArgument("request").get("text")
@@ -47,7 +47,7 @@ public class GraphQLProviderTest {
 
         GraphQLProvider graphQLProvider = semla.getInstance(GraphQLProvider.class);
 
-        graphQLProvider.addQuery("fibonacci(input: Int) : Int", (factory, environment) ->
+        graphQLProvider.addQuery("fibonacci(input: Int) : Int", (injector, environment) ->
             fibonacci(environment.getArgument("input"))
         );
 
@@ -58,7 +58,7 @@ public class GraphQLProviderTest {
                 "input Request { text: String! } ",
                 "type Response { text: String! } "
             )
-            .addMutation("ping(request: Request!): Response!", (factory, environment) ->
+            .addMutation("ping(request: Request!): Response!", (injector, environment) ->
                 Maps.of(
                     "text",
                     "hello " + environment.<Map<String, String>>getArgument("request").get("text")

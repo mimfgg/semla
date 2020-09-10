@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.semla</groupId>
         <artifactId>semla</artifactId>
-        <version>1.0.6</version>
+        <version>1.0.7</version>
     </parent>
     <artifactId>semla-jdbi</artifactId>
     <packaging>jar</packaging>
@@ -13,7 +13,7 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-core</artifactId>
-            <version>1.0.6</version>
+            <version>1.0.7</version>
         </dependency>
         <dependency>
             <groupId>org.jdbi</groupId>
@@ -44,20 +44,20 @@
         <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
-            <version>2.5.0</version>
+            <version>2.5.1</version>
             <type>jar</type>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-testing</artifactId>
-            <version>1.0.6</version>
+            <version>1.0.7</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-core</artifactId>
             <classifier>tests</classifier>
-            <version>1.0.6</version>
+            <version>1.0.7</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

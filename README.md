@@ -32,7 +32,7 @@ Get it from maven central:
 <dependency>
     <groupId>io.semla</groupId>
     <artifactId>semla-core</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.7</version>
     <scope>compile</scope>
 </dependency>
 ```
@@ -49,7 +49,7 @@ Given that you annotate a `User` class with `io.semla.persistence.annotations.Ma
 <plugin>
     <groupId>io.semla</groupId>
     <artifactId>semla-maven-plugin</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.7</version>
     <configuration>
         <sources>
             <source>/src/main/java/package/of/your/model/**</source>
