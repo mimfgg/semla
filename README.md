@@ -533,13 +533,14 @@ Then it can be serialized and deserialized properly:
    "- type: hero" +
    "  name: Luke" +
    "- type: hero" +
-   "  name: Leia"
+   "  name: Leia",
+   Types.parameterized(List.class).of(Character.class)
  );
 ```
 
 *Note: subtypes can also be deserialized from their typenames only:*
 ```java
- List<Hero> heroes = Yaml.read("[hero, hero]"); // this will return 2 default heroes
+ List<Hero> heroes = Yaml.read("[hero, hero]", Types.parameterized(List.class).of(Character.class)); // this will return 2 default heroes
 ```
 
 ## GraphQL
