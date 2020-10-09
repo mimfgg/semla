@@ -19,10 +19,10 @@ import static io.semla.serialization.io.CharacterReader.EOF;
 
 public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
 
-    private static Pattern NUMBER = Pattern.compile("[0-9]+(?:\\.[0-9]+)?");
-    private static Pattern BOOLEAN = Pattern.compile("(?i)y|yes|true|on|n|no|false|off");
-    private static Pattern TRUE = Pattern.compile("(?i)y|yes|true|on");
-    private static Pattern DOCUMENT_END = Pattern.compile("\\.\\.\\.");
+    private static final Pattern NUMBER = Pattern.compile("[0-9]+(?:\\.[0-9]+)?");
+    private static final Pattern BOOLEAN = Pattern.compile("(?i)y|yes|true|on|n|no|false|off");
+    private static final Pattern TRUE = Pattern.compile("(?i)y|yes|true|on");
+    private static final Pattern DOCUMENT_END = Pattern.compile("\\.\\.\\.");
 
     public YamlDeserializer() {
         read(Boolean.class).as(Token.BOOLEAN, value -> TRUE.matcher(value).matches());
@@ -126,6 +126,9 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                         if (buffer.length() == 0) {
                             quoting = Quoting.SINGLE_QUOTED;
                         } else {
+                            if (quoting == Quoting.SINGLE_QUOTED) {
+                                return Token.STRING;
+                            }
                             buffer.append(c);
                         }
                         break;
@@ -136,7 +139,7 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                             switch (quoting) {
                                 case DOUBLE_QUOTED:
                                     if (!escaped) {
-                                        return evaluateBuffer();
+                                        return Token.STRING;
                                     }
                                 case SINGLE_QUOTED:
                                 case PLAIN:
@@ -615,6 +618,7 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
             if (logger.isTraceEnabled()) {
                 logger.trace("consuming comment...");
             }
+            //noinspection StatementWithEmptyBody
             while (reader().next() != '\n' && reader().current() != EOF) {
                 // this is a comment, let's just consume it (っ˘ڡ˘ς)
             }

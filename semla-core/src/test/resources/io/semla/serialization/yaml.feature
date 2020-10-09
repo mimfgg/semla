@@ -817,3 +817,14 @@ Feature: a yaml serializer/deserializer
       | off   | false  |
       | Off   | false  |
       | OFF   | false  |
+
+  Scenario: Map of Strings that look like primitives
+    When the following yaml gets parsed as a java.util.Map:
+    """
+    number: "1234"
+    bool: 'true'
+    """
+    Then it gets serialized as this json:
+    """
+    {"number":"1234","bool":"true"}
+    """
