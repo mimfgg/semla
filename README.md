@@ -32,7 +32,7 @@ Get it from maven central:
 <dependency>
     <groupId>io.semla</groupId>
     <artifactId>semla-core</artifactId>
-    <version>1.0.7</version>
+    <version>1.0.8</version>
     <scope>compile</scope>
 </dependency>
 ```
@@ -49,7 +49,7 @@ Given that you annotate a `User` class with `io.semla.persistence.annotations.Ma
 <plugin>
     <groupId>io.semla</groupId>
     <artifactId>semla-maven-plugin</artifactId>
-    <version>1.0.7</version>
+    <version>1.0.8</version>
     <configuration>
         <sources>
             <source>/src/main/java/package/of/your/model/**</source>
@@ -390,23 +390,23 @@ If the injector is configured to use a Cache:
 
 Then you can easily cache all the read queries with:
 ```java
- userManager.where().name().is("bob").cachedFor(Duration.ofMinutes(3)).first()
- userManager.cachedFor(Duration.ofMinutes(3)).get(1)
+ userManager.where().name().is("bob").cachedFor(Duration.ofMinutes(3)).first();
+ userManager.cachedFor(Duration.ofMinutes(3)).get(1);
 ```
 
 To manually refresh the cache:
 ```java
- userManager.where().name().is("bob").invalidateCache().cachedFor(Duration.ofMinutes(3)).first()
+ userManager.where().name().is("bob").invalidateCache().cachedFor(Duration.ofMinutes(3)).first();
 ```
  
 Or evict it:
 ```java
- userManager.where().name().is("bob").evictCache().first() // this returns a void
+ userManager.where().name().is("bob").evictCache().first(); // this returns a void
 ```
 
 You can also use your cache for custom queries:
 ```java
-long users = semla.getInstance(Cache.class).get("onlineUsers", () -> computeUserCounts(), Duration.ofMinutes(1));
+ long users = semla.getInstance(Cache.class).get("onlineUsers", () -> computeUserCounts(), Duration.ofMinutes(1));
 ```
 
 If you need multiple caches, with different datasources, you should name them:
@@ -417,7 +417,7 @@ If you need multiple caches, with different datasources, you should name them:
     )
     .create();
 
- semla.getInstance(Cache.class, Annotations.named("shared")).get(...)
+ semla.getInstance(Cache.class, Annotations.named("shared")).get(...);
 ```
 
 All the datasources can be used as a cache, even the sql ones.
@@ -529,7 +529,7 @@ The Hero type needs to be registered:
 
 Then it can be serialized and deserialized properly:
 ```java
- List<Hero> heroes = Yaml.read(
+ List<Character> characters = Yaml.read(
    "- type: hero" +
    "  name: Luke" +
    "- type: hero" +
@@ -540,7 +540,7 @@ Then it can be serialized and deserialized properly:
 
 *Note: subtypes can also be deserialized from their typenames only:*
 ```java
- List<Hero> heroes = Yaml.read("[hero, hero]", Types.parameterized(List.class).of(Character.class)); // this will return 2 default heroes
+ List<Character> characters = Yaml.read("[hero, hero]", Types.parameterized(List.class).of(Character.class)); // this will return 2 default heroes
 ```
 
 ## GraphQL
