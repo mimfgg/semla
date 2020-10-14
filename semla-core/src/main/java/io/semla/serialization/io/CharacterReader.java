@@ -24,7 +24,7 @@ public abstract class CharacterReader {
     }
 
     public int line() {
-        return line;
+        return line - (stashed ? 1 : 0);
     }
 
     public abstract int length();

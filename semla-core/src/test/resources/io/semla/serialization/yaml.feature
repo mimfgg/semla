@@ -828,3 +828,19 @@ Feature: a yaml serializer/deserializer
     """
     {"number":"1234","bool":"true"}
     """
+
+  Scenario: Map of List of List with values with white spaces
+    When the following yaml gets parsed as a java.util.Map:
+    """
+    test:
+      - attributes:
+        - name: name 1
+          value: value 1
+        - name: name 2
+          value: value 2
+    result: true
+    """
+    Then it gets serialized as this json:
+    """
+    {"test":[{"attributes":[{"name":"name 1","value":"value 1"},{"name":"name 2","value":"value 2"}]}],"result":true}
+    """
