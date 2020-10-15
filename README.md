@@ -1,7 +1,7 @@
 # Semla
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.semla/semla-core/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.semla/semla-core)
-![Build](https://github.com/mimfgg/semla/workflows/build/badge.svg)
+![Build](https://github.com/mimfgg/semla/workflows/master/badge.svg)
 [![codecov](https://codecov.io/gh/mimfgg/semla/branch/master/graph/badge.svg)](https://codecov.io/gh/mimfgg/semla)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![lifecycle: beta](https://img.shields.io/badge/lifecycle-beta-509bf5.svg)
