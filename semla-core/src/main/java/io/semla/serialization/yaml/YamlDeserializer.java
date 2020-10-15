@@ -191,14 +191,18 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                         buffer.append(c);
                         break;
                     case '?':
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("sequence as key!");
+                        if (buffer.length() == 0) {
+                            if (logger.isTraceEnabled()) {
+                                logger.trace("sequence as key!");
+                            }
+                            previousWasCompositeKey = true;
+                            if (structure().isEmpty() || last() != Token.OBJECT) {
+                                return Token.OBJECT;
+                            }
+                            return evaluateNextToken();
                         }
-                        previousWasCompositeKey = true;
-                        if (structure().isEmpty() || last() != Token.OBJECT) {
-                            return Token.OBJECT;
-                        }
-                        return evaluateNextToken();
+                        buffer.append(c);
+                        break;
                     case '!':
                         if (buffer.length() == 0) {
                             char next = reader().next();
@@ -248,12 +252,7 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                             }
                             return Token.SKIP;
                         }
-                        if (style == FlowStyle.INDENTATION && buffer.length() > 1 && last() == Token.PROPERTY) {
-                            bufferFlowBlock();
-                            return evaluateBuffer();
-                        } else {
-                            buffer.append(c);
-                        }
+                        buffer.append(c);
                         break;
                     case ':':
                         if (previousWasCompositeKey) {
@@ -291,6 +290,7 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                             }
                             return Token.SKIP;
                         }
+                        bufferFlowBlock();
                         return evaluateBuffer();
                     case ',':
                         if (buffer.length() == 0 && last() == Token.ARRAY) {
@@ -306,10 +306,9 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                         if (quoting == Quoting.PLAIN && buffer.length() == 0) {
                             consumeComment();
                             return Token.SKIP;
-                        } else {
-                            buffer.append(c);
                         }
-                        break;
+                        bufferFlowBlock();
+                        return evaluateBuffer();
                     case EOF:
                         break;
                     case '&':
@@ -404,6 +403,9 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
             if (quoting == Quoting.PLAIN) {
                 initialColumn += Math.max(indentation, 1);
             }
+            if (structure().getLast().equals(Token.ARRAY)) {
+                initialColumn += 2;
+            }
             do {
                 char s = reader().current();
                 if (s == '\n') {
@@ -443,50 +445,43 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                             }
                             break;
                         case '\'':
-                            if (buffer.length() == 0) {
-                                quoting = Quoting.SINGLE_QUOTED;
-                            } else {
-                                switch (quoting) {
-                                    case SINGLE_QUOTED:
-                                        if (!escaped) {
-                                            escaped = true;
-                                            break;
-                                        } else {
-                                            escaped = false;
-                                        }
-                                    case DOUBLE_QUOTED:
-                                    case PLAIN:
-                                        buffer.append(backslashed ? backslashed(s) : s);
-                                        backslashed = false;
+                            switch (quoting) {
+                                case SINGLE_QUOTED:
+                                    if (!escaped) {
+                                        escaped = true;
                                         break;
-                                }
+                                    } else {
+                                        escaped = false;
+                                    }
+                                case DOUBLE_QUOTED:
+                                case PLAIN:
+                                    buffer.append(backslashed ? backslashed(s) : s);
+                                    backslashed = false;
+                                    break;
                             }
                             break;
                         case '"':
-                            if (buffer.length() == 0) {
-                                quoting = Quoting.DOUBLE_QUOTED;
-                            } else {
-                                switch (quoting) {
-                                    case DOUBLE_QUOTED:
-                                        if (!backslashed) {
-                                            read = false;
-                                            break;
-                                        }
-                                        buffer.append(backslashed(s));
-                                        backslashed = false;
+                            switch (quoting) {
+                                case DOUBLE_QUOTED:
+                                    if (!backslashed) {
+                                        read = false;
                                         break;
-                                    case SINGLE_QUOTED:
-                                    case PLAIN:
-                                        buffer.append(backslashed ? backslashed(s) : s);
-                                        backslashed = false;
-                                        break;
-                                }
+                                    }
+                                    buffer.append(backslashed(s));
+                                    backslashed = false;
+                                    break;
+                                case SINGLE_QUOTED:
+                                case PLAIN:
+                                    buffer.append(backslashed ? backslashed(s) : s);
+                                    backslashed = false;
+                                    break;
                             }
                             break;
                         case '#':
-                            consumeComment();
-                            read = false;
-                            break;
+                            if (buffer.charAt(buffer.length() - 1) == ' ') {
+                                consumeComment();
+                                break;
+                            }
                         default:
                             buffer.append(backslashed ? backslashed(s) : s);
                             backslashed = false;
