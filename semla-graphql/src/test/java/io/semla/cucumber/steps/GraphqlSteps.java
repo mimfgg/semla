@@ -5,7 +5,7 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
-import io.semla.graphql.GraphQLProvider;
+import io.semla.graphql.GraphQLSupplier;
 import io.semla.inject.GraphQLModule;
 import io.semla.serialization.yaml.Yaml;
 
@@ -38,7 +38,7 @@ public class GraphqlSteps {
     @Then("^the graphql schema is equal to:$")
     public <T> void the_schema_is_equal_to(String expected) {
         assertThatCode(() -> EntitySteps.getInstance(GraphQL.class)).doesNotThrowAnyException();
-        String schema = EntitySteps.getInstance(GraphQLProvider.class).getSchema();
+        String schema = EntitySteps.getInstance(GraphQLSupplier.class).getSchema();
         assertThat(schema).isEqualTo(expected);
     }
 

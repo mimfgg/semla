@@ -1,18 +1,17 @@
 package io.semla;
 
 import io.semla.cache.Cache;
-import io.semla.config.HsqlDatasourceConfiguration;
 import io.semla.cucumber.steps.EntitySteps;
 import io.semla.datasource.HsqlDatasource;
 import org.junit.BeforeClass;
 
-import static io.semla.config.DatasourceConfiguration.generic;
+import static io.semla.datasource.Datasource.Configuration.generic;
 
 public class JdbiTest extends DatasourceSuite {
 
     @BeforeClass
     public static void init() {
-        HsqlDatasourceConfiguration hsql = HsqlDatasource.configure()
+        HsqlDatasource.Configuration hsql = HsqlDatasource.configure()
             .withJdbcUrl("jdbc:hsqldb:mem:test")
             .withAutoCreateTable(true)
             .autoclose();

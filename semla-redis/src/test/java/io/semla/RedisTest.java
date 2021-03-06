@@ -2,20 +2,19 @@ package io.semla;
 
 import io.semla.cache.Cache;
 import io.semla.cache.CacheTest;
-import io.semla.config.RedisDatasourceConfiguration;
 import io.semla.cucumber.steps.EntitySteps;
 import io.semla.datasource.*;
 import io.semla.persistence.KeyValueCachedEntityManagerTest;
 import io.semla.persistence.KeyValueCachedTypedEntityManagerTest;
-import io.semla.relations.KeyValueRelationsTest;
+import io.semla.relation.KeyValueRelationsTest;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.runners.Suite;
 import org.testcontainers.containers.GenericContainer;
 import redis.clients.jedis.Jedis;
 
-import static io.semla.config.DatasourceConfiguration.wrapped;
-import static io.semla.config.RedisDatasourceConfiguration.DEFAULT_PORT;
+import static io.semla.datasource.Datasource.Configuration.wrapped;
+import static io.semla.datasource.RedisDatasource.Configuration.DEFAULT_PORT;
 
 @Suite.SuiteClasses({
     CacheTest.class,
@@ -36,7 +35,7 @@ public class RedisTest extends KeyValueDatasourceSuite {
 
     @BeforeClass
     public static void init() {
-        RedisDatasourceConfiguration redis = RedisDatasource.configure()
+        RedisDatasource.Configuration redis = RedisDatasource.configure()
             .withHost(container.getContainerIpAddress())
             .withPort(container.getMappedPort(DEFAULT_PORT))
             .autoclose();

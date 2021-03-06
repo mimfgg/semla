@@ -1,20 +1,26 @@
 package io.semla.datasource;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import io.semla.model.Column;
 import io.semla.model.EntityModel;
 import io.semla.query.Pagination;
 import io.semla.query.Predicate;
 import io.semla.query.Predicates;
 import io.semla.query.Values;
-import io.semla.reflect.Member;
 import io.semla.reflect.Methods;
+import io.semla.reflect.Properties;
+import io.semla.reflect.Setter;
+import io.semla.serialization.annotations.Deserialize;
+import io.semla.serialization.annotations.Serialize;
+import io.semla.serialization.annotations.When;
 import io.semla.serialization.json.Json;
 import io.semla.util.Arrays;
-import io.semla.util.ImmutableMap;
-import io.semla.util.Lists;
-import io.semla.util.Throwables;
+import io.semla.util.*;
 import io.semla.util.function.PentaConsumer;
+import org.jdbi.v3.core.Handle;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.config.JdbiConfig;
 import org.jdbi.v3.core.statement.*;
 
 import javax.persistence.*;
@@ -22,6 +28,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -32,25 +39,24 @@ import java.util.stream.Stream;
 
 import static io.semla.model.EntityModel.isEntity;
 import static io.semla.reflect.Types.isAssignableTo;
-import static io.semla.reflect.Types.typeArgumentOf;
+import static io.semla.reflect.Types.rawTypeArgumentOf;
 import static io.semla.util.Unchecked.unchecked;
-
 
 public abstract class SqlDatasource<T> extends Datasource<T> {
 
-    private static Map<Class<?>, Throwables.BiFunction<ResultSet, String, ?>> PRIMITIVE_READERS =
-        ImmutableMap.<Class<?>, Throwables.BiFunction<ResultSet, String, ?>>builder()
-            .put(byte.class, ResultSet::getByte)
-            .put(short.class, ResultSet::getShort)
-            .put(int.class, ResultSet::getInt)
-            .put(long.class, ResultSet::getLong)
-            .put(float.class, ResultSet::getFloat)
-            .put(double.class, ResultSet::getDouble)
-            .put(boolean.class, ResultSet::getBoolean)
-            .build();
+    private static final Map<Class<?>, Throwables.BiFunction<ResultSet, String, ?>> PRIMITIVE_READERS =
+            ImmutableMap.<Class<?>, Throwables.BiFunction<ResultSet, String, ?>>builder()
+                    .put(byte.class, ResultSet::getByte)
+                    .put(short.class, ResultSet::getShort)
+                    .put(int.class, ResultSet::getInt)
+                    .put(long.class, ResultSet::getLong)
+                    .put(float.class, ResultSet::getFloat)
+                    .put(double.class, ResultSet::getDouble)
+                    .put(boolean.class, ResultSet::getBoolean)
+                    .build();
 
-    private static final int MAX_CHUNCK_SIZE = 1000;
     private static final Calendar UTC = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    private static final Calendar defaultCalendar = Calendar.getInstance(TimeZone.getDefault());
 
     private final Map<Column<T>, Throwables.Function<ResultSet, ?>> mappers = new LinkedHashMap<>();
     private final Map<Column<T>, Function<Object, Object>> binders = new LinkedHashMap<>();
@@ -58,7 +64,8 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
     private final String[] generatedColumns;
     private final Jdbi dbi;
     private final SqlDDL<T> ddl;
-    private Calendar defaultCalendar = Calendar.getInstance(TimeZone.getDefault());
+
+    private int maxChunkSize = 1000;
 
     public SqlDatasource(EntityModel<T> entityModel, Jdbi dbi, String tablename) {
         super(entityModel);
@@ -87,19 +94,19 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
                 });
             } else if (isEntity(type)) {
                 mappers.put(column, resultSet -> {
-                        Class<?> keyType = EntityModel.of(type).key().member().getType();
-                        Object keyValue;
-                        if (keyType.isPrimitive()) {
-                            keyValue = PRIMITIVE_READERS.get(keyType).apply(resultSet, column.name());
-                        } else {
-                            keyValue = resultSet.getObject(column.name(), keyType);
+                            Class<?> keyType = EntityModel.of(type).key().member().getType();
+                            Object keyValue;
+                            if (keyType.isPrimitive()) {
+                                keyValue = PRIMITIVE_READERS.get(keyType).apply(resultSet, column.name());
+                            } else {
+                                keyValue = resultSet.getObject(column.name(), keyType);
+                            }
+                            return keyValue != null ? EntityModel.referenceTo(type, keyValue) : null;
                         }
-                        return keyValue != null ? EntityModel.referenceTo(type, keyValue) : null;
-                    }
                 );
                 binders.put(column, EntityModel::keyOf);
             } else if (type.equals(Optional.class)) {
-                mappers.put(column, resultSet -> Optional.of(resultSet.getObject(column.name(), typeArgumentOf(column.member().getGenericType()))));
+                mappers.put(column, resultSet -> Optional.of(resultSet.getObject(column.name(), rawTypeArgumentOf(column.member().getGenericType()))));
                 binders.put(column, value -> ((Optional<?>) value).orElse(null));
             } else if (type.equals(BigInteger.class)) {
                 mappers.put(column, resultSet -> BigInteger.valueOf(resultSet.getLong(column.name())));
@@ -130,10 +137,10 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
             } else if (type.isEnum()) {
                 if (column.member().annotation(Enumerated.class).filter(enumerated -> enumerated.value() == EnumType.ORDINAL).isPresent()) {
                     mappers.put(column, resultSet -> type.getEnumConstants()[resultSet.getInt(column.name())]);
-                    binders.put(column, value -> ((Enum) value).ordinal());
+                    binders.put(column, value -> ((Enum<?>) value).ordinal());
                 } else {
                     mappers.put(column, resultSet -> Methods.invoke(type, "valueOf", resultSet.getString(column.name())));
-                    binders.put(column, value -> ((Enum) value).name());
+                    binders.put(column, value -> ((Enum<?>) value).name());
                 }
             } else if (type.equals(UUID.class)) {
                 mappers.put(column, resultSet -> Optional.of(resultSet.getString(column.name())).map(UUID::fromString).orElse(null));
@@ -141,20 +148,26 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
             }
         });
         generatedColumns = model().columns().stream()
-            .filter(column -> column.isGenerated() && !column.member().getType().equals(UUID.class))
-            .map(Column::name).toArray(String[]::new);
+                .filter(column -> column.isGenerated() && !column.member().getType().equals(UUID.class))
+                .map(Column::name).toArray(String[]::new);
         extend();
         if (dbi != null && dbi.getConfig(SemlaJdbiConfig.class).autoCreateTable) {
             try {
                 dbi.withHandle(handle -> handle
-                    .createQuery("SELECT COUNT(*) FROM " + ddl().escape(ddl().tablename()))
-                    .mapTo(Long.class)
-                    .findOne()
+                        .createQuery("SELECT COUNT(*) FROM " + ddl().escape(ddl().tablename()))
+                        .mapTo(Long.class)
+                        .findOne()
                 );
             } catch (Exception e) {
-                dbi.withHandle(handle -> ddl().create().stream().map(command -> handle.execute(command)).reduce(Integer::sum));
+                dbi.withHandle(handle -> ddl().create().stream().map(handle::execute).reduce(Integer::sum));
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public <SelfType extends SqlDatasource<T>> SelfType withMaxChunkSize(int maxChunkSize) {
+        this.maxChunkSize = maxChunkSize;
+        return (SelfType) this;
     }
 
     protected abstract void extend();
@@ -179,7 +192,7 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
             Map<K, T> entitiesByKey = new LinkedHashMap<>();
             keys.forEach(key -> entitiesByKey.put(key, null));
             list(model().key().in(keys), Pagination.of(model().getType()).limitTo(keys.size()))
-                .forEach(entity -> entitiesByKey.put(model().key().member().getOn(entity), entity));
+                    .forEach(entity -> entitiesByKey.put(model().key().member().getOn(entity), entity));
             return entitiesByKey;
         } else {
             return new LinkedHashMap<>();
@@ -188,7 +201,7 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
 
     @Override
     public void create(T entity) {
-        dbi.withHandle(handle -> {
+        dbi.useHandle(handle -> {
             if (!model().key().member().isDefaultOn(entity)) {
                 Object key = model().key().member().getOn(entity);
                 get(key).ifPresent(current -> {
@@ -199,72 +212,73 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
             Update update = bind(handle.createUpdate(ddl().insert()), model().columns().stream().filter(Column::insertable), entity);
             if (generatedColumns.length > 0) {
                 update.executeAndReturnGeneratedKeys(generatedColumns).mapToMap().findFirst()
-                    .ifPresent(generatedKeys -> assignGeneratedValues(entity, Lists.from(generatedKeys.values())));
+                        .ifPresent(generatedKeys -> assignGeneratedValues(entity, Lists.from(generatedKeys.values())));
             } else {
                 int inserted = update.execute();
                 if (inserted == 0) {
                     throw new PersistenceException("couldn't insert " + Json.write(entity));
                 }
             }
-            return true;
         });
     }
 
     @Override
     public void create(Collection<T> entities) {
-        Lists.chunk(entities, MAX_CHUNCK_SIZE).forEach(chunck ->
-            dbi.withHandle(handle -> {
-                PreparedBatch preparedBatch = handle.prepareBatch(ddl().insert());
-                chunck.forEach(entity -> bind(preparedBatch, model().columns().stream().filter(Column::insertable), entity).add());
-                if (generatedColumns.length > 0) {
-                    List<Map<String, Object>> generatedKeys = preparedBatch.executeAndReturnGeneratedKeys(generatedColumns).mapToMap().list();
-                    IntStream.range(0, chunck.size()).forEach(i -> assignGeneratedValues(chunck.get(i), Lists.from(generatedKeys.get(i).values())));
-                } else {
-                    preparedBatch.execute();
-                }
-                return true;
-            })
+        Lists.chunk(entities, maxChunkSize).forEach(chunck ->
+                dbi.useHandle(handle -> {
+                    PreparedBatch preparedBatch = handle.prepareBatch(ddl().insert());
+                    chunck.forEach(entity -> bind(preparedBatch, model().columns().stream().filter(Column::insertable), entity).add());
+                    if (generatedColumns.length > 0) {
+                        List<Map<String, Object>> generatedKeys = preparedBatch.executeAndReturnGeneratedKeys(generatedColumns).mapToMap().list();
+                        IntStream.range(0, chunck.size()).forEach(i -> assignGeneratedValues(chunck.get(i), Lists.from(generatedKeys.get(i).values())));
+                    } else {
+                        preparedBatch.execute();
+                    }
+                })
         );
     }
 
     @Override
     public void update(T entity) {
-        dbi.withHandle(handle -> {
+        dbi.useHandle(handle -> {
             Update update = bind(handle.createUpdate(ddl().update()), model().columns().stream().filter(Column::updatable), entity);
             Object key = binders.getOrDefault(model().key(), Function.identity()).apply(model().key().member().getOn(entity));
             update.bindByType(model().key().name(), key, key.getClass());
             model().version().ifPresent(version ->
-                update.bindByType(version.name(), version.member().<Integer>getOn(entity), Integer.class)
+                    update.bindByType(version.name(), version.member().<Integer>getOn(entity), Integer.class)
             );
-            long updated = update.execute();
-            if (updated == 0) {
-                if (model().version().isPresent()) {
-                    throw new OptimisticLockException("while updating " + entity);
-                } else {
-                    throw notFound(key);
+            if (generatedColumns.length > 0) {
+                update.executeAndReturnGeneratedKeys(generatedColumns).mapToMap().findFirst()
+                        .ifPresent(generatedKeys -> assignGeneratedValues(entity, Lists.from(generatedKeys.values())));
+            } else {
+                long updated = update.execute();
+                if (updated == 0) {
+                    if (model().version().isPresent()) {
+                        throw new OptimisticLockException("while updating " + entity);
+                    } else {
+                        throw notFound(key);
+                    }
                 }
             }
-            return true;
         });
     }
 
     @Override
     public void update(Collection<T> entities) {
-        Lists.chunk(entities, MAX_CHUNCK_SIZE).forEach(chunck ->
-            dbi.withHandle(handle -> {
-                PreparedBatch preparedBatch = handle.prepareBatch(ddl().update());
-                chunck.forEach(entity -> {
-                    Object key = binders.getOrDefault(model().key(), Function.identity()).apply(model().key().member().getOn(entity));
-                    bind(preparedBatch, model().columns().stream().filter(Column::updatable), entity)
-                        .bindByType(model().key().name(), key, key.getClass());
-                    model().version().ifPresent(version ->
-                        preparedBatch.bindByType(version.name(), version.member().<Integer>getOn(entity), Integer.class)
-                    );
-                    preparedBatch.add();
-                });
-                preparedBatch.execute();
-                return true;
-            })
+        Lists.chunk(entities, maxChunkSize).forEach(chunck ->
+                dbi.useHandle(handle -> {
+                    PreparedBatch preparedBatch = handle.prepareBatch(ddl().update());
+                    chunck.forEach(entity -> {
+                        Object key = binders.getOrDefault(model().key(), Function.identity()).apply(model().key().member().getOn(entity));
+                        bind(preparedBatch, model().columns().stream().filter(Column::updatable), entity)
+                                .bindByType(model().key().name(), key, key.getClass());
+                        model().version().ifPresent(version ->
+                                preparedBatch.bindByType(version.name(), version.member().<Integer>getOn(entity), Integer.class)
+                        );
+                        preparedBatch.add();
+                    });
+                    preparedBatch.execute();
+                })
         );
     }
 
@@ -284,15 +298,15 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
     @Override
     public Optional<T> first(Predicates<T> predicates, Pagination<T> pagination) {
         return dbi.withHandle(handle ->
-            query(handle::createQuery, new StringBuilder("SELECT * FROM " + ddl().escape(ddl().tablename())), predicates, pagination)
-                .map(this::mapRow).findFirst()
+                query(handle::createQuery, new StringBuilder("SELECT * FROM " + ddl().escape(ddl().tablename())), predicates, pagination)
+                        .map(this::mapRow).findFirst()
         );
     }
 
     @Override
     public List<T> list(Predicates<T> predicates, Pagination<T> pagination) {
         return dbi.withHandle(handle -> query(handle::createQuery, new StringBuilder("SELECT * FROM " + ddl().escape(ddl().tablename())), predicates, pagination)
-            .map(this::mapRow).list());
+                .map(this::mapRow).list());
     }
 
 
@@ -312,10 +326,13 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
 
     protected void assignGeneratedValues(T entity, List<Object> generatedValues) {
         // we cannot use the names, but can rely on the orders
+        Map<String, Setter<T>> setters = Properties.settersOf(entity);
         for (int j = 0; j < generatedValues.size(); j++) {
             Object generatedValue = generatedValues.get(j);
-            String name = generatedColumns[j];
-            Member<T> key = model().member(name);
+            Setter<T> key = setters.get(generatedColumns[j]);
+            if (key == null) {
+                throw new PersistenceException("generatedColumns " + generatedColumns[j] + " doesn't have a setter on " + entity);
+            }
             Class<?> keyType = key.getType();
             if (isAssignableTo(generatedValue.getClass(), Long.class) && isAssignableTo(keyType, Integer.class)) {
                 generatedValue = ((Long) generatedValue).intValue();
@@ -337,8 +354,8 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
         return (long) dbi.withHandle(handle -> {
             StringBuilder sql = new StringBuilder("UPDATE " + ddl().escape(ddl().tablename()) + " SET ");
             values.keySet().stream()
-                .map(member -> model().getColumn(member).name())
-                .forEach(name -> sql.append(ddl().escape(name)).append(" = ").append(":").append(name).append(", "));
+                    .map(member -> model().getColumn(member).name())
+                    .forEach(name -> sql.append(ddl().escape(name)).append(" = ").append(":").append(name).append(", "));
             sql.delete(sql.length() - 2, sql.length());
             model().version().ifPresent(version -> {
                 String name = version.name();
@@ -361,18 +378,19 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
     @Override
     public long count(Predicates<T> predicates) {
         return dbi.withHandle(handle -> query(handle::createQuery, new StringBuilder("SELECT COUNT(*) FROM " + ddl().escape(ddl().tablename())), predicates,
-            Pagination.of(model().getType()))
-            .mapTo(Long.class).findOne().orElse(0L));
+                Pagination.of(model().getType()))
+                .mapTo(Long.class).findOne().orElse(0L));
     }
 
     protected T mapRow(ResultSet resultSet, StatementContext ctx) {
-        T entity = model().newInstance();
-        model().columns().forEach(column -> {
-                Object value = unchecked(() -> mappers.computeIfAbsent(column, c -> r -> r.getObject(c.name(), c.member().getType())).apply(resultSet));
-                column.member().setOn(entity, value);
-            }
-        );
-        return entity;
+        return model().newInstance(instance -> {
+            Map<String, Setter<T>> setters = Properties.settersOf(instance);
+            model().columns().forEach(column -> {
+                        Object value = unchecked(() -> mappers.computeIfAbsent(column, c -> r -> r.getObject(c.name(), c.member().getType())).apply(resultSet));
+                        setters.get(column.member().getName()).setOn(instance, value);
+                    }
+            );
+        });
     }
 
     protected <SqlStatementType extends SqlStatement<SqlStatementType>> SqlStatementType query(Function<String, SqlStatementType> statementContructor,
@@ -394,12 +412,12 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
         if (!predicates.isEmpty()) {
             sql.append(" WHERE ");
             predicates.forEach((field, operators) -> {
-                    Column<T> column = model().getColumn(field);
-                    operators.forEach((predicate, value) -> {
-                        appendPredicate(sql, column, predicate, value, values);
-                        sql.append(" AND ");
-                    });
-                }
+                        Column<T> column = model().getColumn(field);
+                        operators.forEach((predicate, value) -> {
+                            appendPredicate(sql, column, predicate, value, values);
+                            sql.append(" AND ");
+                        });
+                    }
             );
             sql.delete(sql.length() - 5, sql.length());
         }
@@ -526,5 +544,146 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
             date = resultSet.getTimestamp(column.name(), defaultCalendar);
         }
         return date != null ? mapper.apply(date.getTime()) : null;
+    }
+
+    public static class SemlaJdbiConfig implements JdbiConfig<SemlaJdbiConfig> {
+
+        public boolean autoCreateTable;
+
+        public SemlaJdbiConfig() {
+        }
+
+        private SemlaJdbiConfig(boolean autoCreateTable) {
+            this.autoCreateTable = autoCreateTable;
+        }
+
+        @Override
+        public SemlaJdbiConfig createCopy() {
+            return new SemlaJdbiConfig(autoCreateTable);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static abstract class Configuration<SelfType extends io.semla.datasource.SqlDatasource.Configuration<?>> implements Datasource.Configuration {
+
+        private boolean autoCreateTable;
+        private final HikariConfig hikariConfig = new HikariConfig();
+        private final Singleton<Jdbi> jdbi = Singleton.lazy(this::createJdbi);
+
+        @Serialize(When.NOT_DEFAULT)
+        public boolean autoCreateTable() {
+            return autoCreateTable;
+        }
+
+        @SuppressWarnings("unchecked")
+        public SelfType withAutoCreateTable(boolean autoCreateTable) {
+            this.autoCreateTable = autoCreateTable;
+            return (SelfType) this;
+        }
+
+        @Serialize
+        public String driverClassName() {
+            return hikariConfig.getDriverClassName();
+        }
+
+        @Deserialize
+        public SelfType withDriverClassName(String driver) {
+            hikariConfig.setDriverClassName(driver);
+            return (SelfType) this;
+        }
+
+        @Serialize
+        public String username() {
+            return hikariConfig.getUsername();
+        }
+
+        @Deserialize
+        public SelfType withUsername(String username) {
+            hikariConfig.setUsername(username);
+            return (SelfType) this;
+        }
+
+        @Serialize
+        public String password() {
+            return hikariConfig.getPassword();
+        }
+
+        @Deserialize
+        public SelfType withPassword(String password) {
+            hikariConfig.setPassword(password);
+            return (SelfType) this;
+        }
+
+        @Serialize
+        public String jdbcUrl() {
+            return hikariConfig.getJdbcUrl();
+        }
+
+        @Deserialize
+        public SelfType withJdbcUrl(String jdbcUrl) {
+            hikariConfig.setJdbcUrl(jdbcUrl);
+            return (SelfType) this;
+        }
+
+        @Serialize
+        public String connectionTestQuery() {
+            return hikariConfig.getConnectionTestQuery();
+        }
+
+        @Deserialize
+        public SelfType withConnectionTestQuery(String connectionTestQuery) {
+            hikariConfig.setConnectionTestQuery(connectionTestQuery);
+            return (SelfType) this;
+        }
+
+        @Serialize
+        public int maximumPoolSize() {
+            return hikariConfig.getMaximumPoolSize();
+        }
+
+        @Deserialize
+        public SelfType withMaximumPoolSize(int maximumPoolSize) {
+            hikariConfig.setMaximumPoolSize(maximumPoolSize);
+            return (SelfType) this;
+        }
+
+        @Serialize
+        public Duration idleTimeout() {
+            return Duration.ofMillis(hikariConfig.getIdleTimeout());
+        }
+
+        @Deserialize
+        public SelfType withIdleTimeout(Duration idleTimeout) {
+            hikariConfig.setIdleTimeout(idleTimeout.toMillis());
+            return (SelfType) this;
+        }
+
+        public HikariConfig hikariConfig() {
+            return hikariConfig;
+        }
+
+        public Jdbi jdbi() {
+            return jdbi.get();
+        }
+
+        protected Jdbi createJdbi() {
+            Jdbi jdbi = Jdbi.create(new HikariDataSource(hikariConfig));
+            jdbi.getConfig().get(SemlaJdbiConfig.class).autoCreateTable = autoCreateTable;
+            return jdbi;
+        }
+
+        @Override
+        public <T> SqlDatasource<T> create(EntityModel<T> model) {
+            return create(model, model.tablename());
+        }
+
+        @Override
+        public void close() {
+            jdbi.get().useHandle(Handle::close);
+            jdbi.reset();
+        }
+
+        public abstract <T> SqlDatasource<T> create(EntityModel<T> model, String tablename);
+
     }
 }

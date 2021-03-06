@@ -146,7 +146,7 @@ public class SqlDDL<T> {
         return Optional.ofNullable(column.columnDefinition().orElseGet(() -> {
             Class<?> type = column.member().getType();
             if (type.equals(Optional.class)) {
-                type = typeArgumentOf(column.member().getGenericType());
+                type = rawTypeArgumentOf(column.member().getGenericType());
             }
             if (isAssignableTo(type, Byte.class)) {
                 return "TINYINT";

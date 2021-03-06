@@ -3,8 +3,8 @@ package io.semla.serialization.jackson;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.semla.config.DatasourceConfiguration;
-import io.semla.config.InMemoryDatasourceConfiguration;
+import io.semla.datasource.Datasource;
+import io.semla.datasource.InMemoryDatasource;
 import io.semla.serialization.annotations.TypeInfo;
 import io.semla.serialization.annotations.TypeName;
 import org.junit.Test;
@@ -18,14 +18,14 @@ public class MixInsTest {
     public void mixin() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         objectMapper.addMixIn(
-            DatasourceConfiguration.class,
-            MixIns.createFor(InMemoryDatasourceConfiguration.class)
+            Datasource.Configuration.class,
+            MixIns.createFor(InMemoryDatasource.Configuration.class)
         );
 
-        DatasourceConfiguration datasourceConfiguration = objectMapper.readValue(
+        Datasource.Configuration datasourceConfiguration = objectMapper.readValue(
             "type: in-memory\n",
-            DatasourceConfiguration.class);
-        assertThat(datasourceConfiguration).isNotNull().isInstanceOf(InMemoryDatasourceConfiguration.class);
+            Datasource.Configuration.class);
+        assertThat(datasourceConfiguration).isNotNull().isInstanceOf(InMemoryDatasource.Configuration.class);
     }
 
     @Test
@@ -34,13 +34,13 @@ public class MixInsTest {
 
         assertThatThrownBy(() ->
             objectMapper.addMixIn(
-                DatasourceConfiguration.class,
-                MixIns.createFor(InMemoryDatasourceConfiguration.class, OtherClass.class)
+                Datasource.Configuration.class,
+                MixIns.createFor(InMemoryDatasource.Configuration.class, OtherClass.class)
             ))
             .hasMessage("classes: " +
-                "[class io.semla.config.InMemoryDatasourceConfiguration, class io.semla.serialization.jackson.MixInsTest$OtherClass] " +
+                "[class io.semla.datasource.InMemoryDatasource$Configuration, class io.semla.serialization.jackson.MixInsTest$OtherClass] " +
                 "don't all share the same superType! " +
-                "found: [interface io.semla.config.DatasourceConfiguration, interface io.semla.serialization.jackson.MixInsTest$OtherSuperClass]");
+                "found: [interface io.semla.datasource.Datasource$Configuration, interface io.semla.serialization.jackson.MixInsTest$OtherSuperClass]");
     }
 
     @TypeInfo

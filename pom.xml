@@ -15,12 +15,15 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-    <version>1.0.9</version>
+    <version>1.1.0</version>
     <packaging>pom</packaging>
     <modules>
         <module>method-runner-maven-plugin</module>
         <module>semla-logging</module>
-        <module>semla-core</module>
+        <module>semla-testing</module>
+        <module>semla-common</module>
+        <module>semla-inject</module>
+        <module>semla-jpa</module>
         <module>semla-jackson</module>
         <module>semla-graphql</module>
         <module>semla-jdbi</module>
@@ -30,7 +33,6 @@
         <module>semla-memcached</module>
         <module>semla-redis</module>
         <module>semla-maven-plugin</module>
-        <module>semla-testing</module>
         <module>report</module>
     </modules>
     <scm>
@@ -46,9 +48,18 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.version>3.6.0</maven.version>
         <sl4fj.version>1.7.30</sl4fj.version>
-        <jdbi.version>3.14.4</jdbi.version>
-        <testcontainers.version>1.14.3</testcontainers.version>
+        <jdbi.version>3.18.0</jdbi.version>
+        <testcontainers.version>1.15.2</testcontainers.version>
     </properties>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>5.5.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <build>
         <pluginManagement>
             <plugins>
@@ -92,7 +103,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.5</version>
+                    <version>0.8.6</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -147,6 +158,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.6</version>
                 <executions>
                     <execution>
                         <goals>

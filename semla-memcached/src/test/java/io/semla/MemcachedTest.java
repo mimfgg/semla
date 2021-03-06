@@ -2,19 +2,18 @@ package io.semla;
 
 import io.semla.cache.Cache;
 import io.semla.cache.CacheTest;
-import io.semla.config.MemcachedDatasourceConfiguration;
 import io.semla.cucumber.steps.EntitySteps;
 import io.semla.datasource.*;
 import io.semla.persistence.KeyValueCachedEntityManagerTest;
 import io.semla.persistence.KeyValueCachedTypedEntityManagerTest;
-import io.semla.relations.KeyValueRelationsTest;
+import io.semla.relation.KeyValueRelationsTest;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.runners.Suite;
 import org.testcontainers.containers.GenericContainer;
 
-import static io.semla.config.DatasourceConfiguration.wrapped;
-import static io.semla.config.MemcachedDatasourceConfiguration.DEFAULT_PORT;
+import static io.semla.datasource.Datasource.Configuration.wrapped;
+import static io.semla.datasource.MemcachedDatasource.Configuration.DEFAULT_PORT;
 import static io.semla.util.Unchecked.unchecked;
 
 @Suite.SuiteClasses({
@@ -36,7 +35,7 @@ public class MemcachedTest extends KeyValueDatasourceSuite {
 
     @BeforeClass
     public static void init() {
-        MemcachedDatasourceConfiguration memcached = MemcachedDatasource.configure()
+        MemcachedDatasource.Configuration memcached = MemcachedDatasource.configure()
             .withHosts(container.getContainerIpAddress() + ":" + container.getMappedPort(DEFAULT_PORT))
             .withKeyspace("test")
             .autoclose();

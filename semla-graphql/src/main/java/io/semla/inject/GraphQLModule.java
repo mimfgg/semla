@@ -2,10 +2,10 @@ package io.semla.inject;
 
 import graphql.GraphQL;
 import graphql.schema.DataFetchingEnvironment;
-import io.semla.graphql.GraphQLProvider;
+import io.semla.graphql.GraphQLSupplier;
+import io.semla.reflect.TypeReference;
 import io.semla.util.Lists;
 
-import javax.enterprise.util.TypeLiteral;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,10 +25,10 @@ public class GraphQLModule implements Module {
     @Override
     public void configure(Binder binder) {
         binder
-            .bind(new TypeLiteral<Map<String, BiFunction<Injector, DataFetchingEnvironment, ?>>>() {}).named(GRAPHQL_ADDITIONAL_QUERIES).to(additionalQueries)
-            .bind(new TypeLiteral<Map<String, BiFunction<Injector, DataFetchingEnvironment, ?>>>() {}).named(GRAPHQL_ADDITIONAL_MUTATIONS).to(additionalMutations)
-            .bind(new TypeLiteral<List<String>>() {}).named(GRAPHQL_ADDITIONAL_TYPES).to(additionalTypes)
-            .bind(GraphQL.class).toProvider(GraphQLProvider.class);
+            .bind(new TypeReference<Map<String, BiFunction<Injector, DataFetchingEnvironment, ?>>>() {}).named(GRAPHQL_ADDITIONAL_QUERIES).to(additionalQueries)
+            .bind(new TypeReference<Map<String, BiFunction<Injector, DataFetchingEnvironment, ?>>>() {}).named(GRAPHQL_ADDITIONAL_MUTATIONS).to(additionalMutations)
+            .bind(new TypeReference<List<String>>() {}).named(GRAPHQL_ADDITIONAL_TYPES).to(additionalTypes)
+            .bind(GraphQL.class).toSupplier(GraphQLSupplier.class);
     }
 
     public GraphQLModule withQuery(String query, BiFunction<Injector, DataFetchingEnvironment, ?> handler) {

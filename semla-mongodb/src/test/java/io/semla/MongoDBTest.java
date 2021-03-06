@@ -1,7 +1,6 @@
 package io.semla;
 
 import io.semla.cache.Cache;
-import io.semla.config.MongoDBDatasourceConfiguration;
 import io.semla.cucumber.steps.EntitySteps;
 import io.semla.datasource.MongoDBDatasource;
 import io.semla.util.Maps;
@@ -9,8 +8,8 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.testcontainers.containers.GenericContainer;
 
-import static io.semla.config.DatasourceConfiguration.wrapped;
-import static io.semla.config.MongoDBDatasourceConfiguration.DEFAULT_PORT;
+import static io.semla.datasource.Datasource.Configuration.wrapped;
+import static io.semla.datasource.MongoDBDatasource.Configuration.DEFAULT_PORT;
 
 public class MongoDBTest extends DatasourceSuite {
 
@@ -21,7 +20,7 @@ public class MongoDBTest extends DatasourceSuite {
 
     @BeforeClass
     public static void init() {
-        MongoDBDatasourceConfiguration mongodb = MongoDBDatasource.configure()
+        MongoDBDatasource.Configuration mongodb = MongoDBDatasource.configure()
             .withHost(container.getContainerIpAddress())
             .withPort(container.getMappedPort(DEFAULT_PORT))
             .autoclose();

@@ -1,10 +1,11 @@
 package io.semla.datasource;
 
-import io.semla.config.HsqlDatasourceConfiguration;
 import io.semla.model.EntityModel;
 import io.semla.query.Pagination;
 import io.semla.query.Predicates;
+import io.semla.serialization.annotations.TypeName;
 import org.jdbi.v3.core.Jdbi;
+import org.jdbi.v3.core.h2.H2DatabasePlugin;
 
 import javax.persistence.Embedded;
 import javax.persistence.GeneratedValue;
@@ -13,7 +14,6 @@ import java.util.stream.Collectors;
 
 import static io.semla.reflect.Types.isAssignableTo;
 import static io.semla.reflect.Types.isAssignableToOneOf;
-
 
 public class HsqlDatasource<T> extends SqlDatasource<T> {
 
@@ -49,10 +49,6 @@ public class HsqlDatasource<T> extends SqlDatasource<T> {
         );
     }
 
-    public static HsqlDatasourceConfiguration configure() {
-        return new HsqlDatasourceConfiguration();
-    }
-
     @Override
     public long delete(Predicates<T> predicates, Pagination<T> pagination) {
         if (pagination.isSorted() || pagination.isPaginated()) {
@@ -61,5 +57,36 @@ public class HsqlDatasource<T> extends SqlDatasource<T> {
         }
         return super.delete(predicates, pagination);
     }
+
+    public static HsqlDatasource.Configuration configure() {
+        return new HsqlDatasource.Configuration();
+    }
+
+    @TypeName("hsql")
+    public static class Configuration extends SqlDatasource.Configuration<HsqlDatasource.Configuration> {
+
+        public Configuration() {
+            withDriverClassName("org.hsqldb.jdbcDriver");
+            withUsername("SA");
+            withPassword("");
+            withConnectionTestQuery("SELECT 1 FROM INFORMATION_SCHEMA.SYSTEM_USERS");
+            withMaximumPoolSize(1);
+        }
+
+        @Override
+        public <T> HsqlDatasource<T> create(EntityModel<T> model) {
+            return (HsqlDatasource<T>) super.create(model);
+        }
+
+        public <T> HsqlDatasource<T> create(EntityModel<T> model, String tablename) {
+            return new HsqlDatasource<>(model, jdbi(), tablename);
+        }
+
+        @Override
+        protected Jdbi createJdbi() {
+            return super.createJdbi().installPlugin(new H2DatabasePlugin());
+        }
+    }
+
 }
 

@@ -1,9 +1,9 @@
 package io.semla.datasource;
 
-import io.semla.config.MysqlDatasourceConfiguration;
 import io.semla.model.EntityModel;
 import io.semla.query.Pagination;
 import io.semla.query.Predicates;
+import io.semla.serialization.annotations.TypeName;
 import org.jdbi.v3.core.Jdbi;
 
 import javax.persistence.GeneratedValue;
@@ -91,7 +91,26 @@ public class MysqlDatasource<T> extends SqlDatasource<T> {
         return super.delete(predicates, pagination);
     }
 
-    public static MysqlDatasourceConfiguration configure() {
-        return new MysqlDatasourceConfiguration();
+    public static MysqlDatasource.Configuration configure() {
+        return new MysqlDatasource.Configuration();
     }
+
+    @TypeName("mysql")
+    public static class Configuration extends SqlDatasource.Configuration<MysqlDatasource.Configuration> {
+
+        public Configuration() {
+            withConnectionTestQuery("SELECT 1");
+        }
+
+        @Override
+        public <T> MysqlDatasource<T> create(EntityModel<T> model) {
+            return (MysqlDatasource<T>) super.create(model);
+        }
+
+        @Override
+        public <T> MysqlDatasource<T> create(EntityModel<T> model, String tablename) {
+            return new MysqlDatasource<>(model, jdbi(), tablename);
+        }
+    }
+
 }

@@ -8,7 +8,6 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.lang.NonNull;
-import io.semla.config.MongoDBDatasourceConfiguration;
 import io.semla.model.Column;
 import io.semla.model.EntityModel;
 import io.semla.query.Pagination;
@@ -16,10 +15,16 @@ import io.semla.query.Predicate;
 import io.semla.query.Predicates;
 import io.semla.query.Values;
 import io.semla.reflect.Member;
+import io.semla.reflect.Properties;
+import io.semla.reflect.Setter;
 import io.semla.reflect.Types;
+import io.semla.serialization.annotations.Deserialize;
+import io.semla.serialization.annotations.Serialize;
+import io.semla.serialization.annotations.TypeName;
 import io.semla.serialization.json.Json;
 import io.semla.util.Arrays;
 import io.semla.util.Pair;
+import io.semla.util.Singleton;
 import io.semla.util.Strings;
 import org.bson.BsonDocument;
 import org.bson.Document;
@@ -55,18 +60,18 @@ public class MongoDBDatasource<T> extends Datasource<T> {
         super(model);
         this.collection = mongoDatabase.getCollection(model.tablename());
         model().indices().stream()
-            .filter(index -> !index.isPrimary())
-            .forEach(index -> {
-                String[] fieldNames = index.columns().stream().map(column -> getFieldName(column.member())).toArray(String[]::new);
-                IndexOptions indexOptions = new IndexOptions();
-                if (index.isUnique()) {
-                    indexOptions.unique(true);
-                }
-                this.collection.createIndex(Indexes.ascending(fieldNames), indexOptions);
-            });
+                .filter(index -> !index.isPrimary())
+                .forEach(index -> {
+                    String[] fieldNames = index.columns().stream().map(column -> getFieldName(column.member())).toArray(String[]::new);
+                    IndexOptions indexOptions = new IndexOptions();
+                    if (index.isUnique()) {
+                        indexOptions.unique(true);
+                    }
+                    this.collection.createIndex(Indexes.ascending(fieldNames), indexOptions);
+                });
         if (model().key().isGenerated()) {
             CodecRegistry pojoCodecRegistry = fromRegistries(MongoClient.getDefaultCodecRegistry(),
-                fromProviders(PojoCodecProvider.builder().automatic(true).build()));
+                    fromProviders(PojoCodecProvider.builder().automatic(true).build()));
             sequences = mongoDatabase.getCollection(DEFAULT_SEQUENCE_TABLE, Sequence.class).withCodecRegistry(pojoCodecRegistry);
             if (sequences.countDocuments(eq("_id", model().tablename())) == 0) {
                 sequences.insertOne(Sequence.of(model().tablename()));
@@ -89,10 +94,10 @@ public class MongoDBDatasource<T> extends Datasource<T> {
     @Override
     public <K> Map<K, T> get(Collection<K> keys) {
         Map<K, T> found = collection.find(in(getFieldName(model().key().member()), serializeKeys(keys)))
-            .into(new ArrayList<>()).stream()
-            .filter(Objects::nonNull)
-            .map(this::fromDocument)
-            .collect(Collectors.toMap(entity -> model().key().member().getOn(entity), Function.identity()));
+                .into(new ArrayList<>()).stream()
+                .filter(Objects::nonNull)
+                .map(this::fromDocument)
+                .collect(Collectors.toMap(entity -> model().key().member().getOn(entity), Function.identity()));
         return keys.stream().collect(LinkedHashMap::new, (map, key) -> map.put(key, found.get(key)), LinkedHashMap::putAll);
     }
 
@@ -126,9 +131,9 @@ public class MongoDBDatasource<T> extends Datasource<T> {
     @Override
     public void create(Collection<T> entities) {
         collection.insertMany(entities.stream()
-            .peek(this::setPrimaryKeyIfGenerated)
-            .map(this::toDocument)
-            .collect(Collectors.toList()));
+                .peek(this::setPrimaryKeyIfGenerated)
+                .map(this::toDocument)
+                .collect(Collectors.toList()));
     }
 
     @Override
@@ -185,7 +190,7 @@ public class MongoDBDatasource<T> extends Datasource<T> {
         if (pagination.isPaginated()) {
             // there is not pagination on updateMany, so we have to first query and then update;
             predicates.where(model().key().member().getName()).in(
-                list(predicates, pagination).stream().map(model().key().member()::getOn).collect(Collectors.toList())
+                    list(predicates, pagination).stream().map(model().key().member()::getOn).collect(Collectors.toList())
             );
         }
         return collection.updateMany(toBson(predicates), update).getModifiedCount();
@@ -196,7 +201,7 @@ public class MongoDBDatasource<T> extends Datasource<T> {
         if (pagination.isPaginated()) {
             // there is not pagination on deleteMany, so we have to first query and then delete the keys;
             predicates.where(model().key().member().getName()).in(
-                list(predicates, pagination).stream().map(model().key().member()::getOn).collect(Collectors.toList())
+                    list(predicates, pagination).stream().map(model().key().member()::getOn).collect(Collectors.toList())
             );
         }
         return collection.deleteMany(toBson(predicates)).getDeletedCount();
@@ -210,26 +215,27 @@ public class MongoDBDatasource<T> extends Datasource<T> {
     @NonNull
     private T fromDocument(Document document) {
         T entity = model().newInstance();
+        Map<String, Setter<T>> setters = Properties.settersOf(entity);
         document.forEach((key, value) -> {
-            Member<T> member = getAccessor(key);
-            member.setOn(entity, deserializeValue(value, member));
+            Setter<T> setter = key.equals("_id") ? setters.get(model().key().name()) : setters.get(key);
+            setter.setOn(entity, deserializeValue(value, setter));
         });
         return entity;
     }
 
-    private Object deserializeValue(Object value, Member<T> member) {
+    private Object deserializeValue(Object value, Setter<T> setter) {
         if (value != null) {
-            if (EntityModel.isEntity(member.getType())) {
-                value = EntityModel.referenceTo(member.getType(), value);
-            } else if (member.annotation(Embedded.class).isPresent()) {
-                if (member.isAnnotatedWithOneOf(Arrays.of(OneToMany.class, ManyToMany.class))) {
-                    EntityModel<?> model = EntityModel.of(Types.typeArgumentOf(member.getGenericType()));
-                    value = ((Collection<?>) value).stream().map(model::newInstanceFromKey).collect(Collectors.toCollection(Types.supplierOf(member.getGenericType())));
+            if (EntityModel.isEntity(setter.getType())) {
+                value = EntityModel.referenceTo(setter.getType(), value);
+            } else if (setter.annotation(Embedded.class).isPresent()) {
+                if (setter.isAnnotatedWithOneOf(Arrays.of(OneToMany.class, ManyToMany.class))) {
+                    EntityModel<?> model = EntityModel.of(Types.rawTypeArgumentOf(setter.getGenericType()));
+                    value = ((Collection<?>) value).stream().map(model::newInstanceFromKey).collect(Collectors.toCollection(Types.supplierOf(setter.getGenericType())));
                 }
-            } else if (member.getType().equals(Optional.class)) {
-                value = Optional.ofNullable(Strings.parse(String.valueOf(value), Types.typeArgumentOf(member.getGenericType())));
+            } else if (setter.getType().equals(Optional.class)) {
+                value = Optional.ofNullable(Strings.parse(String.valueOf(value), Types.rawTypeArgumentOf(setter.getGenericType())));
             } else {
-                value = Strings.parse(String.valueOf(value), member.getType());
+                value = Strings.parse(String.valueOf(value), setter.getType());
             }
         }
         return value;
@@ -248,7 +254,7 @@ public class MongoDBDatasource<T> extends Datasource<T> {
             } else if (value instanceof Collection && EntityModel.containsEntities((Collection<?>) value)) {
                 value = ((Collection<?>) value).stream().map(EntityModel::keyOf).collect(Collectors.toList());
             } else if (Types.isEqualToOneOf(column.member().getType(), BigInteger.class, BigDecimal.class) ||
-                !Types.isAssignableToOneOf(column.member().getType(), Number.class, Boolean.class, String.class)) {
+                    !Types.isAssignableToOneOf(column.member().getType(), Number.class, Boolean.class, String.class)) {
                 if (column.member().annotation(Embedded.class).isPresent()) {
                     value = Json.write(value);
                 } else {
@@ -270,17 +276,10 @@ public class MongoDBDatasource<T> extends Datasource<T> {
 
     private Bson toBson(Values<T> values) {
         List<Bson> updates = values.entrySet().stream()
-            .map(value -> set(value.getKey().getName(), serializeValue(model().getColumn(value.getKey()), value.getValue())))
-            .collect(Collectors.toList());
+                .map(value -> set(value.getKey().getName(), serializeValue(model().getColumn(value.getKey()), value.getValue())))
+                .collect(Collectors.toList());
         model().version().ifPresent(version -> updates.add(inc(version.member().getName(), 1)));
         return combine(updates.toArray(new Bson[0]));
-    }
-
-    private Member<T> getAccessor(String fieldName) {
-        if (fieldName.equals("_id")) {
-            return model().key().member();
-        }
-        return model().member(fieldName);
     }
 
     private String getFieldName(Member<T> member) {
@@ -325,7 +324,7 @@ public class MongoDBDatasource<T> extends Datasource<T> {
                     case notContainedIn:
                         logger.warn("running where function against collection {}!", model().pluralName());
                         return where("function() { return \"" + value + "\".indexOf(this." + fieldName + ") " +
-                            (operator.getKey() == Predicate.containedIn ? ">" : "==") + " -1; }");
+                                (operator.getKey() == Predicate.containedIn ? ">" : "==") + " -1; }");
                     default:
                         // unreachable
                         throw new UnsupportedOperationException("unreachable");
@@ -367,7 +366,66 @@ public class MongoDBDatasource<T> extends Datasource<T> {
         }
     }
 
-    public static MongoDBDatasourceConfiguration configure() {
-        return new MongoDBDatasourceConfiguration();
+    public static MongoDBDatasource.Configuration configure() {
+        return new MongoDBDatasource.Configuration();
+    }
+
+    @TypeName("mongodb")
+    public static class Configuration implements Datasource.Configuration {
+
+        public static final int DEFAULT_PORT = 27017;
+        private String host = "localhost";
+        private Integer port = DEFAULT_PORT;
+        private String database = "default";
+
+        private Singleton<MongoClient> client = Singleton.lazy(() -> new MongoClient(host, port));
+
+        public MongoClient client() {
+            return client.get();
+        }
+
+        @Serialize
+        public String host() {
+            return host;
+        }
+
+        @Deserialize
+        public Configuration withHost(String host) {
+            this.host = host;
+            return this;
+        }
+
+        @Serialize
+        public Integer port() {
+            return port;
+        }
+
+        @Deserialize
+        public Configuration withPort(Integer port) {
+            this.port = port;
+            return this;
+        }
+
+        @Serialize
+        public String database() {
+            return database;
+        }
+
+        @Deserialize
+        public Configuration withDatabase(String database) {
+            this.database = database;
+            return this;
+        }
+
+        @Override
+        public <T> MongoDBDatasource<T> create(EntityModel<T> model) {
+            return new MongoDBDatasource<>(model, client().getDatabase(database));
+        }
+
+        @Override
+        public void close() {
+            client.get().close();
+            client.reset();
+        }
     }
 }

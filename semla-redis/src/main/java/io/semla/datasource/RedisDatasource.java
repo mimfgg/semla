@@ -1,11 +1,15 @@
 package io.semla.datasource;
 
-import io.semla.config.RedisDatasourceConfiguration;
 import io.semla.model.EntityModel;
+import io.semla.serialization.annotations.Deserialize;
+import io.semla.serialization.annotations.Serialize;
+import io.semla.serialization.annotations.TypeName;
 import io.semla.serialization.json.Json;
 import io.semla.util.Maps;
+import io.semla.util.Singleton;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.params.SetParams;
 
@@ -116,7 +120,104 @@ public class RedisDatasource<T> extends EphemeralKeyValueDatasource<T> {
         return 0L;
     }
 
-    public static RedisDatasourceConfiguration configure() {
-        return new RedisDatasourceConfiguration();
+    public static RedisDatasource.Configuration configure() {
+        return new RedisDatasource.Configuration();
     }
+
+    @TypeName("redis")
+    public static class Configuration extends KeyValueDatasource.Configuration<RedisDatasource.Configuration> {
+
+        public static final int DEFAULT_PORT = 6379;
+        private final JedisPoolConfig config = new JedisPoolConfig();
+        private String host = "localhost";
+        private Integer port = DEFAULT_PORT;
+        private final Singleton<JedisPool> client = Singleton.lazy(() -> new JedisPool(config, host, port));
+
+
+        public JedisPool client() {
+            return client.get();
+        }
+
+        @Serialize
+        public int minIdle() {
+            return config.getMinIdle();
+        }
+
+        @Deserialize
+        public Configuration withMinIdle(int minIdle) {
+            config.setMinIdle(minIdle);
+            return this;
+        }
+
+        @Serialize
+        public int maxIdle() {
+            return config.getMaxIdle();
+        }
+
+        @Deserialize
+        public Configuration withMaxIdle(int maxIdle) {
+            config.setMaxIdle(maxIdle);
+            return this;
+        }
+
+        @Serialize
+        public long maxWaitMillis() {
+            return config.getMaxWaitMillis();
+        }
+
+        @Deserialize
+        public Configuration withMaxWaitMillis(long maxWaitMillis) {
+            config.setMaxWaitMillis(maxWaitMillis);
+            return this;
+        }
+
+        @Serialize
+        public int maxTotal() {
+            return config.getMaxTotal();
+        }
+
+        @Deserialize
+        public Configuration withMaxTotal(int maxTotal) {
+            config.setMaxTotal(maxTotal);
+            return this;
+        }
+
+        @Serialize
+        public String host() {
+            return host;
+        }
+
+        @Deserialize
+        public Configuration withHost(String host) {
+            this.host = host;
+            return this;
+        }
+
+        @Serialize
+        public Integer port() {
+            return port;
+        }
+
+        public JedisPoolConfig config() {
+            return config;
+        }
+
+        @Deserialize
+        public Configuration withPort(Integer port) {
+            this.port = port;
+            return this;
+        }
+
+        @Override
+        public <T> RedisDatasource<T> create(EntityModel<T> entityModel) {
+            return new RedisDatasource<>(entityModel, client(), keyspace());
+        }
+
+        @Override
+        public void close() {
+            client().close();
+            client.reset();
+        }
+    }
+
 }
