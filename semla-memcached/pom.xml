@@ -5,7 +5,7 @@
     <parent>
         <artifactId>semla</artifactId>
         <groupId>io.semla</groupId>
-        <version>1.0.9</version>
+        <version>1.1.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>semla-memcached</artifactId>
@@ -13,8 +13,8 @@
     <dependencies>
         <dependency>
             <groupId>io.semla</groupId>
-            <artifactId>semla-core</artifactId>
-            <version>1.0.9</version>
+            <artifactId>semla-jpa</artifactId>
+            <version>1.1.0</version>
         </dependency>
         <dependency>
             <groupId>net.spy</groupId>
@@ -25,14 +25,21 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-testing</artifactId>
-            <version>1.0.9</version>
+            <version>1.1.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
-            <artifactId>semla-core</artifactId>
+            <artifactId>semla-jpa</artifactId>
             <classifier>tests</classifier>
-            <version>1.0.9</version>
+            <version>1.1.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.semla</groupId>
+            <artifactId>semla-common</artifactId>
+            <classifier>tests</classifier>
+            <version>1.1.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>

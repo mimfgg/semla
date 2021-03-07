@@ -5,11 +5,11 @@
     <parent>
         <groupId>io.semla</groupId>
         <artifactId>semla</artifactId>
-        <version>1.0.9</version>
+        <version>1.1.0</version>
     </parent>
     <artifactId>semla-logging</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.9</version>
+    <version>1.1.0</version>
     <properties>
         <logback.version>1.2.3</logback.version>
     </properties>
@@ -53,7 +53,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13.1</version>
+            <version>4.13.2</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -1,10 +1,10 @@
 package io.semla.datasource;
 
-import io.semla.config.PostgresqlDatasourceConfiguration;
 import io.semla.model.EntityModel;
 import io.semla.query.Pagination;
 import io.semla.query.Predicates;
 import io.semla.query.Values;
+import io.semla.serialization.annotations.TypeName;
 import org.jdbi.v3.core.Jdbi;
 
 import javax.persistence.GeneratedValue;
@@ -64,7 +64,27 @@ public class PostgresqlDatasource<T> extends SqlDatasource<T> {
         return super.delete(predicates, pagination);
     }
 
-    public static PostgresqlDatasourceConfiguration configure() {
-        return new PostgresqlDatasourceConfiguration();
+    public static PostgresqlDatasource.Configuration configure() {
+        return new PostgresqlDatasource.Configuration();
     }
+
+    @TypeName("postgresql")
+    public static class Configuration extends SqlDatasource.Configuration<PostgresqlDatasource.Configuration> {
+
+        public Configuration() {
+            withDriverClassName("org.postgresql.Driver");
+            withConnectionTestQuery("SELECT 1");
+        }
+
+        @Override
+        public <T> PostgresqlDatasource<T> create(EntityModel<T> model) {
+            return (PostgresqlDatasource<T>) super.create(model);
+        }
+
+        @Override
+        public <T> PostgresqlDatasource<T> create(EntityModel<T> model, String tablename) {
+            return new PostgresqlDatasource<>(model, jdbi(), tablename);
+        }
+    }
+
 }

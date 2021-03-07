@@ -10,7 +10,7 @@
     <dependencies>
         <dependency>
             <groupId>io.semla</groupId>
-            <artifactId>semla-core</artifactId>
+            <artifactId>semla-jpa</artifactId>
             <version>1.0.0</version>
             <scope>compile</scope>
         </dependency>

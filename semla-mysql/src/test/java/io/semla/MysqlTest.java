@@ -1,7 +1,6 @@
 package io.semla;
 
 import io.semla.cache.Cache;
-import io.semla.config.MysqlDatasourceConfiguration;
 import io.semla.cucumber.steps.EntitySteps;
 import io.semla.datasource.MysqlDatasource;
 import io.semla.util.Maps;
@@ -12,7 +11,7 @@ import org.testcontainers.containers.MySQLContainer;
 
 import java.util.TimeZone;
 
-import static io.semla.config.DatasourceConfiguration.generic;
+import static io.semla.datasource.Datasource.Configuration.generic;
 
 
 public class MysqlTest extends DatasourceSuite {
@@ -23,7 +22,7 @@ public class MysqlTest extends DatasourceSuite {
 
     @BeforeClass
     public static void init() {
-        MysqlDatasourceConfiguration mysql = MysqlDatasource.configure()
+        MysqlDatasource.Configuration mysql = MysqlDatasource.configure()
             .withJdbcUrl(container.getJdbcUrl() + "?serverTimezone=" + TimeZone.getDefault().getID())
             .withUsername(container.getUsername())
             .withPassword(container.getPassword())

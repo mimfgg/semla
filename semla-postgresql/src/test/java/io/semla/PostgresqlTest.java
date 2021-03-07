@@ -1,7 +1,6 @@
 package io.semla;
 
 import io.semla.cache.Cache;
-import io.semla.config.PostgresqlDatasourceConfiguration;
 import io.semla.cucumber.steps.EntitySteps;
 import io.semla.datasource.PostgresqlDatasource;
 import io.semla.util.Maps;
@@ -10,7 +9,7 @@ import org.junit.ClassRule;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-import static io.semla.config.DatasourceConfiguration.generic;
+import static io.semla.datasource.Datasource.Configuration.generic;
 
 public class PostgresqlTest extends DatasourceSuite {
 
@@ -20,7 +19,7 @@ public class PostgresqlTest extends DatasourceSuite {
 
     @BeforeClass
     public static void init() {
-        PostgresqlDatasourceConfiguration pgsql = PostgresqlDatasource.configure()
+        PostgresqlDatasource.Configuration pgsql = PostgresqlDatasource.configure()
             .withDriverClassName("org.postgresql.Driver")
             .withJdbcUrl(container.getJdbcUrl())
             .withUsername(container.getUsername())
