@@ -73,8 +73,7 @@ public class Processes {
             if (!process.isAlive() && process.exitValue() != 0) {
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 unchecked(() -> IOUtils.copy(process.getErrorStream(), outputStream));
-                logger.error("'" + command + "' returned error code " + process.exitValue() + " and:\n" +
-                    "\t" + new String(outputStream.toByteArray()));
+                logger.error("'" + command + "' returned error code " + process.exitValue() + " and:\n\t" + outputStream);
                 return false;
             }
             return true;

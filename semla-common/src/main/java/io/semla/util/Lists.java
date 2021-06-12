@@ -29,12 +29,12 @@ public final class Lists {
 
     public static <E> List<List<E>> chunk(Collection<E> values, int maxChunckSize) {
         return IntStream.range(0, (int) Math.ceil((values.size() * 1.0) / maxChunckSize))
-            .mapToObj(i -> values.stream().skip(maxChunckSize * i).limit(maxChunckSize))
+            .mapToObj(i -> values.stream().skip((long) maxChunckSize * i).limit(maxChunckSize))
             .map(first -> first.collect(Collectors.toList())).collect(Collectors.toList());
     }
 
     public static <E> List<E> fromArray(Object value) {
-        return (List<E>) io.semla.util.Arrays.toStream(value).collect(Collectors.toList());
+        return (List<E>) Arrays.toStream(value).collect(Collectors.toList());
     }
 
     public static <E> List<E> empty() {

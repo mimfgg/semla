@@ -30,7 +30,7 @@ public interface Setter<T> extends Property<T> {
         return new Setter<T>() {
             @Override
             public T setOn(T host, Object value) {
-                methodAccess.invoke(host, index, (Object) Types.unwrap(getType(), value));
+                methodAccess.invoke(host, index, Types.<Object>unwrap(getType(), value));
                 return host;
             }
 

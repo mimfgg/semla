@@ -75,7 +75,8 @@ public class Model<T> {
                         member.setOn(to, valueOnFrom);
                     } else {
                         throw new SemlaException(
-                                "couldn't merge already set value to '" + valueOnTo + "' for '" + member + "', was '" + valueOnFrom + "'");
+                            String.format("couldn't merge already set value to '%s' for '%s', was '%s'", valueOnTo, member, valueOnFrom)
+                        );
                     }
                 }
             }
@@ -134,7 +135,7 @@ public class Model<T> {
         details.append("\n\tplural name: ").append(pluralName);
         details.append("\n\tmembers: ");
         members().forEach(member ->
-                details.append("\n\t\t").append(member.toGenericString()).append(" (default: ").append((Object) member.getOn(defaultInstance.get())).append(")")
+            details.append("\n\t\t").append(member.toGenericString()).append(" (default: ").append(member.<Object>getOn(defaultInstance.get())).append(")")
         );
         return details;
     }
@@ -197,11 +198,11 @@ public class Model<T> {
 
     private static <T> Model<T> createModel(Class<T> clazz) {
         return CUSTOM_MODELS_HANDLERS.entrySet().stream()
-                .filter(subModel -> subModel.getKey().test(clazz))
-                .map(subModel -> subModel.getValue().apply(clazz))
-                .map(model -> (Model<T>) model)
-                .findFirst()
-                .orElseGet(() -> new Model<>(clazz));
+            .filter(subModel -> subModel.getKey().test(clazz))
+            .map(subModel -> subModel.getValue().apply(clazz))
+            .map(model -> (Model<T>) model)
+            .findFirst()
+            .orElseGet(() -> new Model<>(clazz));
     }
 
     public static <T> Class<T> getClassBy(String name) {
@@ -211,20 +212,20 @@ public class Model<T> {
     @SuppressWarnings({"ThrowableInstanceNotThrown", "ThrowableInstanceNeverThrown"})
     private static <T> Class<T> findClassBy(String name) {
         return MODELS.values().stream()
-                .filter(model -> model.getType().getCanonicalName().equalsIgnoreCase(name)
-                        || model.getType().getSimpleName().equalsIgnoreCase(name)
-                        || model.singularName().equals(name)
-                        || model.pluralName().equals(name)
-                )
-                .map(model -> (Class<T>) model.getType())
-                .findFirst()
-                .orElseGet(() -> {
-                    try {
-                        return (Class<T>) Class.forName(name);
-                    } catch (ClassNotFoundException ex) {
-                        throw new SemlaException("could not find any class known by the name '" + name + "'");
-                    }
-                });
+            .filter(model -> model.getType().getCanonicalName().equalsIgnoreCase(name)
+                || model.getType().getSimpleName().equalsIgnoreCase(name)
+                || model.singularName().equals(name)
+                || model.pluralName().equals(name)
+            )
+            .map(model -> (Class<T>) model.getType())
+            .findFirst()
+            .orElseGet(() -> {
+                try {
+                    return (Class<T>) Class.forName(name);
+                } catch (ClassNotFoundException ex) {
+                    throw new SemlaException("could not find any class known by the name '" + name + "'");
+                }
+            });
     }
 
     public static void clear() {

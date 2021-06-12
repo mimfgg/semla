@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.semla</groupId>
         <artifactId>semla</artifactId>
-        <version>1.1.0</version>
+        <version>1.1.1</version>
     </parent>
     <artifactId>semla-jdbi</artifactId>
     <packaging>jar</packaging>
@@ -13,7 +13,7 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-jpa</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
         </dependency>
         <dependency>
             <groupId>org.jdbi</groupId>
@@ -28,7 +28,17 @@
                     <groupId>com.google.code.findbugs</groupId>
                     <artifactId>jsr305</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.github.ben-manes.caffeine</groupId>
+                    <artifactId>caffeine</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <!-- latest java8 compatible caffeine -->
+            <version>2.9.1</version>
         </dependency>
         <dependency>
             <groupId>com.zaxxer</groupId>
@@ -46,25 +56,26 @@
             <artifactId>hsqldb</artifactId>
             <version>2.5.1</version>
             <type>jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-testing</artifactId>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-jpa</artifactId>
             <classifier>tests</classifier>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-common</artifactId>
             <classifier>tests</classifier>
-            <version>1.1.0</version>
+            <version>1.1.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

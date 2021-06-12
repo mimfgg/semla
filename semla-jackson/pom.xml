@@ -5,7 +5,7 @@
     <parent>
         <artifactId>semla</artifactId>
         <groupId>io.semla</groupId>
-        <version>1.1.0</version>
+        <version>1.1.1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -14,19 +14,19 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-jpa</artifactId>
-            <version>1.1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>io.semla</groupId>
-            <artifactId>semla-testing</artifactId>
-            <version>1.1.0</version>
-            <scope>test</scope>
+            <version>1.1.1</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>[2.12.2,)</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.semla</groupId>
+            <artifactId>semla-testing</artifactId>
+            <version>1.1.1</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>

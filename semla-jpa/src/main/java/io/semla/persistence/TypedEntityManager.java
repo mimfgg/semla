@@ -523,7 +523,7 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
             "import javax.annotation.Generated;\n\n" +
             "@Generated(value = \"by semla.io\", date = \"" + Strings.toString(Instant.now()) + "\")\n" +
             "public class " + className + " extends TypedEntityManager<" + wrappedKeyType + ", " + entityName + ", " + className + ".Get, " + className + ".Create, " +
-            "\n    " + className + ".Setter," + className + ".Patch, " + className + ".Select, " + className + ".PredicateHandler, " + className + ".Includes> {\n\n" +
+            "\n    " + className + ".Setter," + className + ".Patch, " + className + ".Select, " + className + ".PredicateHandler<?>, " + className + ".Includes> {\n\n" +
             "    public " + className + "(EntityManager<" + entityName + "> entityManager) {\n" +
             "        super(entityManager);\n    }\n\n" +
             "    public " + className + ".Create new" + clazz.getSimpleName() + "(" + constructorParameters + ") {\n        return super.newInstance()" + constructionChain + ";\n    }\n\n" +

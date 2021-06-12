@@ -12,7 +12,7 @@ public enum Token {
 
     NULL, OBJECT, OBJECT_END, PROPERTY, NUMBER, BOOLEAN, STRING, ARRAY, ARRAY_END, END, SKIP;
 
-    private static Map<Class<?>, Token> tokenByType = new LinkedHashMap<>();
+    private static final Map<Class<?>, Token> tokenByType = new LinkedHashMap<>();
 
     public static Token fromType(Class<?> type) {
         return tokenByType.computeIfAbsent(type, c -> {

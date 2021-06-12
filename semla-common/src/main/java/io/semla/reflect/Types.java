@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static io.semla.util.Arrays.toArray;
 import static io.semla.util.Unchecked.unchecked;
 
 
@@ -136,7 +137,7 @@ public final class Types {
         int result = ToolProvider.getSystemJavaCompiler().run(null, out, out, arguments.toArray(new String[0]));
         if (result > 0) {
             throw new RuntimeException("compilation failed for " + files.length + " file" + (result > 1 ? "s" : "")
-                    + "\noutput:" + new String(out.toByteArray())
+                    + "\noutput:" + out
                     + "\narguments: " + arguments);
         }
         unchecked(() -> Methods.invoke(Types.class.getClassLoader(), "addURL", new File(tmpDir).toURI().toURL()));
@@ -180,7 +181,7 @@ public final class Types {
     }
 
     private static String createTempDirectory() {
-        return unchecked(() -> Files.createTempDirectory("").toAbsolutePath().toString() + File.separator);
+        return unchecked(() -> Files.createTempDirectory("").toAbsolutePath() + File.separator);
     }
 
     public static void assertIsAssignableTo(Object value, Class<?> toClass) {
@@ -297,8 +298,8 @@ public final class Types {
         return clazz.isAnnotationPresent(annotation) || (Types.hasSuperClass(clazz) && isAnnotatedWith(clazz.getSuperclass(), annotation));
     }
 
-    public static Type parameterized(Class<?> rawType, Type parameter, Type... parameters) {
-        return new ParameterizedTypeImpl(rawType, io.semla.util.Arrays.concat(parameter, parameters));
+    public static ParameterizedType parameterized(Class<?> rawType, Type parameter, Type... parameters) {
+        return new ParameterizedTypeImpl(rawType, toArray(parameter, parameters));
     }
 
     public static WithBuilder<BiFunction<Class<?>, Object, Object>> unwrap(Predicate<Class<?>> predicate) {
@@ -325,6 +326,43 @@ public final class Types {
         return (R) object;
     }
 
+    public static Class<?> getCommonSuperClass(Collection<?> objects) {
+        if (objects == null) {
+            return null;
+        }
+        if (objects.isEmpty()) {
+            return Object.class;
+        }
+        Class<?> clazz = null;
+        for (Object object : objects) {
+            if (clazz == null) {
+                clazz = object.getClass();
+            } else {
+                clazz = getCommonSuperClass(clazz, object.getClass());
+            }
+        }
+        return clazz;
+    }
+
+    public static Class<?> getCommonSuperClass(Object object1, Object object2) {
+        return getCommonSuperClass(object1.getClass(), object2.getClass());
+    }
+
+    public static Class<?> getCommonSuperClass(Class<?> class1, Class<?> class2) {
+        Set<Class<?>> classes = new LinkedHashSet<>();
+        while (!class1.equals(Object.class)) {
+            classes.add(class1);
+            class1 = class1.getSuperclass();
+        }
+        while (!class2.equals(Object.class)) {
+            if (classes.contains(class2)) {
+                return class2;
+            }
+            class2 = class2.getSuperclass();
+        }
+        return Object.class;
+    }
+
     public static class ParameterizedTypeBuilder {
 
         private final Class<?> rawType;
@@ -333,8 +371,8 @@ public final class Types {
             this.rawType = rawType;
         }
 
-        public Type of(Type parameter, Type... parameters) {
-            return new ParameterizedTypeImpl(rawType, io.semla.util.Arrays.concat(parameter, parameters));
+        public ParameterizedType of(Type parameter, Type... parameters) {
+            return new ParameterizedTypeImpl(rawType, toArray(parameter, parameters));
         }
     }
 
@@ -347,9 +385,10 @@ public final class Types {
             this.rawType = rawType;
             if (rawType.getTypeParameters().length != actualTypeArguments.length) {
                 throw new IllegalArgumentException(
-                        "type " + rawType + " expects " + rawType.getTypeParameters().length
-                                + " argument" + (rawType.getTypeParameters().length > 1 ? "s" : "")
-                                + " but got " + actualTypeArguments.length);
+                        String.format("type %s expects %d argument%s but got %d",
+                                rawType, rawType.getTypeParameters().length,
+                                rawType.getTypeParameters().length > 1 ? "s" : "",
+                                actualTypeArguments.length));
             }
             this.actualTypeArguments = actualTypeArguments;
         }
@@ -371,7 +410,8 @@ public final class Types {
 
         @Override
         public String toString() {
-            return rawType.getTypeName() + "<" + Stream.of(actualTypeArguments).map(Type::getTypeName).collect(Collectors.joining(", ")) + ">";
+            return String.format("%s<%s>", rawType.getTypeName(),
+                    Stream.of(actualTypeArguments).map(Type::getTypeName).collect(Collectors.joining(", ")));
         }
     }
 }

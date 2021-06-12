@@ -2,7 +2,6 @@ package io.semla.util;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
-import java.util.List;
 import java.util.stream.Stream;
 
 @SuppressWarnings("unchecked")
@@ -210,21 +209,13 @@ public final class Arrays {
     }
 
     @SafeVarargs
-    public static <E> E[] concat(E[] first, E[]... others) {
-        List<E> list = Lists.fromArray(first);
-        for (E[] other : others) {
-            list.addAll(Lists.fromArray(other));
+    public static <E> E[] toArray(E first, E... others) {
+        Object array = Array.newInstance(others.getClass().getComponentType(), others.length + 1);
+        Array.set(array, 0, first);
+        for (int i = 0; i < others.length; i++) {
+            Array.set(array, i + 1, others[i]);
         }
-        return (E[]) toArray(list, list.get(0).getClass());
-    }
-
-    @SafeVarargs
-    public static <E> E[] concat(E first, E[]... others) {
-        List<E> list = Lists.of(first);
-        for (E[] other : others) {
-            list.addAll(Lists.fromArray(other));
-        }
-        return (E[]) toArray(list, list.get(0).getClass());
+        return (E[]) array;
     }
 
     public static <E> Stream<E> toStream(Object value) {
@@ -244,6 +235,13 @@ public final class Arrays {
             }
         }
         return false;
+    }
+
+    public static <E> E[] concat(E[] first, E[] second) {
+        E[] array = (E[]) Array.newInstance(first.getClass().getComponentType(), first.length + second.length);
+        System.arraycopy(first, 0, array, 0, first.length);
+        System.arraycopy(second, 0, array, first.length, second.length);
+        return array;
     }
 }
 
