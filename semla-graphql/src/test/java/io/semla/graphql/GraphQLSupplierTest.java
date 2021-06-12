@@ -1,16 +1,15 @@
 package io.semla.graphql;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import io.semla.Semla;
 import io.semla.inject.GraphQLModule;
 import io.semla.serialization.yaml.Yaml;
 import io.semla.util.Maps;
-import org.junit.Test;
-
 import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.Test;
 
 public class GraphQLSupplierTest {
 

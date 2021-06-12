@@ -1,6 +1,7 @@
 package io.semla.reflect;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -57,7 +58,7 @@ public final class Fields {
         return byName(clazz).values().stream();
     }
 
-    private static Map<String, Field> recursivelyCacheFieldsOf(Class<?> clazz) {
+    private static synchronized Map<String, Field> recursivelyCacheFieldsOf(Class<?> clazz) {
         Map<String, Field> fields = new LinkedHashMap<>();
         recursivelyCacheFieldsOf(clazz, fields);
         return fields;

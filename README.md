@@ -6,15 +6,21 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 ![lifecycle: beta](https://img.shields.io/badge/lifecycle-beta-509bf5.svg)
 
-Semla is a lightweight library driven by the [Java Persistence API](https://en.wikipedia.org/wiki/Java_Persistence_API) 
-supporting most of the features required to persist, query, serialize/deserialize entities as well as injecting dependencies.
+Semla is a lightweight library driven by the [Java Persistence API](https://en.wikipedia.org/wiki/Java_Persistence_API)
+supporting most of the features required to persist, query, serialize/deserialize entities as well as injecting
+dependencies.
 
 It could be seen as Hibernate + Jackson + Guava + Guice, all in one.
 
-Using reflection and static/dynamic source generation, it provides fluent and typed interfaces that can be used as DAOs. 
-The query language is independant of the storage vendor and remains the same if you migrate from one database vendor to another.
+Using reflection and static/dynamic source generation, it provides fluent and typed interfaces that can be used as DAOs.
+The query language is independant of the storage vendor and remains the same if you migrate from one database vendor to
+another.
+
+**One biggest difference with other JPA frameworks is that there is no persistence context in Semla. 
+All the objects you will get are ready to use and won't introduce any side effect due to Proxies not being initialized.**
 
 Semla is fully extensible but comes with those maven modules:
+
 * [semla-common](/semla-common): common library including a lot of utils as well as the json and yaml serializers
 * [semla-inject](/semla-inject): dependency injection library.
 * [semla-jpa](/semla-jpa): the base JPA library.
@@ -33,28 +39,35 @@ Semla is fully extensible but comes with those maven modules:
 *Example given with mysql, but you can replace the module with the vendor of your choice!*
 
 Get it from maven central:
+
 ```xml
+
 <dependency>
     <groupId>io.semla</groupId>
     <artifactId>semla-mysql</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <scope>compile</scope>
 </dependency>
 ```
 
 *Semla uses names very similar to those used by JPA, but their usage and interface might differ a bit, for example:*
+
 * `io.semla.datasource.Datasource<T>` is the low level datasource translating the query to the vendor API
 * `io.semla.persistence.EntityManager<T>` is the class implementing all the query logic
 * `io.semla.persistence.EntityManagerFactory` is the class generating the EntityManagers
 
-Semla comes with a plugin to generate typed EntityManagers extending `io.semla.persistence.TypedEntityManager` and having type-safe methods for all the properties of your types.
+Semla comes with a plugin to generate typed EntityManagers extending `io.semla.persistence.TypedEntityManager` and
+having type-safe methods for all the properties of your types.
 
-Given that you annotate a `User` class with `io.semla.persistence.annotations.Managed` and that you add this plugin to your project:
+Given that you annotate a `User` class with `io.semla.persistence.annotations.Managed` and that you add this plugin to
+your project:
+
 ```xml
+
 <plugin>
     <groupId>io.semla</groupId>
     <artifactId>semla-maven-plugin</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
     <configuration>
         <sources>
             <source>/src/main/java/package/of/your/model/**</source>
@@ -87,6 +100,7 @@ The main class is the `io.semla.Semla` class, which can be configured for exampl
 ```
 
 A datasource configuration shared for a set of entities:
+
 ```java
  Semla semla = Semla.configure()
      .withDatasourceOf(User.class, Group.class)
@@ -101,6 +115,7 @@ A datasource configuration shared for a set of entities:
 ```
 
 Or directly a specific datasource:
+
 ```java
  Semla semla = Semla.configure()
      .withDatasource(MysqlDatasource.configure()
@@ -111,20 +126,21 @@ Or directly a specific datasource:
      .create();
 ```
 
-Semla can easily mix different datasources and recursively query them. 
-You can even write a Datasource for your favorite DB flavour if it's not already supported!
+Semla can easily mix different datasources and recursively query them. You can even write a Datasource for your favorite
+DB flavour if it's not already supported!
 
 By default, the following datasources are included in the core library:
- - InMemoryDatasource: useful for prototyping, it is a non-expiring in-memory relational datasource backed by a HashMap.
- - KeyValueDatasource: NoSQL interface to extend in other Datasources (like memcached or redis)
- - SoftKeyValueDatasource: SoftHashMap backed datasource that can be used for caching.
- - CachedDatasource: 2 layers datasource using a KeyValueDatasource as a cache layer
- - MasterSlaveDatasource: "write one, read all" replicated datasource, to use for example with a Mysql cluster.
- - ReadOneWriteAllDatasource: when you want replication to be handled by Semla.
- - ShardedDatasource: shards on primary key and automatically rebalances if a shard is added.
 
-Semla creates a model of each type it manages, mostly holding instances of everything obtained through reflection.
-If the type is annotated with `javax.persistence.Entity`, it will create an `io.semla.model.EntityModel` that will also
+- InMemoryDatasource: useful for prototyping, it is a non-expiring in-memory relational datasource backed by a HashMap.
+- KeyValueDatasource: NoSQL interface to extend in other Datasources (like memcached or redis)
+- SoftKeyValueDatasource: SoftHashMap backed datasource that can be used for caching.
+- CachedDatasource: 2 layers datasource using a KeyValueDatasource as a cache layer
+- MasterSlaveDatasource: "write one, read all" replicated datasource, to use for example with a Mysql cluster.
+- ReadOneWriteAllDatasource: when you want replication to be handled by Semla.
+- ShardedDatasource: shards on primary key and automatically rebalances if a shard is added.
+
+Semla creates a model of each type it manages, mostly holding instances of everything obtained through reflection. If
+the type is annotated with `javax.persistence.Entity`, it will create an `io.semla.model.EntityModel` that will also
 contain information about the relational and column annotations present on the type.
 
 ## Dependency injection
@@ -138,7 +154,7 @@ Semla packs its own dependency injection framework which can be configured durin
     )
     .create();
 ```
- 
+
 Bindings can also be organized in modules through the `io.semla.inject.Module` class:
 
 ```java
@@ -148,6 +164,7 @@ Bindings can also be organized in modules through the `io.semla.inject.Module` c
 ```
 
 Explicit binding can be required with:
+
 ```java
  Semla semla = Semla.configure()
     .withBindings(Binder::requireExplicitBinding)
@@ -155,6 +172,7 @@ Explicit binding can be required with:
 ```
 
 Multibiding can be achieved with:
+
 ```java
  Semla semla = Semla.configure()
      .withBindings(binder -> binder
@@ -168,6 +186,7 @@ Multibiding can be achieved with:
 ```
 
 You can intercept an injection (for debugging or testing purpose):
+
 ```java
  Semla semla = Semla.configure()
     .withBindings(binder -> binder
@@ -179,6 +198,7 @@ You can intercept an injection (for debugging or testing purpose):
 ```
 
 All the injector methods are available on the semla instance for convenience:
+
 ```java
  semla.getInstance(EntityManagerFactory.class);
  semla.getInstance(new TypeReference<EntityManager<User>>(){});
@@ -186,7 +206,9 @@ All the injector methods are available on the semla instance for convenience:
  semla.inject(yourInstance);
 ```
 
-And if you are not interested in the entity management part of Semla, you can include the `semla-inject` module and create the injector manually:
+And if you are not interested in the entity management part of Semla, you can include solely the `semla-inject` module
+and create the injector manually:
+
 ```java
   Injector injector = SemlaInjector.create(
           binder -> binder.bind(YourType.class).to(yourInstance));
@@ -194,12 +216,17 @@ And if you are not interested in the entity management part of Semla, you can in
 
 ### Factories
 
-Factories are used by the injector to create all the instances and hold the singletons. A factory must implement the `io.semla.inject.Factory` interface.
+Factories are used by the injector to create all the instances and hold the singletons. A factory must implement
+the `io.semla.inject.Factory` interface.
 
 3 singleton factories are preconfigured:
-- `io.semla.datasource.DatasourceFactory`: creates and holds all the `io.semla.datasource.Datasource<T>` instances (1 per type)
-- `io.semla.persistence.EntityManagerFactory`: creates and holds all the generic `io.semla.persistence.EntityManager<T>` instances
-- `io.semla.persistence.TypedEntityManagerFactory`: creates and holds all the `io.semla.persistence.TypedEntityManager` implementations.
+
+- `io.semla.datasource.DatasourceFactory`: creates and holds all the `io.semla.datasource.Datasource<T>` instances (1
+  per type)
+- `io.semla.persistence.EntityManagerFactory`: creates and holds all the generic `io.semla.persistence.EntityManager<T>`
+  instances
+- `io.semla.persistence.TypedEntityManagerFactory`: creates and holds all the `io.semla.persistence.TypedEntityManager`
+  implementations.
 
 ### Entity operations
 
@@ -247,16 +274,19 @@ Once your factory is configured, you can get an `io.semla.persistence.EntityMana
 
 This is a generic entity manager that will let you manipulate your entities and query your datasource.
 
-However, if you have run the maven plugin to generate your TypeEntityManager classes, those 2 TypeEntityManager are available:
+However, if you have run the maven plugin to generate your TypeEntityManager classes, those 2 TypeEntityManager are
+available:
+
 ```java
  UserManager userManager = semla.getInstance(UserManager.class);
  GroupManager groupManager = semla.getInstance(GroupManager.class);
 ```
 
-You can either use the generic or the generated manager to query your entities. 
-Since the second is mostly a wrapper around the first, their behaviour is the same.
+You can either use the generic, or the generated manager to query your entities. Since the second is mostly a wrapper
+around the first, their behaviour is the same.
 
-*The methods on the generic EntityManager are the same but they use a String parameter in place of field names and enum values.*
+*The methods on the generic EntityManager are the same, but they use a String parameter in place of field names and enum
+values.*
 
 To manipulate your entities, the following operations are available:
 
@@ -277,12 +307,14 @@ To manipulate your entities, the following operations are available:
 #### Update/patch
 
 You can either update a modified entity:
+
 ```java
  user.name = "tom";
  userManager.update(user);
 ```
 
 Or patch it directly through the manager:
+
 ```java
  userManager.set().name("tom").where().id().is(1).patch();
 ```
@@ -317,16 +349,18 @@ Or patch it directly through the manager:
 
 #### Include sub entities
 
-Semla supports all the relations defined by the JPA annotations, so one can easily fetch sub entities in the same query:
+Semla supports all the relations defined by the JPA annotations, so we can easily fetch sub entities in the same query:
 
 ```java
  List<Group> groups = groupManager.list(group -> group.users());
  Optional<User> bob = userManager.where().name().is("bob").first(user -> user.group()); 
 ```
 
-Note that we pass a function as a parameter. The query can be read as: `get the first user named bob and for this user get its group`
+Note that we pass a function as a parameter. The query can be read
+as: `get the first user named bob and for this user get its group`
 
-Relations can be traversed in both directions. For example, we can fetch all the users in bob's group:
+Relations can be traversed in both directions. For example, we can fetch all the users in Bob's group:
+
 ```java
  List<User> users = userManager.where().name().is("bob")
    .first(user -> user.group(group -> group.users()))
@@ -347,7 +381,7 @@ To select entities, the following predicates are available:
  * greaterThan(Number number)
  * lessOrEquals(Number number)
  * lessThan(Number number)
- * like(String pattern) 
+ * like(String pattern)
  * notLike(String pattern)
  * contains(String pattern)
  * doesNotContain(String pattern)
@@ -355,6 +389,7 @@ To select entities, the following predicates are available:
  * notContainedIn(String pattern)
  
 They can be chained to make a query filter:
+
 ```java
  List<User> users = userManager.where().name().like("b.*").and().id().lessThan(10).list();
 ```
@@ -366,7 +401,7 @@ Semla comes with its own simple query language mapping the executed query.
  Optional<Group> group = query.in(entityManagerFactory.newContext());
 ```
 
-It is mostly used by the tests and for debugging, as it allows for reparsing the query printed in the logs. 
+It is mostly used by the tests and for debugging, as it allows for reparsing the query printed in the logs.
 
 Every query is thus mapped to a humanly readable expression, and for example the above query would output:
 
@@ -382,10 +417,11 @@ Entities can be ordered using:
 ```java
  List<User> users = userManager.orderedBy(name().desc()).startAt(10).limitTo(30).list();
 ```
- 
+
 #### Caching
 
 If the injector is configured to use a Cache: 
+
 ```java
  Semla semla = Semla.configure()
     .withBindings(binder -> binder
@@ -395,46 +431,54 @@ If the injector is configured to use a Cache:
 ```
 
 Then you can easily cache all the read queries with:
+
 ```java
  userManager.where().name().is("bob").cachedFor(Duration.ofMinutes(3)).first();
  userManager.cachedFor(Duration.ofMinutes(3)).get(1);
 ```
 
 To manually refresh the cache:
+
 ```java
  userManager.where().name().is("bob").invalidateCache().cachedFor(Duration.ofMinutes(3)).first();
 ```
- 
+
 Or evict it:
+
 ```java
  userManager.where().name().is("bob").evictCache().first(); // this returns a void
 ```
 
 You can also use your cache for custom queries:
+
 ```java
  long users = semla.getInstance(Cache.class).get("onlineUsers", () -> computeUserCounts(), Duration.ofMinutes(1));
 ```
 
 If you need multiple caches, with different datasources, you should name them:
+
 ```java
- Semla semla = Semla.configure()
+  Semla semla = Semla.configure()
     .withBindings(binder -> binder
         .bind(Cache.class).named("shared").to(MemcachedDatasource.configure().withHosts("ip:port").asCache())
     )
     .create();
 
- semla.getInstance(Cache.class, Annotations.named("shared")).get(...);
+  semla.getInstance(Cache.class,Annotations.named("shared")).get(...);
 ```
 
 All the datasources can be used as a cache, even the sql ones.
 
 ## Indices
 
-if `@StrictIndices` is added to the class, then only the primary key and the explicitly indexed properties will be queryable.
-The typed manager will not have the non indexed methods, and the generic manager will reject the queries at runtime.
+if `@StrictIndices` is added to the class, then only the primary key and the explicitly indexed properties will be
+queryable. The typed manager will not have the non indexed methods, and the generic manager will reject the queries at
+runtime.
 
 Indices on columns can be defined on the class as:
+
 ```java
+
 @StrictIndices
 @Indices(
     @Index(name = "idx_name_value", properties = {"name", "value"}, unique = true)
@@ -443,6 +487,7 @@ public class YourEntity...
 ```
 
 Or directly on the field:
+
 ```java
 @Indexed(unique = false)
 public String name;
@@ -450,10 +495,10 @@ public String name;
 
 ## Serialization / Deserialization
 
-Semla includes both a Json and a Yaml serializer/deserizalizer. Available as singletons through the `Json` and `Yaml` classes, 
-they are thread safe and can take Options directly as parameters. However, if you want those options to be default, you can either
-configure them or create your own instance locally.
- 
+Semla includes both a Json and a Yaml serializer/deserizalizer. Available as singletons through the `Json` and `Yaml`
+classes, they are thread safe and can take Options directly as parameters. However, if you want those options to be
+default, you can either configure them or create your own instance locally.
+
 Here are some usage examples:
 
 ```java
@@ -477,46 +522,50 @@ While less configurable than Jackson, it should be sufficient for most projects.
 | Deserializer.IGNORE_UNKNOWN_PROPERTIES | will ignore unknown properties instead of throwing an exception      |
 | Deserializer.UNWRAP_STRINGS            | will unwrap string properties if the expected type is something else |
 
-The Yaml parser supports references and anchors as well as including sub files through the `!include` tag:
+However, contrary to Jackson, it does support references and anchors as well as including sub files through
+the `!include` tag:
 
 ```yaml
 data:
   <<: !include base.yaml
   more: value
 ```
- 
+
 Field serialization/deserialization can be controlled with the `@Serialize` and `@Deserialize` annotations.
 
-By default, all getters/setters with matching fields are serialized/deserialized. 
-Chained setters are also supported (ie: `public T withName(String value)`).
-Regular methods have to be explicitly annotated to be serialized/deserialized.
-Relational graphs are handled natively, so references to values should be preserved after deserialization. 
+By default, all getters/setters with matching fields are serialized/deserialized. Chained setters are also supported (
+ie: `public T withName(String value)`). Regular methods have to be explicitly annotated to be serialized/deserialized.
+Relational graphs are handled natively, so references to values should be preserved after deserialization.
 
-An enum `When` is also available to serialize/deserialize only on some cases, 
-the supported values are: `ALWAYS, NEVER, NOT_NULL, NOT_EMPTY, NOT_DEFAULT`
+An enum `When` is also available to serialize/deserialize only on some cases, the supported values
+are: `ALWAYS, NEVER, NOT_NULL, NOT_EMPTY, NOT_DEFAULT`
 
 For example:
+
 ```java
  public class Character {
 
-   private String internalName;
-   @Serialize(When.NO_NULL)
-   public String alias;
-    
-   @Serialize(as = "name")
-   public String name() {
-     return internalName;
-   }   
-    
-   @Deserialize(from = "name")
-   public Character withName(String name) {
-     // do something with the name
-     return this;
-   }
- }
+    private String internalName;
+    @Serialize(When.NOT_NULL)
+    public String alias;
+
+    @Serialize(as = "name")
+    public String name() {
+        return internalName;
+    }
+
+    @Deserialize(from = "name")
+    public Character withName(String name) {
+        this.internalName = name;
+        // do something with the name
+        return this;
+    }
+}
  ```
 
-Finally, polymorphism is supported via the `@TypeInfo(property = "type")` and `@TypeName("typename")` annotations, example:
+Finally, polymorphism is supported via the `@TypeInfo(property = "type")` and `@TypeName("typename")` annotations,
+example:
+
 ```java
  @TypeInfo // type is the default value
  public abstract class Character {
@@ -529,11 +578,13 @@ Finally, polymorphism is supported via the `@TypeInfo(property = "type")` and `@
 ```
 
 The Hero type needs to be registered:
+
 ```java
  Types.registerSubTypes(Hero.class);
 ```
 
 Then it can be serialized and deserialized properly:
+
 ```java
  List<Character> characters = Yaml.read(
    "- type: hero" +
@@ -545,14 +596,51 @@ Then it can be serialized and deserialized properly:
 ```
 
 *Note: subtypes can also be deserialized from their typenames only:*
+
 ```java
  List<Character> characters = Yaml.read("[hero, hero]", Types.parameterized(List.class).of(Character.class)); // this will return 2 default heroes
 ```
 
+## Logging
+
+*semla-logging* provides a nice wrapper around Logback.
+
+Setting the log level in your application or tests is as simple as:
+```java
+  Logging.setTo(Level.ERROR);
+```
+
+However, you can also customize the logger:
+```java
+  Logging
+    .withLogLevel(Level.INFO) // set the default log level to INFO
+    .withAppenderLevel("io.semla", Level.ALL) // but a specific appender to ALL
+    .withPattern("%-5p [%t]: %m%n")
+    .setup();
+```
+
+Capture all your logs to a specific appender:
+```java
+  ListAppender listAppender = new ListAppender();
+  Logging.withAppender(listAppender).noConsole().withPattern("%-5p [%t]: %m%n").setup();
+```
+
+Or log to a file, optionally rolling:
+```java
+  Logging.configure()
+    .withPattern("%-5p [%t]: %m%n")
+    .noConsole()
+    .withFileAppender()
+    .withLogFilename("test.log")
+    // if you want to keep the last 30 days    
+    .keep(30).withLogFilenamePattern("test-%d.log.gz")
+    .setup();
+```
+
 ## GraphQL
 
-The *semla-graphql* module provides support for graphql.
-You can enable it by adding the dependency to your project and the `GraphQLModule` module to your configuration:
+The *semla-graphql* module provides support for graphql. You can enable it by adding the dependency to your project and
+the `GraphQLModule` module to your configuration:
 
 ```java
   Semla semla = Semla.configure()
@@ -560,18 +648,20 @@ You can enable it by adding the dependency to your project and the `GraphQLModul
     .create();
 ```  
 
-This will make a `GraphQL` and a `GraphQLProvider` instance available in your injector.
-The `GraphQL` instance will be configured with the base schema for all your entities, 
-so you should be able to access your database right away.
+This will make a `GraphQL` and a `GraphQLProvider` instance available in your injector. The `GraphQL` instance will be
+configured with the base schema for all your entities, so you should be able to access your database right away.
 
 The generated schema is available through:
+
 ```java
   String schema = semla.getInstance(GraphQLProvider.class).getSchema()
 ```
 
-See the tests for the [queries](https://github.com/mimfgg/semla/blob/master/semla-graphql/src/test/resources/io/semla/graphql/queries.feature)
-and the [configuration](https://github.com/mimfgg/semla/blob/master/semla-graphql/src/test/java/io/semla/graphql/GraphQLProviderTest.java)
-for more examples or for how to add your own queries, types and mutations to the base schema. 
+See the tests for
+the [queries](https://github.com/mimfgg/semla/blob/master/semla-graphql/src/test/resources/io/semla/graphql/queries.feature)
+and
+the [configuration](https://github.com/mimfgg/semla/blob/master/semla-graphql/src/test/java/io/semla/graphql/GraphQLSupplierTest.java)
+for more examples or for how to add your own queries, types and mutations to the base schema.
 
 ## Examples
 

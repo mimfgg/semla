@@ -3,9 +3,9 @@ package io.semla.reflect;
 import io.semla.model.Child;
 import io.semla.model.Parent;
 import io.semla.model.Sibbling;
+import io.semla.util.Lists;
 import org.junit.Test;
 
-import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -16,12 +16,14 @@ public class TypesTest {
 
     @Test
     public void constructTypes() {
-        assertThat(Types.parameterized(Optional.class, String.class).getTypeName()).isEqualTo("java.util.Optional<java.lang.String>");
+        assertThat(Types.parameterized(Optional.class).of(String.class).getTypeName()).isEqualTo("java.util.Optional<java.lang.String>");
         assertThat(Types.parameterized(List.class).of(String.class).getTypeName()).isEqualTo("java.util.List<java.lang.String>");
-        assertThat(Types.parameterized(Map.class, String.class, String.class).getTypeName()).isEqualTo("java.util.Map<java.lang.String, java.lang.String>");
-        assertThat(Types.parameterized(Supplier.class, String.class).getTypeName()).isEqualTo("java.util.function.Supplier<java.lang.String>");
-        assertThat(((ParameterizedType) Types.parameterized(Optional.class, String.class)).getOwnerType()).isNull();
-        assertThat(((ParameterizedType) Types.parameterized(Map.Entry.class, Integer.class, String.class)).getOwnerType()).isEqualTo(Map.class);
+        assertThat(Types.parameterized(Map.class).of(String.class, String.class).getTypeName()).isEqualTo("java.util.Map<java.lang.String, java.lang.String>");
+        assertThat(Types.parameterized(Supplier.class).of(String.class).getTypeName()).isEqualTo("java.util.function.Supplier<java.lang.String>");
+        assertThat(Types.parameterized(Map.class).of(String.class, Types.parameterized(List.class).of(String.class)).getTypeName())
+            .isEqualTo("java.util.Map<java.lang.String, java.util.List<java.lang.String>>");
+        assertThat(Types.parameterized(Optional.class).of(String.class).getOwnerType()).isNull();
+        assertThat(Types.parameterized(Map.Entry.class).of(Integer.class, String.class).getOwnerType()).isEqualTo(Map.class);
         assertThatThrownBy(() -> Types.parameterized(Map.class, Integer.class, String.class, String.class))
             .hasMessage("type interface java.util.Map expects 2 arguments but got 3");
     }
@@ -70,4 +72,16 @@ public class TypesTest {
             .hasMessage("no subtype 'nephew' registered for interface io.semla.model.Parent");
     }
 
+    @Test
+    public void getCommonSuperClass() {
+        assertThat(Types.getCommonSuperClass(1, 1)).isEqualTo(Integer.class);
+        assertThat(Types.getCommonSuperClass(1, "a")).isEqualTo(Object.class);
+        assertThat(Types.getCommonSuperClass(Integer.class, String.class)).isEqualTo(Object.class);
+        assertThat(Types.getCommonSuperClass(Integer.class, Double.class)).isEqualTo(Number.class);
+        assertThat(Types.getCommonSuperClass(Number.class, Double.class)).isEqualTo(Number.class);
+        assertThat(Types.getCommonSuperClass(Double.class, Number.class)).isEqualTo(Number.class);
+        assertThat(Types.getCommonSuperClass(Lists.of(1, 2))).isEqualTo(Integer.class);
+        assertThat(Types.getCommonSuperClass(Lists.of(1, "a"))).isEqualTo(Object.class);
+        assertThat(Types.getCommonSuperClass(Lists.of(1, 2.1d))).isEqualTo(Number.class);
+    }
 }

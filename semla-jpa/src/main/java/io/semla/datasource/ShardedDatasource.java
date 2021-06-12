@@ -137,7 +137,7 @@ public class ShardedDatasource<T> extends Datasource<T> {
                         Datasource<T> correctDatasource = forEntity(entity.get());
                         if (!correctDatasource.equals(datasource)) {
                             correctDatasource.create(entity.get());
-                            datasource.delete((Object) model().key().member().getOn(entity.get()));
+                            datasource.delete(model().key().member().<Object>getOn(entity.get()));
                         }
                     }
                     return entity;
