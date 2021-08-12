@@ -4,6 +4,8 @@ import io.semla.model.Score;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.stream.IntStream;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class FieldsTest {
@@ -43,5 +45,14 @@ public class FieldsTest {
     @Test
     public void hasField() {
         assertThat(Fields.hasField(scoreA, "score")).isTrue();
+    }
+
+    @Test
+    public void testConcurrentAccess() {
+        IntStream.range(1, 100).parallel().forEach(i -> Fields.byName(InnerTestClass.class));
+    }
+
+    private static class InnerTestClass {
+        public int value;
     }
 }

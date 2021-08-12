@@ -59,7 +59,7 @@ public final class Fields {
     }
 
     private static synchronized Map<String, Field> recursivelyCacheFieldsOf(Class<?> clazz) {
-        Map<String, Field> fields = new LinkedHashMap<>();
+        Map<String, Field> fields = synchronizedMap(new LinkedHashMap<>());
         recursivelyCacheFieldsOf(clazz, fields);
         return fields;
     }

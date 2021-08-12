@@ -31,7 +31,7 @@ public final class Methods {
     }
 
     private static Map<String, Method> recursivelyFindAllMethodsOf(Class<?> clazz) {
-        Map<String, Method> methods = new LinkedHashMap<>();
+        Map<String, Method> methods = synchronizedMap(new LinkedHashMap<>());
         recursivelyFindAllMethodsOf(clazz, methods);
         return methods;
     }
@@ -109,7 +109,7 @@ public final class Methods {
 
     public static Stream<MethodInvocator> findAnnotatedWith(Class<?> type, Class<? extends Annotation> annotation) {
         return ANNOTATED_METHODS
-                .computeIfAbsent(type, t -> new LinkedHashMap<>())
+                .computeIfAbsent(type, t -> synchronizedMap(new LinkedHashMap<>()))
                 .computeIfAbsent(annotation, a ->
                         Stream.of(type.getMethods())
                                 .filter(method -> method.isAnnotationPresent(a))
