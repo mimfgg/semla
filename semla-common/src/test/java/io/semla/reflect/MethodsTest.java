@@ -3,6 +3,8 @@ package io.semla.reflect;
 import io.semla.serialization.annotations.Deserialize;
 import org.junit.Test;
 
+import java.util.stream.IntStream;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class MethodsTest {
@@ -31,6 +33,11 @@ public class MethodsTest {
         assertThat(Methods.<String>invoke(new TestParentClass(), "protectedOverridenMethod")).isEqualTo("protectedOriginalMethod");
 
         assertThat(Methods.findMethod(Annotations.defaultOf(Deserialize.class).getClass(), "value")).isPresent();
+    }
+
+    @Test
+    public void testConcurrentAccess() {
+        IntStream.range(1, 100).parallel().forEach(i -> Methods.findMethod(TestClass.class, "init"));
     }
 
     public interface BaseInterface {
