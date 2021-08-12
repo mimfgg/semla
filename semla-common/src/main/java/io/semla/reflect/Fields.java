@@ -1,19 +1,19 @@
 package io.semla.reflect;
 
 import java.lang.reflect.Field;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
 import static io.semla.util.Unchecked.unchecked;
+import static java.util.Collections.synchronizedMap;
 
 
 @SuppressWarnings("unchecked")
 public final class Fields {
 
-    private static final Map<Class<?>, Map<String, Field>> CACHE = new HashMap<>();
+    private static final Map<Class<?>, Map<String, Field>> CACHE = synchronizedMap(new HashMap<>());
 
     private Fields() {
     }
