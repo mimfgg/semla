@@ -17,12 +17,13 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static io.semla.util.Unchecked.unchecked;
+import static java.util.Collections.synchronizedMap;
 
 @SuppressWarnings("unchecked")
 public class Javassist {
 
     private static final ReentrantLock lock = new ReentrantLock(true);
-    private static final HashMap<String, Class<?>> JAVASSIST_CLASSES = new HashMap<>();
+    private static final Map<String, Class<?>> JAVASSIST_CLASSES = synchronizedMap(new HashMap<>());
 
     private Javassist() {
     }
@@ -72,8 +73,8 @@ public class Javassist {
 
         public ClassBuilder implementing(String... interfaceClass) {
             ctClass.setInterfaces(Stream.of(interfaceClass)
-                .map(classname -> unchecked(() -> ClassPool.getDefault().get(classname)))
-                .toArray(CtClass[]::new));
+                    .map(classname -> unchecked(() -> ClassPool.getDefault().get(classname)))
+                    .toArray(CtClass[]::new));
             return this;
         }
 

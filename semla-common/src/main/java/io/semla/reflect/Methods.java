@@ -7,12 +7,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.semla.util.Unchecked.unchecked;
+import static java.util.Collections.synchronizedMap;
 import static java.util.Optional.ofNullable;
 
 public final class Methods {
 
-    private static final Map<Class<?>, Map<Class<? extends Annotation>, List<MethodInvocator>>> ANNOTATED_METHODS = new LinkedHashMap<>();
-    private static final Map<Class<?>, Map<String, Method>> METHOD_CACHE = new LinkedHashMap<>();
+    private static final Map<Class<?>, Map<Class<? extends Annotation>, List<MethodInvocator>>> ANNOTATED_METHODS = synchronizedMap(new HashMap<>());
+    private static final Map<Class<?>, Map<String, Method>> METHOD_CACHE = synchronizedMap(new HashMap<>());
 
     private Methods() {
     }

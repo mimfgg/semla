@@ -5,7 +5,7 @@
     <parent>
         <artifactId>semla</artifactId>
         <groupId>io.semla</groupId>
-        <version>1.1.1</version>
+        <version>1.1.2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>semla-postgresql</artifactId>
@@ -14,7 +14,7 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-jdbi</artifactId>
-            <version>1.1.1</version>
+            <version>1.1.2</version>
         </dependency>
         <dependency>
             <groupId>org.jdbi</groupId>
@@ -30,28 +30,28 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-testing</artifactId>
-            <version>1.1.1</version>
+            <version>1.1.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-common</artifactId>
             <classifier>tests</classifier>
-            <version>1.1.1</version>
+            <version>1.1.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-jpa</artifactId>
             <classifier>tests</classifier>
-            <version>1.1.1</version>
+            <version>1.1.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-jdbi</artifactId>
             <classifier>tests</classifier>
-            <version>1.1.1</version>
+            <version>1.1.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
