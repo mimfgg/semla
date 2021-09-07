@@ -1,5 +1,7 @@
 package io.semla.reflect;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -10,6 +12,7 @@ import static io.semla.util.Unchecked.unchecked;
 import static java.util.Collections.synchronizedMap;
 import static java.util.Optional.ofNullable;
 
+@Slf4j
 public final class Methods {
 
     private static final Map<Class<?>, Map<Class<? extends Annotation>, List<MethodInvocator>>> ANNOTATED_METHODS = synchronizedMap(new HashMap<>());
@@ -42,10 +45,14 @@ public final class Methods {
                 .filter(method -> clazz.isAnnotation() || !Modifier.is(method, Modifier.ABSTRACT))
                 .filter(method -> !methods.containsValue(method))
                 .forEach(method -> {
-                    if (!method.isAccessible()) {
-                        method.setAccessible(true);
+                    try {
+                        if (!method.isAccessible()) {
+                            method.setAccessible(true);
+                        }
+                        methods.put(getMethodSignature(clazz, method.getName(), method.getParameterTypes()), method);
+                    } catch (Exception e) {
+                        log.debug("ignoring inaccessible {}", method);
                     }
-                    methods.put(getMethodSignature(clazz, method.getName(), method.getParameterTypes()), method);
                 });
         ofNullable(clazz.getSuperclass()).ifPresent(superClass -> recursivelyFindAllMethodsOf(superClass, methods));
         Stream.of(clazz.getInterfaces()).forEach(interfaceClass -> recursivelyFindAllMethodsOf(interfaceClass, methods));

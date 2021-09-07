@@ -1,5 +1,7 @@
 package io.semla.reflect;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -11,6 +13,7 @@ import static java.util.Collections.synchronizedMap;
 
 
 @SuppressWarnings("unchecked")
+@Slf4j
 public final class Fields {
 
     private static final Map<Class<?>, Map<String, Field>> CACHE = synchronizedMap(new HashMap<>());
@@ -66,11 +69,15 @@ public final class Fields {
 
     private static void recursivelyCacheFieldsOf(Class<?> clazz, Map<String, Field> fields) {
         for (Field field : clazz.getDeclaredFields()) {
-            if (!field.getName().equals("$jacocoData") && !fields.containsKey(field.getName())) {
-                if (!field.isAccessible()) {
-                    field.setAccessible(true);
+            try {
+                if (!field.getName().equals("$jacocoData") && !fields.containsKey(field.getName())) {
+                    if (!field.isAccessible()) {
+                        field.setAccessible(true);
+                    }
+                    fields.put(field.getName(), field);
                 }
-                fields.put(field.getName(), field);
+            } catch (Exception e) {
+                log.debug("ignoring inaccessible {}", field);
             }
         }
         if (clazz.getSuperclass() != null) {
