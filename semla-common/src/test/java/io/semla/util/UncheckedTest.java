@@ -27,6 +27,13 @@ public class UncheckedTest {
         });
     }
 
+    @Test(expected = Error.class)
+    public void uncheckedError() {
+        Unchecked.unchecked((Throwables.Runnable) () -> {
+            throw new Error();
+        });
+    }
+
     @Test
     public void catchAndPrefixMessageRunnable() {
         assertThatThrownBy(() ->

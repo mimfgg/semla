@@ -5,11 +5,11 @@
     <parent>
         <groupId>io.semla</groupId>
         <artifactId>semla</artifactId>
-        <version>1.1.4</version>
+        <version>1.1.5</version>
     </parent>
     <artifactId>semla-logging</artifactId>
     <packaging>jar</packaging>
-    <version>1.1.4</version>
+    <version>1.1.5</version>
     <properties>
         <logback.version>1.2.3</logback.version>
     </properties>
