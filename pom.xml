@@ -15,7 +15,7 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-    <version>1.1.5</version>
+    <version>1.1.6</version>
     <packaging>pom</packaging>
     <modules>
         <module>method-runner-maven-plugin</module>
