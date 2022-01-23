@@ -34,7 +34,7 @@ public class CachedDatasource<T> extends Datasource<T> {
     @Override
     public Optional<T> get(Object key) {
         Optional<T> cached = cache.get(key);
-        if (!cached.isPresent()) {
+        if (cached.isEmpty()) {
             Optional<T> persisted = datasource.get(key);
             persisted.ifPresent(cache::create);
             return persisted;

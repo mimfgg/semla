@@ -4,7 +4,6 @@ import io.semla.reflect.*;
 import io.semla.serialization.Token;
 import io.semla.serialization.annotations.Deserialize;
 import io.semla.serialization.annotations.Serialize;
-import lombok.Builder;
 import org.junit.Test;
 
 import java.io.Serializable;
@@ -25,16 +24,16 @@ public class JavassistTest {
     @Test
     public void extending() {
         assertThat(
-            Javassist.getOrCreate("ExtendedLinkedHashMap", clazz -> clazz.extending(LinkedHashMap.class))
+            Javassist.getOrCreate("io.semla.util.ExtendedLinkedHashMap", this.getClass(), clazz -> clazz.extending(LinkedHashMap.class))
         ).isEqualTo(
-            Javassist.getOrCreate("ExtendedLinkedHashMap", clazz -> clazz.extending(LinkedHashMap.class))
+            Javassist.getOrCreate("io.semla.util.ExtendedLinkedHashMap", this.getClass(), clazz -> clazz.extending(LinkedHashMap.class))
         );
     }
 
     @Test
     public void implementing() {
         Class<?> someSerializableType =
-            Javassist.getOrCreate("SomeSerializableType", clazz -> clazz.implementing(Serializable.class));
+            Javassist.getOrCreate("io.semla.util.SomeSerializableType", this.getClass(), clazz -> clazz.implementing(Serializable.class));
         Object o = Types.newInstance(someSerializableType);
         assertThat(o).isInstanceOf(Serializable.class);
     }
@@ -42,10 +41,10 @@ public class JavassistTest {
     @Test
     public void addAnnotation() {
         Class<?> someAnnotatedType =
-            Javassist.getOrCreate("SomeAnnotatedType", clazz -> clazz.addAnnotation(AllMemberValues.class));
+            Javassist.getOrCreate("io.semla.util.SomeAnnotatedType", this.getClass(), clazz -> clazz.addAnnotation(AllMemberValues.class));
         assertThat(someAnnotatedType).hasAnnotation(AllMemberValues.class);
         Class<?> someAnnotatedTypeWithATable =
-            Javassist.getOrCreate("SomeAnnotatedTypeWithMoreInfo",
+            Javassist.getOrCreate("io.semla.util.SomeAnnotatedTypeWithMoreInfo", this.getClass(),
                 clazz -> clazz.addAnnotation(AllMemberValues.class, annotation -> annotation.set("value", "something")));
         assertThat(someAnnotatedTypeWithATable).hasAnnotation(AllMemberValues.class);
         assertThat(someAnnotatedTypeWithATable.getAnnotation(AllMemberValues.class).value()).isEqualTo("something");
@@ -54,17 +53,17 @@ public class JavassistTest {
     @Test
     public void addField() {
         Class<?> someTypeWithAField =
-            Javassist.getOrCreate("SomeTypeWithAField", clazz -> clazz.addField("value", String.class));
+            Javassist.getOrCreate("io.semla.util.SomeTypeWithAField", this.getClass(), clazz -> clazz.addField("value", String.class));
         assertThat(Fields.getField(someTypeWithAField, "value")).isNotNull();
         Class<?> someTypeWithAPrivateField =
-            Javassist.getOrCreate("SomeTypeWithAPrivateField",
+            Javassist.getOrCreate("io.semla.util.SomeTypeWithAPrivateField", this.getClass(),
                 clazz -> clazz.addField("value", String.class,
                     field -> field.setModifier(Modifier.PRIVATE)));
         Field privateField = Fields.getField(someTypeWithAPrivateField, "value");
         assertThat(privateField).isNotNull();
         assertThat(privateField.getModifiers() & java.lang.reflect.Modifier.PRIVATE).isEqualTo(java.lang.reflect.Modifier.PRIVATE);
         Class<?> someTypeWithAnAnnotatedField =
-            Javassist.getOrCreate("SomeTypeWithAnAnnotatedField",
+            Javassist.getOrCreate("io.semla.util.SomeTypeWithAnAnnotatedField", this.getClass(),
                 clazz -> clazz.addField("id", Integer.class, field -> field.addAnnotation(Serialize.class)));
         assertThat(Fields.getField(someTypeWithAnAnnotatedField, "id").isAnnotationPresent(Serialize.class)).isTrue();
     }
@@ -72,10 +71,10 @@ public class JavassistTest {
     @Test
     public void addMethod() {
         Class<?> someTypeWithAMethod =
-            Javassist.getOrCreate("SomeTypeWithAMethod", clazz -> clazz.addMethod("public String test(){return \"hello world!\";}"));
+            Javassist.getOrCreate("io.semla.util.SomeTypeWithAMethod", this.getClass(), clazz -> clazz.addMethod("public String test(){return \"hello world!\";}"));
         assertThat(Methods.<String>invoke(Types.newInstance(someTypeWithAMethod), "test")).isEqualTo("hello world!");
         Class<?> someTypeWithAnAnnotatedMethod =
-            Javassist.getOrCreate("SomeTypeWithAnAnnotatedMethod",
+            Javassist.getOrCreate("io.semla.util.SomeTypeWithAnAnnotatedMethod", this.getClass(),
                 clazz -> clazz.addMethod("public String test(){return \"hello world!\";}",
                     method -> method.addAnnotation(Serialize.class)));
         assertThat(Methods.getMethod(someTypeWithAnAnnotatedMethod, "test").isAnnotationPresent(Serialize.class)).isTrue();
@@ -84,11 +83,11 @@ public class JavassistTest {
     @Test
     public void addConstructor() throws NoSuchMethodException {
         Class<?> someTypeWithAConstructor =
-            Javassist.getOrCreate("SomeTypeWithAConstructor", clazz -> clazz.addConstructor("public SomeTypeWithAConstructor(int id){}"));
+            Javassist.getOrCreate("io.semla.util.SomeTypeWithAConstructor", this.getClass(), clazz -> clazz.addConstructor("public SomeTypeWithAConstructor(int id){}"));
         assertThat(someTypeWithAConstructor.getConstructor(int.class)).isNotNull();
 
         Class<?> someTypeWithAnAnnotatedConstructor =
-            Javassist.getOrCreate("SomeTypeWithAnAnnotatedConstructor",
+            Javassist.getOrCreate("io.semla.util.SomeTypeWithAnAnnotatedConstructor", this.getClass(),
                 clazz -> clazz.addConstructor("public SomeTypeWithAnAnnotatedConstructor(int id){}",
                     constructor -> constructor.addAnnotation(SomeAllAroundAnnotation.class)));
         assertThat(someTypeWithAnAnnotatedConstructor.getConstructor(int.class).isAnnotationPresent(SomeAllAroundAnnotation.class)).isTrue();
@@ -100,7 +99,7 @@ public class JavassistTest {
         Deserialize[] deserializes = Arrays.of(Annotations.proxyOf(Deserialize.class, Maps.of("from", "test")));
 
         Class<?> someAnnotatedType =
-            Javassist.getOrCreate("SomeTypeAnnotatedWithAllMemberValues",
+            Javassist.getOrCreate("io.semla.util.SomeTypeAnnotatedWithAllMemberValues", this.getClass(),
                 clazz -> clazz
                     .addAnnotation(AllMemberValues.class, annotation -> annotation
                         .set("deserialize", deserialize)
@@ -133,7 +132,7 @@ public class JavassistTest {
         assertThat(allMemberValues.value()).isEqualTo("test");
 
         assertThatThrownBy(() ->
-            Javassist.getOrCreate("SomeTypeThatWontCompile",
+            Javassist.getOrCreate("SomeTypeThatWontCompile", this.getClass(),
                 clazz -> clazz.addAnnotation(AllMemberValues.class,
                     values -> values.set("deserializes", Lists.of("whatever"))))
         ).hasMessage("cannot create a ctMember value out of class java.util.ArrayList");

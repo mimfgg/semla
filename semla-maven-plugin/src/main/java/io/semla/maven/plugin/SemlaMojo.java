@@ -53,14 +53,12 @@ public class SemlaMojo extends AbstractMojo {
     public void execute() {
         try {
             additionalClasspathElements = additionalClasspathElements.stream().map(this::withBasedir).collect(Collectors.toList());
-            sources = sources.stream().map(this::withBasedir).collect(Collectors.toList());
+            sources = sources.stream().map(this::withBasedir).toList();
             outputPath = withBasedir(outputPath);
             List<String> classpathElements = getClasspathElements();
-            Method addUrl = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-            addUrl.setAccessible(true);
-            List<File> jarList = classpathElements.stream().map(File::new).collect(Collectors.toList());
+            List<File> jarList = classpathElements.stream().map(File::new).toList();
             for (File file : jarList) {
-                addUrl.invoke(Types.class.getClassLoader(), file.toURI().toURL());
+                Types.addToClassLoaders(file.toURI().toURL());
             }
 
             List<File> processedSources = TypedEntityManager.preProcessSources(classpathElements, outputPath, sources);
@@ -105,19 +103,12 @@ public class SemlaMojo extends AbstractMojo {
 
         //
         switch (ResolutionScope.valueOf(resolutionScope.toUpperCase())) {
-            case TEST:
-                classpathElements.addAll(project.getTestClasspathElements());
-                break;
-            case COMPILE:
-                classpathElements.addAll(project.getCompileClasspathElements());
-                break;
-            case RUNTIME:
-                classpathElements.addAll(project.getRuntimeClasspathElements());
-                break;
-            default:
-                throw new UnsupportedOperationException(
-                    "resolution scope " + resolutionScope + " is not supported. Supported values are [TEST, COMPILE, RUNTIME]"
-                );
+            case TEST -> classpathElements.addAll(project.getTestClasspathElements());
+            case COMPILE -> classpathElements.addAll(project.getCompileClasspathElements());
+            case RUNTIME -> classpathElements.addAll(project.getRuntimeClasspathElements());
+            default -> throw new UnsupportedOperationException(
+                "resolution scope " + resolutionScope + " is not supported. Supported values are [TEST, COMPILE, RUNTIME]"
+            );
         }
         classpathElements.addAll(additionalClasspathElements);
         if (additionalClasspath != null) {

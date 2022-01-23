@@ -25,7 +25,7 @@ public class MysqlDatasource<T> extends SqlDatasource<T> {
     protected void extend() {
         ddl().escapeWith(name -> "`" + name + "`");
         if (model().key().member().annotation(GeneratedValue.class).isPresent()) {
-            if (!model().key().columnDefinition().isPresent() && isAssignableToOneOf(model().key().member().getType(), Integer.class, Long.class)) {
+            if (model().key().columnDefinition().isEmpty() && isAssignableToOneOf(model().key().member().getType(), Integer.class, Long.class)) {
                 String columnDefinition = ddl().getColumnDefinition(model().key())
                     .orElseThrow(() -> new IllegalStateException("no definition for column " + model().key()));
                 columnDefinition += " AUTO_INCREMENT NOT NULL";
@@ -75,14 +75,14 @@ public class MysqlDatasource<T> extends SqlDatasource<T> {
     @Override
     public long delete(Predicates<T> predicates, Pagination<T> pagination) {
         if (pagination.isSorted() || pagination.isPaginated()) {
-            // Mysql doesn't supported sorting or offset on deletes
+            // Mysql doesn't support sorting or offset on deletes
             // we use a double nested query:
             // DELETE FROM `table` WHERE id IN (select id from (select id FROM `table` <predicates> <pagination>) x)
             return (long) raw().withHandle(handle -> {
                 String key = ddl().escape(model().key().name());
                 String table = ddl().escape(ddl().tablename());
                 StringBuilder sql = new StringBuilder(
-                    String.format("DELETE FROM %s WHERE %s IN (SELECT %s FROM (SELECT %s FROM %s ", table, key, key, key, table));
+                    "DELETE FROM %s WHERE %s IN (SELECT %s FROM (SELECT %s FROM %s ".formatted(table, key, key, key, table));
                 Map<String, Object> values = addPredicates(sql, predicates, pagination);
                 sql.append(") x)");
                 return query(handle::createUpdate, sql, values).execute();

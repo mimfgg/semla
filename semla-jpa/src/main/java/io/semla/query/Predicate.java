@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
-
 public enum Predicate {
 
     is(Predicate::equals),

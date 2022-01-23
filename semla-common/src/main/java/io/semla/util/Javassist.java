@@ -7,6 +7,8 @@ import javassist.*;
 import javassist.bytecode.AnnotationsAttribute;
 import javassist.bytecode.ConstPool;
 import javassist.bytecode.annotation.*;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -20,22 +22,20 @@ import static io.semla.util.Unchecked.unchecked;
 import static java.util.Collections.synchronizedMap;
 
 @SuppressWarnings("unchecked")
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Javassist {
 
     private static final ReentrantLock lock = new ReentrantLock(true);
     private static final Map<String, Class<?>> JAVASSIST_CLASSES = synchronizedMap(new HashMap<>());
 
-    private Javassist() {
-    }
-
-    public static <T> Class<T> getOrCreate(String classname, UnaryOperator<ClassBuilder> builder) {
+    public static <T> Class<T> getOrCreate(String classname, Class<?> neighbor, UnaryOperator<ClassBuilder> builder) {
         Class<T> clazz = (Class<T>) JAVASSIST_CLASSES.get(classname);
         if (clazz == null) {
             try {
                 lock.lock();
                 clazz = (Class<T>) unchecked(() -> {
                     if (!JAVASSIST_CLASSES.containsKey(classname)) {
-                        Class<T> newClass = builder.apply(new ClassBuilder(classname)).create();
+                        Class<T> newClass = builder.apply(new ClassBuilder(classname)).create(neighbor);
                         JAVASSIST_CLASSES.put(classname, newClass);
                         return newClass;
                     } else {
@@ -125,11 +125,11 @@ public class Javassist {
             return this;
         }
 
-        private <T> Class<T> create() throws CannotCompileException {
+        private <T> Class<T> create(Class<?> neighbor) throws CannotCompileException {
             if (!annotations.isEmpty()) {
                 ctClass.getClassFile().addAttribute(toAnnotationsAttribute(ctClass.getClassFile().getConstPool(), annotations));
             }
-            return (Class<T>) ctClass.toClass();
+            return (Class<T>) ctClass.toClass(neighbor);
         }
 
         public static class AnnotationBuilder {

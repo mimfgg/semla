@@ -10,10 +10,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -27,7 +29,7 @@ import static org.apache.maven.plugins.annotations.ResolutionScope.TEST;
 )
 public class MethodRunnerMojo extends AbstractMojo {
 
-    private Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     @Parameter(readonly = true, defaultValue = "${project}")
     private MavenProject project;
@@ -45,14 +47,19 @@ public class MethodRunnerMojo extends AbstractMojo {
     public void execute() {
         try {
             logger.info("invoking: " + classname + "." + methodname + "(" + parameters + ")");
-            Method addUrl = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-            addUrl.setAccessible(true);
             Set<File> jarList = project.getCompileClasspathElements().stream().map(File::new).collect(Collectors.toSet());
             jarList.addAll(project.getTestClasspathElements().stream().map(File::new).collect(Collectors.toSet()));
-            for (File file : jarList) {
-                addUrl.invoke(ClassLoader.getSystemClassLoader(), file.toURI().toURL());
-            }
-            Class<?> clazz = ClassLoader.getSystemClassLoader().loadClass(classname);
+            URL[] urls = jarList.stream().map(file -> {
+                    try {
+                        return file.toURI().toURL();
+                    } catch (MalformedURLException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .toArray(URL[]::new);
+            URLClassLoader urlClassLoader = new URLClassLoader(urls, ClassLoader.getSystemClassLoader());
+            Class<?> clazz = urlClassLoader.loadClass(classname);
             Method method = Stream.of(clazz.getDeclaredMethods())
                 .filter(m -> m.getName().equals(methodname) && m.getParameterCount() == parameters.size())
                 .filter(m -> Arrays.stream(m.getParameters(), 0, m.getParameterCount())

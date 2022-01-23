@@ -1,16 +1,17 @@
 package io.semla.util;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ImmutableMap<K, V> implements Map<K, V> {
 
     private final Map<K, V> map = new LinkedHashMap<>();
-
-    private ImmutableMap() {}
 
     private ImmutableMap(Map<K, V> map) {
         this.map.putAll(map);

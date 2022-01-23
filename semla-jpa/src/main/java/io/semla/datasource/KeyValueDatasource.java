@@ -80,7 +80,7 @@ public abstract class KeyValueDatasource<T> extends Datasource<T> {
     }
 
 
-    public abstract static class Configuration<SelfType extends io.semla.datasource.KeyValueDatasource.Configuration<?>> implements Datasource.Configuration {
+    public abstract static class Configuration<SelfType extends Configuration<?>> implements Datasource.Configuration {
 
         private String keyspace;
 

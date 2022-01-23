@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 
 public class MixIns {
 
-    private static AtomicInteger mixins = new AtomicInteger();
+    private static final AtomicInteger mixins = new AtomicInteger();
 
     private MixIns() {}
 
@@ -34,8 +34,7 @@ public class MixIns {
         Types.registerSubTypes(classes);
 
         Set<Class<?>> superType = Stream.of(classes)
-            .map(clazz -> Types.getParentClassAnnotatedWith(clazz, TypeInfo.class)
-                .orElse(null))
+            .map(clazz -> Types.getParentClassAnnotatedWith(clazz, TypeInfo.class).orElse(null))
             .filter(Objects::nonNull)
             .sorted(Comparator.comparing(Class::getName))
             .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -43,15 +42,14 @@ public class MixIns {
 
         if (superType.size() > 1) {
             throw new IllegalArgumentException(
-                "classes: " + Arrays.toString(classes) + " don't all share the same superType! " +
-                    "found: " + superType);
+                "classes: " + Arrays.toString(classes) + " don't all share the same superType! found: " + superType);
         }
 
 
         String property = superType.iterator().next().getAnnotation(TypeInfo.class).property();
 
-        return Javassist
-            .getOrCreate(MixIns.class.getName() + "$$" + mixins.getAndIncrement(),
+        return Javassist.getOrCreate(MixIns.class.getName() + "$$" + mixins.getAndIncrement(),
+                MixIns.class,
                 builder -> builder
                     .addAnnotation(JsonTypeInfo.class, annotation -> annotation
                         .set("use", JsonTypeInfo.Id.NAME)

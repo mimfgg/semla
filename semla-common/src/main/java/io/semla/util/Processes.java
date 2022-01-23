@@ -1,5 +1,8 @@
 package io.semla.util;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,12 +17,9 @@ import java.util.function.Predicate;
 import static io.semla.util.Unchecked.unchecked;
 import static java.time.Instant.now;
 
-
+@Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Processes {
-
-    private Processes() {}
-
-    private static Logger logger = LoggerFactory.getLogger(Processes.class);
 
     public static ProcessHandler execute(String command) {
         return unchecked(() -> new ProcessHandler(command));
@@ -41,7 +41,7 @@ public class Processes {
             InputStream inputStream = process.getInputStream();
             ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
             unchecked(() -> IOUtils.copy(inputStream, byteArrayOutputStream));
-            return new String(byteArrayOutputStream.toByteArray()).trim();
+            return byteArrayOutputStream.toString().trim();
         }
 
         public boolean andWaitUntil(Predicate<String> outputMatches) {
@@ -66,14 +66,14 @@ public class Processes {
                 unchecked(() -> TimeUnit.MILLISECONDS.sleep(1));
                 if (now().isAfter(deadline)) {
                     thread.interrupt();
-                    logger.error("'" + command + "' didn't output the expect content within " + timeoutInMs + "ms");
+                    log.error("'" + command + "' didn't output the expect content within " + timeoutInMs + "ms");
                     return false;
                 }
             }
             if (!process.isAlive() && process.exitValue() != 0) {
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 unchecked(() -> IOUtils.copy(process.getErrorStream(), outputStream));
-                logger.error("'" + command + "' returned error code " + process.exitValue() + " and:\n\t" + outputStream);
+                log.error("'" + command + "' returned error code " + process.exitValue() + " and:\n\t" + outputStream);
                 return false;
             }
             return true;

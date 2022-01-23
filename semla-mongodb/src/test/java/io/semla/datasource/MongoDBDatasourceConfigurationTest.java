@@ -31,10 +31,11 @@ public class MongoDBDatasourceConfigurationTest {
 
     @Test
     public void parse() {
-        Datasource.Configuration configuration = Yaml.read("" +
-                "type: mongodb\n" +
-                "host: localhost\n" +
-                "database: test"
+        Datasource.Configuration configuration = Yaml.read("""
+                type: mongodb
+                host: localhost
+                database: test
+                """
             , Datasource.Configuration.class);
         assertThat(configuration).isInstanceOf(MongoDBDatasource.Configuration.class);
     }

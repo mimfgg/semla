@@ -9,7 +9,7 @@ public enum Modifier {
 
     PUBLIC, PRIVATE, PROTECTED, STATIC, FINAL, SYNCHRONIZED, VOLATILE, TRANSIENT, NATIVE, INTERFACE, ABSTRACT, STRICT, ANNOTATION, ENUM;
 
-    private int value;
+    private final int value;
 
     Modifier() {
         this.value = (int) Math.pow(2, this.ordinal());

@@ -11,5 +11,4 @@ public class ManyToOneRelation<ParentType, ChildType> extends AbstractRelation<P
     public ManyToOneRelation(Member<ParentType> member, ManyToOne manyToOne, EntityModel<ParentType> parentModel, Class<ChildType> childClass) {
         super(member, parentModel, childClass, new IncludeTypes(manyToOne.fetch(), manyToOne.cascade(), false));
     }
-
 }

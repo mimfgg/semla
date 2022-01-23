@@ -52,5 +52,4 @@ public interface NToManyRelation<ParentType, ChildType> extends Relation<ParentT
     default Supplier<Collection<ChildType>> collectionSupplier() {
         return Types.supplierOf(member().getGenericType());
     }
-
 }

@@ -43,9 +43,10 @@ public class HsqlDatasourceConfigurationTest {
     @Test
     public void parse() {
         EntityModel<Player> model = EntityModel.of(Player.class);
-        Datasource<Player> datasource = Yaml.read("" +
-                "type: hsql\n" +
-                "jdbcUrl: jdbc:hsqldb:mem:test\n",
+        Datasource<Player> datasource = Yaml.read("""
+                type: hsql
+                jdbcUrl: jdbc:hsqldb:mem:test
+                """,
             Datasource.Configuration.class).create(model);
         assertThat(datasource).isInstanceOf(HsqlDatasource.class);
     }

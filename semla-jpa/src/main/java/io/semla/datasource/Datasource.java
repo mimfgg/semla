@@ -122,15 +122,15 @@ public abstract class Datasource<T> {
         }
 
         @SuppressWarnings("unchecked")
-        default <DatasourceConfigurationType extends io.semla.datasource.Datasource.Configuration> DatasourceConfigurationType autoclose() {
+        default <DatasourceConfigurationType extends Configuration> DatasourceConfigurationType autoclose() {
             Runtime.getRuntime().addShutdownHook(new Thread(this::close));
             return (DatasourceConfigurationType) this;
         }
 
         default void close() {}
 
-        static io.semla.datasource.Datasource.Configuration wrapped(Function<EntityModel<?>, io.semla.datasource.Datasource.Configuration> override) {
-            return new io.semla.datasource.Datasource.Configuration() {
+        static Configuration wrapped(Function<EntityModel<?>, Configuration> override) {
+            return new Configuration() {
                 @Override
                 public <T> Datasource<T> create(EntityModel<T> entityModel) {
                     return override.apply(entityModel).create(entityModel);
@@ -138,8 +138,8 @@ public abstract class Datasource<T> {
             };
         }
 
-        static io.semla.datasource.Datasource.Configuration generic(Function<EntityModel<?>, Datasource<?>> configuration) {
-            return new io.semla.datasource.Datasource.Configuration() {
+        static Configuration generic(Function<EntityModel<?>, Datasource<?>> configuration) {
+            return new Configuration() {
                 @Override
                 @SuppressWarnings("unchecked")
                 public <T> Datasource<T> create(EntityModel<T> entityModel) {

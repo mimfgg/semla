@@ -5,6 +5,7 @@ import com.mongodb.MongoWriteException;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Indexes;
 import com.mongodb.lang.NonNull;
@@ -60,18 +61,18 @@ public class MongoDBDatasource<T> extends Datasource<T> {
         super(model);
         this.collection = mongoDatabase.getCollection(model.tablename());
         model().indices().stream()
-                .filter(index -> !index.isPrimary())
-                .forEach(index -> {
-                    String[] fieldNames = index.columns().stream().map(column -> getFieldName(column.member())).toArray(String[]::new);
-                    IndexOptions indexOptions = new IndexOptions();
-                    if (index.isUnique()) {
-                        indexOptions.unique(true);
-                    }
-                    this.collection.createIndex(Indexes.ascending(fieldNames), indexOptions);
-                });
+            .filter(index -> !index.isPrimary())
+            .forEach(index -> {
+                String[] fieldNames = index.columns().stream().map(column -> getFieldName(column.member())).toArray(String[]::new);
+                IndexOptions indexOptions = new IndexOptions();
+                if (index.isUnique()) {
+                    indexOptions.unique(true);
+                }
+                this.collection.createIndex(Indexes.ascending(fieldNames), indexOptions);
+            });
         if (model().key().isGenerated()) {
             CodecRegistry pojoCodecRegistry = fromRegistries(MongoClient.getDefaultCodecRegistry(),
-                    fromProviders(PojoCodecProvider.builder().automatic(true).build()));
+                fromProviders(PojoCodecProvider.builder().automatic(true).build()));
             sequences = mongoDatabase.getCollection(DEFAULT_SEQUENCE_TABLE, Sequence.class).withCodecRegistry(pojoCodecRegistry);
             if (sequences.countDocuments(eq("_id", model().tablename())) == 0) {
                 sequences.insertOne(Sequence.of(model().tablename()));
@@ -94,10 +95,10 @@ public class MongoDBDatasource<T> extends Datasource<T> {
     @Override
     public <K> Map<K, T> get(Collection<K> keys) {
         Map<K, T> found = collection.find(in(getFieldName(model().key().member()), serializeKeys(keys)))
-                .into(new ArrayList<>()).stream()
-                .filter(Objects::nonNull)
-                .map(this::fromDocument)
-                .collect(Collectors.toMap(entity -> model().key().member().getOn(entity), Function.identity()));
+            .into(new ArrayList<>()).stream()
+            .filter(Objects::nonNull)
+            .map(this::fromDocument)
+            .collect(Collectors.toMap(entity -> model().key().member().getOn(entity), Function.identity()));
         return keys.stream().collect(LinkedHashMap::new, (map, key) -> map.put(key, found.get(key)), LinkedHashMap::putAll);
     }
 
@@ -131,9 +132,9 @@ public class MongoDBDatasource<T> extends Datasource<T> {
     @Override
     public void create(Collection<T> entities) {
         collection.insertMany(entities.stream()
-                .peek(this::setPrimaryKeyIfGenerated)
-                .map(this::toDocument)
-                .collect(Collectors.toList()));
+            .peek(this::setPrimaryKeyIfGenerated)
+            .map(this::toDocument)
+            .collect(Collectors.toList()));
     }
 
     @Override
@@ -190,7 +191,7 @@ public class MongoDBDatasource<T> extends Datasource<T> {
         if (pagination.isPaginated()) {
             // there is not pagination on updateMany, so we have to first query and then update;
             predicates.where(model().key().member().getName()).in(
-                    list(predicates, pagination).stream().map(model().key().member()::getOn).collect(Collectors.toList())
+                list(predicates, pagination).stream().map(model().key().member()::getOn).collect(Collectors.toList())
             );
         }
         return collection.updateMany(toBson(predicates), update).getModifiedCount();
@@ -201,7 +202,7 @@ public class MongoDBDatasource<T> extends Datasource<T> {
         if (pagination.isPaginated()) {
             // there is not pagination on deleteMany, so we have to first query and then delete the keys;
             predicates.where(model().key().member().getName()).in(
-                    list(predicates, pagination).stream().map(model().key().member()::getOn).collect(Collectors.toList())
+                list(predicates, pagination).stream().map(model().key().member()::getOn).collect(Collectors.toList())
             );
         }
         return collection.deleteMany(toBson(predicates)).getDeletedCount();
@@ -254,7 +255,7 @@ public class MongoDBDatasource<T> extends Datasource<T> {
             } else if (value instanceof Collection && EntityModel.containsEntities((Collection<?>) value)) {
                 value = ((Collection<?>) value).stream().map(EntityModel::keyOf).collect(Collectors.toList());
             } else if (Types.isEqualToOneOf(column.member().getType(), BigInteger.class, BigDecimal.class) ||
-                    !Types.isAssignableToOneOf(column.member().getType(), Number.class, Boolean.class, String.class)) {
+                !Types.isAssignableToOneOf(column.member().getType(), Number.class, Boolean.class, String.class)) {
                 if (column.member().annotation(Embedded.class).isPresent()) {
                     value = Json.write(value);
                 } else {
@@ -276,8 +277,8 @@ public class MongoDBDatasource<T> extends Datasource<T> {
 
     private Bson toBson(Values<T> values) {
         List<Bson> updates = values.entrySet().stream()
-                .map(value -> set(value.getKey().getName(), serializeValue(model().getColumn(value.getKey()), value.getValue())))
-                .collect(Collectors.toList());
+            .map(value -> set(value.getKey().getName(), serializeValue(model().getColumn(value.getKey()), value.getValue())))
+            .collect(Collectors.toList());
         model().version().ifPresent(version -> updates.add(inc(version.member().getName(), 1)));
         return combine(updates.toArray(new Bson[0]));
     }
@@ -295,42 +296,30 @@ public class MongoDBDatasource<T> extends Datasource<T> {
             return predicate.getValue().entrySet().stream().map(operator -> {
                 String fieldName = getFieldName(member);
                 Object value = serializeValue(model().getColumn(member), operator.getValue());
-                switch (operator.getKey()) {
-                    case is:
-                        return eq(fieldName, value);
-                    case not:
-                        return ne(fieldName, value);
-                    case in:
-                        return in(fieldName, (Collection<?>) value);
-                    case notIn:
-                        return nin(fieldName, (Collection<?>) value);
-                    case greaterOrEquals:
-                        return gte(fieldName, value);
-                    case greaterThan:
-                        return gt(fieldName, value);
-                    case lessOrEquals:
-                        return lte(fieldName, value);
-                    case lessThan:
-                        return lt(fieldName, value);
-                    case like:
-                        return regex(fieldName, String.valueOf(value).replaceAll("%", ".*"));
-                    case notLike:
-                        return not(regex(fieldName, String.valueOf(value).replaceAll("%", ".*")));
-                    case contains:
-                        return regex(fieldName, ".*" + value + ".*");
-                    case doesNotContain:
-                        return not(regex(fieldName, ".*" + value + ".*"));
-                    case containedIn:
-                    case notContainedIn:
+                return switch (operator.getKey()) {
+                    case is -> eq(fieldName, value);
+                    case not -> ne(fieldName, value);
+                    case in -> in(fieldName, (Collection<?>) value);
+                    case notIn -> nin(fieldName, (Collection<?>) value);
+                    case greaterOrEquals -> gte(fieldName, value);
+                    case greaterThan -> gt(fieldName, value);
+                    case lessOrEquals -> lte(fieldName, value);
+                    case lessThan -> lt(fieldName, value);
+                    case like -> regex(fieldName, String.valueOf(value).replaceAll("%", ".*"));
+                    case notLike -> not(regex(fieldName, String.valueOf(value).replaceAll("%", ".*")));
+                    case contains -> regex(fieldName, ".*" + value + ".*");
+                    case doesNotContain -> not(regex(fieldName, ".*" + value + ".*"));
+                    case containedIn, notContainedIn -> {
                         logger.warn("running where function against collection {}!", model().pluralName());
-                        return where("function() { return \"" + value + "\".indexOf(this." + fieldName + ") " +
-                                (operator.getKey() == Predicate.containedIn ? ">" : "==") + " -1; }");
-                    default:
-                        // unreachable
-                        throw new UnsupportedOperationException("unreachable");
-                }
-            }).reduce(new BsonDocument(), (current, filter) -> and(current, filter));
-        }).reduce(new BsonDocument(), (current, filter) -> and(current, filter));
+                        yield where("""
+                            function() {
+                                return "%s".indexOf(this.%s) %s -1;
+                            }
+                            """.formatted(value, fieldName, (operator.getKey() == Predicate.containedIn ? ">" : "==")));
+                    }
+                };
+            }).reduce(new BsonDocument(), Filters::and);
+        }).reduce(new BsonDocument(), Filters::and);
     }
 
     private FindIterable<Document> paginate(FindIterable<Document> query, Pagination<T> pagination) {

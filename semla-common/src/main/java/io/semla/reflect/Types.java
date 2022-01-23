@@ -6,6 +6,11 @@ import io.semla.serialization.json.Json;
 import io.semla.util.ImmutableMap;
 import io.semla.util.Strings;
 import io.semla.util.WithBuilder;
+import javassist.ClassPool;
+import javassist.LoaderClassPath;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import javax.tools.ToolProvider;
 import java.io.ByteArrayOutputStream;
@@ -14,6 +19,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.function.BiFunction;
@@ -26,26 +33,25 @@ import java.util.stream.Stream;
 import static io.semla.util.Arrays.toArray;
 import static io.semla.util.Unchecked.unchecked;
 
-
 @SuppressWarnings("unchecked")
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@Slf4j
 public final class Types {
 
     private static final Map<Class<?>, Class<?>> WRAPPER_BY_PRIMITIVE = ImmutableMap.<Class<?>, Class<?>>builder()
-            .put(byte.class, Byte.class)
-            .put(short.class, Short.class)
-            .put(int.class, Integer.class)
-            .put(long.class, Long.class)
-            .put(float.class, Float.class)
-            .put(double.class, Double.class)
-            .put(boolean.class, Boolean.class)
-            .put(char.class, Character.class)
-            .build();
+        .put(byte.class, Byte.class)
+        .put(short.class, Short.class)
+        .put(int.class, Integer.class)
+        .put(long.class, Long.class)
+        .put(float.class, Float.class)
+        .put(double.class, Double.class)
+        .put(boolean.class, Boolean.class)
+        .put(char.class, Character.class)
+        .build();
     private static final Map<Predicate<Class<?>>, BiFunction<Class<?>, Object, Object>> CUSTOM_UNWRAPPERS = new LinkedHashMap<>();
     private static final Map<Class<?>, Map<Class<? extends Annotation>, Optional<Class<?>>>> ANNOTATED_SUPER_CLASSES = new LinkedHashMap<>();
     private static final Map<Class<?>, Map<String, Map<String, Class<?>>>> SUB_TYPES = new LinkedHashMap<>();
-
-    private Types() {
-    }
+    private static ExtendedURLClassLoader extendedURLClassLoader;
 
     public static <E> E safeNull(Type type, E value) {
         return safeNull(rawTypeOf(type), value);
@@ -87,8 +93,7 @@ public final class Types {
     }
 
     public static Type typeArgumentOf(Type type, int argumentIndex) {
-        if (type instanceof ParameterizedType) {
-            ParameterizedType parameterizedType = (ParameterizedType) type;
+        if (type instanceof ParameterizedType parameterizedType) {
             if (parameterizedType.getActualTypeArguments().length > argumentIndex) {
                 return parameterizedType.getActualTypeArguments()[argumentIndex];
             }
@@ -107,7 +112,7 @@ public final class Types {
         } else if (clazz.equals(Map.class)) {
             return () -> (E) new LinkedHashMap<>();
         } else if (!Modifier.is(clazz, Modifier.ABSTRACT)) {
-            return () -> unchecked(() -> (E) clazz.newInstance());
+            return () -> unchecked(() -> (E) clazz.getDeclaredConstructor().newInstance());
         } else {
             throw new RuntimeException("Cannot create a supplier for " + clazz);
         }
@@ -137,31 +142,48 @@ public final class Types {
         int result = ToolProvider.getSystemJavaCompiler().run(null, out, out, arguments.toArray(new String[0]));
         if (result > 0) {
             throw new RuntimeException("compilation failed for " + files.length + " file" + (result > 1 ? "s" : "")
-                    + "\noutput:" + out
-                    + "\narguments: " + arguments);
+                + "\noutput:" + out
+                + "\narguments: " + arguments);
         }
-        unchecked(() -> Methods.invoke(Types.class.getClassLoader(), "addURL", new File(tmpDir).toURI().toURL()));
+        addToClassLoaders(unchecked(() -> new File(tmpDir).toURI().toURL()));
         return unchecked(() -> Files.walk(new File(tmpDir).toPath()))
-                .filter(file -> file.getFileName().toString().endsWith(".class"))
-                .map(file -> file.toAbsolutePath().toString().replace(tmpDir, "").replace(File.separator, ".").replace(".class", ""))
-                .map(classname -> unchecked(() -> Class.forName(classname)))
-                .collect(Collectors.toList());
+            .filter(file -> file.getFileName().toString().endsWith(".class"))
+            .map(file -> file.toAbsolutePath().toString().replace(tmpDir, "").replace(File.separator, ".").replace(".class", ""))
+            .map(classname -> unchecked(() -> Types.forName(classname)))
+            .collect(Collectors.toList());
 
+    }
+
+    public static synchronized void addToClassLoaders(URL url) {
+        if (extendedURLClassLoader == null) {
+            try {
+                Fields.getValue("test", "hashIsZero");
+            } catch (Exception e) {
+                log.warn("""
+                    Modiying the classloader requires to open java.lang for ReflectAsm to find and access the newly added classes.
+                    Please add the following flags to your test or application configuration if you encounter any error:
+                    --add-opens=java.base/java.lang=ALL-UNNAMED
+                    """);
+            }
+            extendedURLClassLoader = new ExtendedURLClassLoader(new URL[]{url});
+            // for Javassist to find our newly added classloader
+            ClassPool.getDefault().appendClassPath(new LoaderClassPath(extendedURLClassLoader));
+        } else {
+            extendedURLClassLoader.addURL(url);
+        }
     }
 
     public static List<Class<?>> compileFromSources(String... sources) {
         String tmpDir = createTempDirectory();
-        return compileFromFiles(new ArrayList<>(), tmpDir, Stream.of(sources).map(source ->
-                unchecked(() -> {
-                    String packagePath = getPackageFrom(source);
-                    String name = getClassNameFrom(source);
-                    File sourceFile = new File(tmpDir + packagePath + name + ".java");
-                    sourceFile.deleteOnExit();
-                    sourceFile.getParentFile().mkdirs();
-                    Files.write(sourceFile.toPath(), source.getBytes());
-                    return sourceFile;
-                })).toArray(File[]::new)
-        );
+        return compileFromFiles(new ArrayList<>(), tmpDir, Stream.of(sources).map(source -> unchecked(() -> {
+            String packagePath = getPackageFrom(source);
+            String name = getClassNameFrom(source);
+            File sourceFile = new File(tmpDir + packagePath + name + ".java");
+            sourceFile.deleteOnExit();
+            sourceFile.getParentFile().mkdirs();
+            Files.write(sourceFile.toPath(), source.getBytes());
+            return sourceFile;
+        })).toArray(File[]::new));
     }
 
     private static String getPackageFrom(String source) {
@@ -221,43 +243,43 @@ public final class Types {
     public static <E> E newInstance(Class<E> clazz, Object... parameters) {
         Class<?>[] parametersTypes = Stream.of(parameters).map(Object::getClass).toArray(Class<?>[]::new);
         return unchecked(() -> Stream.of(clazz.getConstructors())
-                .filter(constructor ->
-                        constructor.getParameterCount() == parameters.length
-                                && IntStream.range(0, parameters.length)
-                                .mapToObj(i -> Types.isAssignableTo(parametersTypes[i], constructor.getParameters()[i].getType()))
-                                .reduce(true, (current, next) -> current && next))
-                .findFirst()
-                .map(constructor -> unchecked(() -> (E) constructor.newInstance(parameters)))
-                .orElseThrow(() ->
-                        new NoSuchMethodException(clazz.getCanonicalName() + ".<init>(" +
-                                Stream.of(parametersTypes).map(Class::getCanonicalName).collect(Collectors.joining(","))
-                                + ")")
-                )
+            .filter(constructor ->
+                constructor.getParameterCount() == parameters.length
+                    && IntStream.range(0, parameters.length)
+                    .mapToObj(i -> Types.isAssignableTo(parametersTypes[i], constructor.getParameters()[i].getType()))
+                    .reduce(true, (current, next) -> current && next))
+            .findFirst()
+            .map(constructor -> unchecked(() -> (E) constructor.newInstance(parameters)))
+            .orElseThrow(() ->
+                new NoSuchMethodException(clazz.getCanonicalName() + ".<init>(" +
+                    Stream.of(parametersTypes).map(Class::getCanonicalName).collect(Collectors.joining(","))
+                    + ")")
+            )
         );
     }
 
     public static Optional<Class<?>> getParentClassAnnotatedWith(Class<?> clazz, Class<? extends Annotation> annotationClass) {
         return ANNOTATED_SUPER_CLASSES
-                .computeIfAbsent(clazz, c -> new LinkedHashMap<>())
-                .computeIfAbsent(annotationClass, a -> {
-                    Class<?> current = clazz;
-                    while (true) {
-                        if (current.isAnnotationPresent(annotationClass)) {
-                            return Optional.of(current);
-                        }
-                        for (Class<?> clazzInterface : current.getInterfaces()) {
-                            if (clazzInterface.isAnnotationPresent(annotationClass)) {
-                                return Optional.of(clazzInterface);
-                            }
-                        }
-                        if (hasSuperClass(current)) {
-                            current = current.getSuperclass();
-                        } else {
-                            break;
+            .computeIfAbsent(clazz, c -> new LinkedHashMap<>())
+            .computeIfAbsent(annotationClass, a -> {
+                Class<?> current = clazz;
+                while (true) {
+                    if (current.isAnnotationPresent(annotationClass)) {
+                        return Optional.of(current);
+                    }
+                    for (Class<?> clazzInterface : current.getInterfaces()) {
+                        if (clazzInterface.isAnnotationPresent(annotationClass)) {
+                            return Optional.of(clazzInterface);
                         }
                     }
-                    return Optional.empty();
-                });
+                    if (hasSuperClass(current)) {
+                        current = current.getSuperclass();
+                    } else {
+                        break;
+                    }
+                }
+                return Optional.empty();
+            });
     }
 
     public static void registerSubTypes(Class<?>... classes) {
@@ -266,15 +288,15 @@ public final class Types {
 
     public static void registerSubType(Class<?> clazz) {
         Class<?> superType = Types.getParentClassAnnotatedWith(clazz, TypeInfo.class)
-                .orElseThrow(() -> new IllegalArgumentException(clazz + " doesn't have any super class annotated with @TypeInfo"));
+            .orElseThrow(() -> new IllegalArgumentException(clazz + " doesn't have any super class annotated with @TypeInfo"));
         TypeName typeName = clazz.getAnnotation(TypeName.class);
         if (typeName == null) {
             throw new IllegalArgumentException(clazz + " is not annotated with @TypeName");
         }
 
         SUB_TYPES.computeIfAbsent(superType, c -> new LinkedHashMap<>())
-                .computeIfAbsent(superType.getAnnotation(TypeInfo.class).property(), t -> new LinkedHashMap<>())
-                .put(typeName.value(), clazz);
+            .computeIfAbsent(superType.getAnnotation(TypeInfo.class).property(), t -> new LinkedHashMap<>())
+            .put(typeName.value(), clazz);
     }
 
     public static <T, S extends T> Class<S> getSubTypeOf(Class<T> clazz, String property, String type) {
@@ -312,11 +334,11 @@ public final class Types {
                 value = Json.isJson((String) value) ? Json.read((String) value, type) : Strings.parse((String) value, type);
             } else {
                 value = CUSTOM_UNWRAPPERS.entrySet().stream()
-                        .filter(unwrapper -> unwrapper.getKey().test(type))
-                        .findFirst()
-                        .map(Map.Entry::getValue)
-                        .orElse((c, v) -> v)
-                        .apply(type, value);
+                    .filter(unwrapper -> unwrapper.getKey().test(type))
+                    .findFirst()
+                    .map(Map.Entry::getValue)
+                    .orElse((c, v) -> v)
+                    .apply(type, value);
             }
         }
         return (E) value;
@@ -363,32 +385,30 @@ public final class Types {
         return Object.class;
     }
 
-    public static class ParameterizedTypeBuilder {
-
-        private final Class<?> rawType;
-
-        public ParameterizedTypeBuilder(Class<?> rawType) {
-            this.rawType = rawType;
+    public static <E> Class<E> forName(String type) throws ClassNotFoundException {
+        if (extendedURLClassLoader != null) {
+            return (Class<E>) Class.forName(type, true, extendedURLClassLoader);
         }
+        return (Class<E>) Class.forName(type);
+    }
+
+    public record ParameterizedTypeBuilder(Class<?> rawType) {
 
         public ParameterizedType of(Type parameter, Type... parameters) {
             return new ParameterizedTypeImpl(rawType, toArray(parameter, parameters));
         }
     }
 
-    private static class ParameterizedTypeImpl implements ParameterizedType {
-
-        private final Class<?> rawType;
-        private final Type[] actualTypeArguments;
+    private record ParameterizedTypeImpl(Class<?> rawType, Type[] actualTypeArguments) implements ParameterizedType {
 
         private ParameterizedTypeImpl(Class<?> rawType, Type[] actualTypeArguments) {
             this.rawType = rawType;
             if (rawType.getTypeParameters().length != actualTypeArguments.length) {
                 throw new IllegalArgumentException(
-                        String.format("type %s expects %d argument%s but got %d",
-                                rawType, rawType.getTypeParameters().length,
-                                rawType.getTypeParameters().length > 1 ? "s" : "",
-                                actualTypeArguments.length));
+                    "type %s expects %d argument%s but got %d".formatted(
+                        rawType, rawType.getTypeParameters().length,
+                        rawType.getTypeParameters().length > 1 ? "s" : "",
+                        actualTypeArguments.length));
             }
             this.actualTypeArguments = actualTypeArguments;
         }
@@ -410,8 +430,20 @@ public final class Types {
 
         @Override
         public String toString() {
-            return String.format("%s<%s>", rawType.getTypeName(),
-                    Stream.of(actualTypeArguments).map(Type::getTypeName).collect(Collectors.joining(", ")));
+            return "%s<%s>".formatted(rawType.getTypeName(),
+                Stream.of(actualTypeArguments).map(Type::getTypeName).collect(Collectors.joining(", ")));
+        }
+    }
+
+    private static class ExtendedURLClassLoader extends URLClassLoader {
+
+        public ExtendedURLClassLoader(URL[] urls) {
+            super(urls, Types.class.getClassLoader());
+        }
+
+        @Override
+        public void addURL(URL url) {
+            super.addURL(url);
         }
     }
 }

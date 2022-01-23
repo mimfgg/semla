@@ -1,15 +1,17 @@
 package io.semla.util;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ImmutableSet<E> implements Set<E> {
 
     private final Set<E> set = new LinkedHashSet<>();
-
-    private ImmutableSet() {}
 
     @Override
     public int size() {

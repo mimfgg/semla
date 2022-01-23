@@ -13,14 +13,16 @@ import java.lang.reflect.Type;
 
 public class ValidatorProvider extends TypedFactory<Validator> {
 
-    private Validator validator;
+    private static Validator validator;
 
     public ValidatorProvider() {
-        try {
-            validator = Validation.buildDefaultValidatorFactory().getValidator();
-        } catch (NoProviderFoundException e) {
-            LoggerFactory.getLogger(this.getClass()).warn("no io.semla.validation provider found, io.semla.validation is disabled!");
-            validator = Proxy.of(Validator.class, (proxy, method, args) -> ImmutableSet.empty());
+        if (validator == null) {
+            try {
+                validator = Validation.buildDefaultValidatorFactory().getValidator();
+            } catch (NoProviderFoundException e) {
+                LoggerFactory.getLogger(this.getClass()).warn("no io.semla.validation provider found, io.semla.validation is disabled!");
+                validator = Proxy.of(Validator.class, (proxy, method, args) -> ImmutableSet.empty());
+            }
         }
     }
 

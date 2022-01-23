@@ -31,7 +31,7 @@ public class SqlDDL<T> {
     private final String tablename;
     private final Singleton<String> insert;
     private final Singleton<String> update;
-    private List<String> commands = new ArrayList<>();
+    private final List<String> commands = new ArrayList<>();
     private Function<String, String> escape = name -> "\"" + name + "\"";
 
     public SqlDDL(EntityModel<T> model, String tablename) {

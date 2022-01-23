@@ -10,11 +10,11 @@ public final class Unchecked {
     private Unchecked() {
     }
 
-    public static <T extends Throwable> void rethrow(Throwable throwable) throws T {
-        rethrow(throwable, UnaryOperator.identity());
+    public static <T extends Throwable, E> E rethrow(Throwable throwable) throws T {
+        return rethrow(throwable, UnaryOperator.identity());
     }
 
-    public static <T extends Throwable> void rethrow(Throwable throwable, UnaryOperator<Throwable> rethrower) throws T {
+    public static <T extends Throwable, E> E rethrow(Throwable throwable, UnaryOperator<Throwable> rethrower) throws T {
         throw (T) rethrower.apply(throwable);
     }
 

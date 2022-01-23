@@ -40,7 +40,7 @@ public class ShardedDatasource<T> extends Datasource<T> {
     @Override
     public Optional<T> get(Object key) {
         Optional<T> entity = forKey(key).get(key);
-        if (rebalacing && !entity.isPresent()) {
+        if (rebalacing && entity.isEmpty()) {
             AtomicReference<Datasource<T>> toPurge = new AtomicReference<>();
             entity = map(datasource -> {
                 Optional<T> entityToRelocate = datasource.get(key);

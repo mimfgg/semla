@@ -22,8 +22,7 @@ public class RelationContext {
     }
 
     private <T, R> boolean isNot(String operation, Relation<T, R> relation, T parent) {
-        return relations.add(String.format(
-            "%s->%s::%s->%s",
+        return relations.add("%s->%s::%s->%s".formatted(
             operation,
             parent.getClass().getCanonicalName(),
             relation.parentModel().key().member().getOn(parent),

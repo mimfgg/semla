@@ -5,5 +5,5 @@ import io.cucumber.junit.CucumberOptions;
 import org.junit.runner.RunWith;
 
 @RunWith(Cucumber.class)
-@CucumberOptions(strict = true, glue = "io.semla.cucumber.steps")
+@CucumberOptions(glue = "io.semla.cucumber.steps")
 public class GraphQLTest {}

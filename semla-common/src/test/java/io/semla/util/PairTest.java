@@ -2,6 +2,10 @@ package io.semla.util;
 
 import org.junit.Test;
 
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -13,7 +17,14 @@ public class PairTest {
         Pair<String, Object> pair = Pair.of("key", null);
         pair.setValue("value");
         assertThat(pair.getValue()).isEqualTo("value");
-        pair.ifLeft(key -> key.equals("key"), key -> assertThat(key).isEqualTo("key"));
+        AtomicReference<String> callback = new AtomicReference<>();
+        pair.ifLeft(key -> key.equals("key")).then(callback::set);
+        assertThat(callback.get()).isEqualTo("key");
+
+        AtomicBoolean valueWasCorrect = new AtomicBoolean(false);
+        pair.ifRight("value"::equals).then(value -> valueWasCorrect.set(true));
+        assertThat(valueWasCorrect).isTrue();
+
     }
 
     @Test

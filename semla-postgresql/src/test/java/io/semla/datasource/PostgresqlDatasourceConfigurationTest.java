@@ -21,9 +21,10 @@ public class PostgresqlDatasourceConfigurationTest {
 
     @Test
     public void parse() {
-        Datasource.Configuration configuration = Yaml.read("" +
-                "type: postgresql\n" +
-                "jdbcUrl: \"jdbc:postgresql://[::1]:5740/accounting\"\n"
+        Datasource.Configuration configuration = Yaml.read("""
+                type: postgresql
+                jdbcUrl: "jdbc:postgresql://[::1]:5740/accounting"
+                """
             , Datasource.Configuration.class);
         assertThat(configuration).isInstanceOf(PostgresqlDatasource.Configuration.class);
     }

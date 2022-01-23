@@ -59,25 +59,19 @@ public class Strings {
     }
 
     public static String decapitalize(String property) {
-        switch (property.length()) {
-            case 0:
-                return property;
-            case 1:
-                return property.toLowerCase();
-            default:
-                return property.substring(0, 1).toLowerCase() + property.substring(1);
-        }
+        return switch (property.length()) {
+            case 0 -> property;
+            case 1 -> property.toLowerCase();
+            default -> property.substring(0, 1).toLowerCase() + property.substring(1);
+        };
     }
 
     public static String capitalize(String property) {
-        switch (property.length()) {
-            case 0:
-                return property;
-            case 1:
-                return property.toUpperCase();
-            default:
-                return property.substring(0, 1).toUpperCase() + property.substring(1);
-        }
+        return switch (property.length()) {
+            case 0 -> property;
+            case 1 -> property.toUpperCase();
+            default -> property.substring(0, 1).toUpperCase() + property.substring(1);
+        };
     }
 
     public static String toString(Object object) {
@@ -260,7 +254,6 @@ public class Strings {
             char c = input.charAt(i);
             if (c == ' ' || c == '_') {
                 wasSpaceOrUnderscore = true;
-                continue;
             } else {
                 if (wasSpaceOrUnderscore) {
                     wasSpaceOrUnderscore = false;
@@ -305,13 +298,7 @@ public class Strings {
         return false;
     }
 
-    public static class ParserHandler<T> {
-
-        private final Class<T> clazz;
-
-        ParserHandler(Class<T> clazz) {
-            this.clazz = clazz;
-        }
+    public record ParserHandler<T>(Class<T> clazz) {
 
         public ParserHandler<T> with(Function<String, T> parser) {
             PARSERS.put(clazz, parser);
@@ -319,13 +306,7 @@ public class Strings {
         }
     }
 
-    public static class WriterHandler<T> {
-
-        private final Class<T> clazz;
-
-        WriterHandler(Class<T> clazz) {
-            this.clazz = clazz;
-        }
+    public record WriterHandler<T>(Class<T> clazz) {
 
         public WriterHandler<T> with(Function<T, String> stringifier) {
             STRINGIFIERS.put(clazz, (o, p) -> stringifier.apply((T) o));

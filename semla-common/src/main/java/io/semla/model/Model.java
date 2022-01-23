@@ -11,6 +11,7 @@ import io.semla.util.Strings;
 import io.semla.util.WithBuilder;
 import lombok.extern.slf4j.Slf4j;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -75,7 +76,7 @@ public class Model<T> {
                         member.setOn(to, valueOnFrom);
                     } else {
                         throw new SemlaException(
-                            String.format("couldn't merge already set value to '%s' for '%s', was '%s'", valueOnTo, member, valueOnFrom)
+                            "couldn't merge already set value to '%s' for '%s', was '%s'".formatted(valueOnTo, member, valueOnFrom)
                         );
                     }
                 }
@@ -104,8 +105,8 @@ public class Model<T> {
 
     public T newInstance() {
         try {
-            return clazz.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException e) {
             throw new SemlaException("couldn't create a new instance of " + clazz, e);
         }
     }
@@ -156,7 +157,7 @@ public class Model<T> {
         if (Methods.findMethod(instance.getClass(), "build").isPresent()) {
             return Methods.invoke(instance, "build");
         } else {
-            throw new DeserializationException(String.format("type mismatched, was expecting %s but got %s", getType(), instance.getClass()));
+            throw new DeserializationException("type mismatched, was expecting %s but got %s".formatted(getType(), instance.getClass()));
         }
     }
 
@@ -173,7 +174,7 @@ public class Model<T> {
     public static <T> Model<T> of(Class<T> clazz) {
         if (!isInitialized.getAndSet(true)) {
             try {
-                Class.forName("io.semla.model.EntityModel");
+                Types.forName("io.semla.model.EntityModel");
             } catch (Throwable e) {
                 log.warn("EntityModel not available...");
             }
@@ -221,9 +222,9 @@ public class Model<T> {
             .findFirst()
             .orElseGet(() -> {
                 try {
-                    return (Class<T>) Class.forName(name);
+                    return (Class<T>) Types.forName(name);
                 } catch (ClassNotFoundException ex) {
-                    throw new SemlaException("could not find any class known by the name '" + name + "'");
+                    throw new SemlaException("could not find any class known by the name '" + name + "'", ex);
                 }
             });
     }

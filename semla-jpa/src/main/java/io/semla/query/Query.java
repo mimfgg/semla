@@ -51,8 +51,7 @@ public class Query<T, ReturnType> {
 
     public static <T> Query<T, Optional<T>> get(Object key, Includes<T> includes) {
         return new Query<>(includes.model(), context -> context.get(key, includes), lazy(() ->
-            String.format(
-                "get the %s where %s is %s%s",
+            "get the %s where %s is %s%s".formatted(
                 includes.model().singularName(),
                 includes.model().key().member().getName(),
                 key,
@@ -71,8 +70,7 @@ public class Query<T, ReturnType> {
 
     public static <K, T> Query<T, Map<K, T>> get(Collection<K> keys, Includes<T> includes) {
         return new Query<>(includes.model(), context -> context.get(keys, includes), lazy(() ->
-            String.format(
-                "get the %s where %s in %s%s",
+            "get the %s where %s in %s%s".formatted(
                 includes.model().pluralName(),
                 includes.model().key().member().getName(),
                 Json.write(keys),
@@ -99,7 +97,7 @@ public class Query<T, ReturnType> {
 
     public static <T> Query<T, Optional<T>> first(Predicates<T> predicates, Pagination<T> pagination, Includes<T> includes) {
         return new Query<>(predicates.model(), context -> context.first(predicates, pagination, includes), lazy(() ->
-            String.format("fetch the first %s%s%s%s",
+            "fetch the first %s%s%s%s".formatted(
                 predicates.model().singularName(),
                 Strings.prefixIfNotNullOrEmpty(" where ", predicates.toString()),
                 Strings.prefixIfNotNullOrEmpty(" ", pagination.toString()),
@@ -125,7 +123,7 @@ public class Query<T, ReturnType> {
 
     public static <T> Query<T, List<T>> list(Predicates<T> predicates, Pagination<T> pagination, Includes<T> includes) {
         return new Query<>(predicates.model(), context -> context.list(predicates, pagination, includes), lazy(() ->
-            String.format("list all the %s%s%s%s",
+            "list all the %s%s%s%s".formatted(
                 predicates.model().pluralName(),
                 Strings.prefixIfNotNullOrEmpty(" where ", predicates.toString()),
                 Strings.prefixIfNotNullOrEmpty(" ", pagination.toString()),
@@ -147,7 +145,7 @@ public class Query<T, ReturnType> {
 
     public static <T> Query<T, Boolean> delete(Object key, Includes<T> includes) {
         return new Query<>(includes.model(), context -> context.delete(key, includes), lazy(() ->
-            String.format("delete the %s where %s is %s%s",
+            "delete the %s where %s is %s%s".formatted(
                 includes.model().singularName(),
                 includes.model().key().member().getName(),
                 key,
@@ -165,7 +163,7 @@ public class Query<T, ReturnType> {
 
     public static <T> Query<T, Long> delete(Collection<?> keys, Includes<T> includes) {
         return new Query<>(includes.model(), context -> context.delete(keys, includes), lazy(() ->
-            String.format("delete the %s where %s in %s%s",
+            "delete the %s where %s in %s%s".formatted(
                 includes.model().pluralName(),
                 includes.model().key().member().getName(),
                 Json.write(keys),
@@ -188,7 +186,7 @@ public class Query<T, ReturnType> {
 
     public static <T> Query<T, Long> delete(Predicates<T> predicates, Pagination<T> pagination, Includes<T> includes) {
         return new Query<>(predicates.model(), context -> context.delete(predicates, pagination, includes), lazy(() ->
-            String.format("delete the %s%s%s%s",
+            "delete the %s%s%s%s".formatted(
                 predicates.model().pluralName(),
                 Strings.prefixIfNotNullOrEmpty(" where ", predicates.toString()),
                 Strings.prefixIfNotNullOrEmpty(" ", pagination.toString()),
@@ -206,7 +204,7 @@ public class Query<T, ReturnType> {
 
     public static <T> Query<T, Long> count(Predicates<T> predicates) {
         return new Query<>(predicates.model(), context -> context.count(predicates), lazy(() ->
-            String.format("count the %s%s",
+            "count the %s%s".formatted(
                 predicates.model().pluralName(),
                 Strings.prefixIfNotNullOrEmpty(" where ", predicates.toString())
             )
@@ -223,8 +221,7 @@ public class Query<T, ReturnType> {
 
     public static <T> Query<T, T> create(T entity, Includes<T> includes) {
         return new Query<>(EntityModel.of(entity), context -> context.create(entity, includes), lazy(() ->
-            String.format(
-                "create the %s -> %s",
+            "create the %s -> %s".formatted(
                 EntityModel.of(entity).singularName(),
                 Json.write(entity)
             )
@@ -247,7 +244,7 @@ public class Query<T, ReturnType> {
     public static <T, CollectionType extends Collection<T>> Query<T, CollectionType> create(CollectionType entities, Includes<T> includes) {
         EntityModel<T> model = EntityModel.of(entities);
         return new Query<>(model, context -> context.create(entities, includes), lazy(() ->
-            String.format("create the %s -> %s",
+            "create the %s -> %s".formatted(
                 model.pluralName(),
                 Json.write(entities)
             )
@@ -265,7 +262,7 @@ public class Query<T, ReturnType> {
     public static <T> Query<T, T> update(T entity, Includes<T> includes) {
         EntityModel<T> model = EntityModel.of(entity);
         return new Query<>(model, context -> context.update(entity, includes), lazy(() ->
-            String.format("update the %s -> %s",
+            "update the %s -> %s".formatted(
                 model.singularName(),
                 Json.write(entity)
             )
@@ -288,7 +285,7 @@ public class Query<T, ReturnType> {
     public static <T, CollectionType extends Collection<T>> Query<T, CollectionType> update(CollectionType entities, Includes<T> includes) {
         EntityModel<T> model = EntityModel.of(entities);
         return new Query<>(model, context -> context.update(entities, includes), lazy(() ->
-            String.format("update the %s -> %s",
+            "update the %s -> %s".formatted(
                 model.pluralName(),
                 Json.write(entities)
             )
@@ -305,7 +302,7 @@ public class Query<T, ReturnType> {
 
     public static <T> Query<T, Long> patch(Values<T> values, Predicates<T> predicates, Pagination<T> pagination) {
         return new Query<>(predicates.model(), context -> context.patch(values, predicates, pagination), lazy(() ->
-            String.format("patch the %s%s%s with %s",
+            "patch the %s%s%s with %s".formatted(
                 predicates.model().pluralName(),
                 Strings.prefixIfNotNullOrEmpty(" where ", predicates.toString()),
                 Strings.prefixIfNotNullOrEmpty(" ", pagination.toString()),
@@ -367,40 +364,29 @@ public class Query<T, ReturnType> {
             Pair<Integer, Part> nextPart = parts.get(i + 1);
             String content = String.join(" ", tokens.subList(currentPart.key(), nextPart.key()));
             switch (currentPart.value()) {
-                case predicates:
-                    predicates.parse(content);
-                    break;
-                case pagination:
-                    pagination.parse(content);
-                    break;
-                case includes:
-                    includes.include(content);
-                    break;
-                case payload:
-                    payload = content.replaceFirst("^(->|with) ", "");
-                    break;
+                case predicates -> predicates.parse(content);
+                case pagination -> pagination.parse(content);
+                case includes -> includes.include(content);
+                case payload -> payload = content.replaceFirst("^(->|with) ", "");
             }
         }
 
-        switch (queryType) {
-            case "count":
-            case "counting":
-                return (Query<T, ReturnType>) count(predicates);
-            case "delete":
-            case "deleting":
+        return (Query<T, ReturnType>) switch (queryType) {
+            case "count", "counting" -> count(predicates);
+            case "delete", "deleting" -> {
                 if (includes.isEmpty()) {
                     Includes.defaultRemovesOrDeleteOf(model).addTo(includes);
                 }
                 if (predicates.isKeyOnly()) {
                     Object key = predicates.toKey();
                     if (key instanceof Collection) {
-                        return (Query<T, ReturnType>) delete((Collection<?>) key, includes);
+                        yield delete((Collection<?>) key, includes);
                     }
-                    return (Query<T, ReturnType>) delete(key, includes);
+                    yield delete(key, includes);
                 }
-                return (Query<T, ReturnType>) delete(predicates, pagination, includes);
-            case "create":
-            case "creating":
+                yield delete(predicates, pagination, includes);
+            }
+            case "create", "creating" -> {
                 if (payload == null) {
                     throw new IllegalStateException("payload is required for a create");
                 }
@@ -408,11 +394,11 @@ public class Query<T, ReturnType> {
                     Includes.defaultPersistsOrMergesOf(model).addTo(includes);
                 }
                 if (type.equals(model.singularName())) {
-                    return (Query<T, ReturnType>) create(Json.read(payload, model.getType()), includes::addTo);
+                    yield create(Json.read(payload, model.getType()), includes::addTo);
                 }
-                return (Query<T, ReturnType>) create((List<T>) Json.read(payload, Types.parameterized(List.class, model.getType())), includes::addTo);
-            case "update":
-            case "updating":
+                yield create((List<T>) Json.read(payload, Types.parameterized(List.class, model.getType())), includes::addTo);
+            }
+            case "update", "updating" -> {
                 if (payload == null) {
                     throw new IllegalStateException("payload is required for an update");
                 }
@@ -420,36 +406,34 @@ public class Query<T, ReturnType> {
                     Includes.defaultPersistsOrMergesOf(model).addTo(includes);
                 }
                 if (type.equals(model.singularName())) {
-                    return (Query<T, ReturnType>) update(Json.read(payload, model.getType()), includes::addTo);
+                    yield update(Json.read(payload, model.getType()), includes::addTo);
                 }
-                return (Query<T, ReturnType>) update((List<T>) Json.read(payload, Types.parameterized(List.class, model.getType())), includes::addTo);
-            case "patch":
-            case "patching":
-                return (Query<T, ReturnType>) patch(new Values<>(model).with(Json.read(payload, Map.class)), predicates, pagination);
-            case "get":
-            case "getting":
+                yield update((List<T>) Json.read(payload, Types.parameterized(List.class, model.getType())), includes::addTo);
+            }
+            case "patch", "patching" -> patch(new Values<>(model).with(Json.read(payload, Map.class)), predicates, pagination);
+            case "get", "getting" -> {
                 if (includes.isEmpty()) {
                     Includes.defaultEagersOf(model).addTo(includes);
                 }
                 Object key = predicates.toKey();
                 if (key instanceof Collection) {
-                    return (Query<T, ReturnType>) get((Collection<?>) key, includes);
+                    yield get((Collection<?>) key, includes);
                 }
-                return (Query<T, ReturnType>) get(key, includes);
-            case "fetch":
-            case "fetching":
+                yield get(key, includes);
+            }
+            case "fetch", "fetching" -> {
                 if (includes.isEmpty()) {
                     Includes.defaultEagersOf(model).addTo(includes);
                 }
-                return (Query<T, ReturnType>) first(predicates, pagination, includes);
-            case "list":
-            case "listing":
+                yield first(predicates, pagination, includes);
+            }
+            case "list", "listing" -> {
                 if (includes.isEmpty()) {
                     Includes.defaultEagersOf(model).addTo(includes);
                 }
-                return (Query<T, ReturnType>) list(predicates, pagination, includes);
-            default:
-                throw new IllegalArgumentException("unknown query type: " + queryType);
-        }
+                yield list(predicates, pagination, includes);
+            }
+            default -> throw new IllegalArgumentException("unknown query type: " + queryType);
+        };
     }
 }
