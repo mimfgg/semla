@@ -393,7 +393,8 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
     }
 
     protected <SqlStatementType extends SqlStatement<SqlStatementType>> SqlStatementType query(Function<String, SqlStatementType> statementContructor,
-                                                                                               StringBuilder sql, Predicates<T> predicates,
+                                                                                               StringBuilder sql,
+                                                                                               Predicates<T> predicates,
                                                                                                Pagination<T> pagination) {
         return query(statementContructor, sql, addPredicates(sql, predicates, pagination));
     }

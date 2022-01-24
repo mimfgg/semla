@@ -49,8 +49,7 @@ public class PostgresqlDatasource<T> extends SqlDatasource<T> {
         if (pagination.isPaginated()) {
             // LIMIT is not supported on updates, so we have to first query and then patch
             List<Object> keys = list(predicates, pagination).stream().map(model().key().member()::getOn).collect(Collectors.toList());
-            predicates.where(model().key().member().getName()).in(keys);
-            return super.patch(values, predicates); // no pagination
+            return super.patch(values, Predicates.of(model()).where(model().key().member().getName()).in(keys)); // no pagination
         }
         return super.patch(values, predicates, pagination);
     }
