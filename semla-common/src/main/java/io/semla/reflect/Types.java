@@ -157,17 +157,19 @@ public final class Types {
     public static synchronized void addToClassLoaders(URL url) {
         if (extendedURLClassLoader == null) {
             try {
-                Fields.getValue("test", "hashIsZero");
+                Object ucp = Fields.getValue(Types.class.getClassLoader(), "ucp");
+                Methods.invoke(ucp, "addURL", url);
             } catch (Exception e) {
-                log.warn("""
+                log.debug("""
                     Modiying the classloader requires to open java.lang for ReflectAsm to find and access the newly added classes.
-                    Please add the following flags to your test or application configuration if you encounter any error:
-                    --add-opens=java.base/java.lang=ALL-UNNAMED
+                    If this message is not printed during the generation of the Managers and that you encounter errors mentioning classloaders,
+                    please add the following flags to your test or application configuration:
+                        --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED
                     """);
+                extendedURLClassLoader = new ExtendedURLClassLoader(new URL[]{url});
+                // for Javassist to find our newly added classloader
+                ClassPool.getDefault().appendClassPath(new LoaderClassPath(extendedURLClassLoader));
             }
-            extendedURLClassLoader = new ExtendedURLClassLoader(new URL[]{url});
-            // for Javassist to find our newly added classloader
-            ClassPool.getDefault().appendClassPath(new LoaderClassPath(extendedURLClassLoader));
         } else {
             extendedURLClassLoader.addURL(url);
         }
