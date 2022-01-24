@@ -28,10 +28,11 @@ public class MemcachedDatasourceConfigurationTest {
 
     @Test
     public void parse() {
-        Datasource.Configuration configuration = Yaml.read("" +
-                "type: memcached\n" +
-                "hosts: [\"localhost:11211\"]\n" +
-                "keyspace: test"
+        Datasource.Configuration configuration = Yaml.read("""
+                type: memcached
+                hosts: ["localhost:11211"]
+                keyspace: test
+                """
             , Datasource.Configuration.class);
         assertThat(configuration).isInstanceOf(MemcachedDatasource.Configuration.class);
     }

@@ -62,7 +62,7 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
     }
 
     protected CreateType newInstance() {
-        Create<T> create =  new Create<>(newContext(), model());
+        Create<T> create = new Create<>(newContext(), model());
         return Proxy.of(createType, new Object[]{new CreateHandler(create)}, (createProxy, method, args) ->
             findMethod(create.getClass(), method.getName(), method.getParameterTypes())
                 .map(m -> invoke(create, method.getName(), Arrays.emptyIfNull(args)))
@@ -108,21 +108,13 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
                     case "and":
                         return Proxy.of(predicatesInterface, (predicateProxy, predicate, none) ->
                             Proxy.of(predicate.getReturnType(), (ignore, operatorMethod, values) -> {
-                                String operator = operatorMethod.getName();
-                                switch (operator) {
-                                    case "hasKey":
-                                        operator = "is";
-                                        break;
-                                    case "hasNotKey":
-                                        operator = "not";
-                                        break;
-                                    case "hasKeyIn":
-                                        operator = "in";
-                                        break;
-                                    case "hasKeyNotIn":
-                                        operator = "notIn";
-                                        break;
-                                }
+                                String operator = switch (operatorMethod.getName()) {
+                                    case "hasKey" -> "is";
+                                    case "hasNotKey" -> "not";
+                                    case "hasKeyIn" -> "in";
+                                    case "hasKeyNotIn" -> "notIn";
+                                    default -> operatorMethod.getName();
+                                };
                                 return invoke(select.predicates().where(selectProxy, predicate.getName()), operator, Arrays.emptyIfNull(values));
                             })
                         );
@@ -427,7 +419,8 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
         FileSystem fileSystem = FileSystems.getDefault();
         List<PathMatcher> matchers = patterns.stream()
             .map(pattern -> pattern.startsWith("glob:") || pattern.startsWith("regex:") ? pattern : "glob:" + pattern)
-            .map(fileSystem::getPathMatcher).collect(Collectors.toList());
+            .map(fileSystem::getPathMatcher)
+            .toList();
         File[] files = Files.find(new File(System.getProperty("user.dir")).toPath(), 100,
             (path, basicFileAttributes) -> !basicFileAttributes.isDirectory() && matchers.stream().anyMatch(matcher -> matcher.matches(path))
         ).map(Path::toFile).distinct().toArray(File[]::new);
@@ -499,7 +492,7 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
 
         model.members().stream()
             .filter(field -> field.annotation(NotNull.class).isPresent() ||
-                (!field.annotation(GeneratedValue.class).isPresent() && field.annotation(Id.class).isPresent()))
+                (field.annotation(GeneratedValue.class).isEmpty() && field.annotation(Id.class).isPresent()))
             .forEach(field -> {
                 constructorParameters.append(getTypeName(field.getGenericType())).append(' ').append(field.getName()).append(", ");
                 constructionChain.append('.').append(field.getName()).append('(').append(field.getName()).append(')');
@@ -778,35 +771,48 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
             });
         source.append("    }\n\n");
 
-        source.append("    public static class Includes {\n\n" +
-            "        private final IncludesHandler handler;\n\n" +
-            "        public Includes(IncludesHandler handler) {\n            this.handler = handler;\n        }\n\n");
+        source.append("""
+                public static class Includes {
+
+                    private final IncludesHandler handler;
+
+                    public Includes(IncludesHandler handler) {
+                        this.handler = handler;
+                    }
+
+            """);
 
         model.relations().stream()
             .filter(TypedEntityManager::isManaged)
             .forEach(relation -> {
                 if (!relation.childModel().relations().isEmpty()) {
                     source.append("        @SafeVarargs\n" +
-                        "        public final void ")
+                            "        public final void ")
                         .append(relation.member().getName()).append("(Consumer<").append(getTypeName(relation)).append(".Includes>... includes) {\n")
                         .append("            handler.include(\"").append(relation.member().getName()).append("\", includes);\n" +
-                        "        }\n\n");
+                            "        }\n\n");
                 } else {
                     source.append("        public final void ").append(relation.member().getName()).append("() {\n")
                         .append("            handler.include(\"").append(relation.member().getName()).append("\");\n" +
-                        "        }\n\n");
+                            "        }\n\n");
                 }
             });
 
-        source.append("        public void none() {\n" +
-            "            handler.none();\n" +
-            "        }\n" +
-            "    }\n\n");
+        source.append("""
+                    public void none() {
+                        handler.none();
+                    }
+                }
 
-        source.append("    public static class Sort extends BaseSort<Sort> {\n\n" +
-            "        private Sort(String fieldName) {\n" +
-            "            super(fieldName);\n" +
-            "        }\n");
+            """);
+
+        source.append("""
+                public static class Sort extends BaseSort<Sort> {
+
+                    private Sort(String fieldName) {
+                        super(fieldName);
+                    }
+            """);
         model.members().forEach(field ->
             source.append("\n        public static Sort ").append(field.getName())
                 .append("() {\n            return new Sort(\"").append(field.getName()).append("\");\n        }\n")

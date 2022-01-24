@@ -15,8 +15,8 @@ public class IncludeTypes {
 
     public IncludeTypes(FetchType fetchType, CascadeType[] cascadeTypes, boolean orphanRemoval) {
         this.value = Stream.concat(
-            Stream.of(cascadeTypes).map(IncludeType::fromCascadeType),
-            Stream.of(fromFetchType(fetchType), fromOrphanRemoval(orphanRemoval)))
+                Stream.of(cascadeTypes).map(IncludeType::fromCascadeType),
+                Stream.of(fromFetchType(fetchType), fromOrphanRemoval(orphanRemoval)))
             .map(IncludeType::value)
             .reduce(NONE.value(), (a, b) -> a | b);
     }

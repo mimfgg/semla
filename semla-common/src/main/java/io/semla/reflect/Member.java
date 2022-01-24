@@ -128,13 +128,13 @@ public class Member<T> implements Getter<T>, Setter<T> {
             set = (host, value) -> Fields.setValue(host, field, value);
         }
         return new Member<>(
-            field.getName(),
-            get,
-            set,
-            (Class<T>) field.getDeclaringClass(),
-            field.getGenericType(),
-            field.toGenericString(),
-            field::getAnnotation
+                field.getName(),
+                get,
+                set,
+                (Class<T>) field.getDeclaringClass(),
+                field.getGenericType(),
+                field.toGenericString(),
+                field::getAnnotation
         );
     }
 
@@ -165,13 +165,13 @@ public class Member<T> implements Getter<T>, Setter<T> {
             set = member::setOn;
         }
         return new Member<>(
-            field.getName(),
-            get,
-            set,
-            (Class<T>) field.getDeclaringClass(),
-            field.getGenericType(),
-            field.toGenericString(),
-            getAnnotation
+                field.getName(),
+                get,
+                set,
+                (Class<T>) field.getDeclaringClass(),
+                field.getGenericType(),
+                field.toGenericString(),
+                getAnnotation
         );
     }
 }

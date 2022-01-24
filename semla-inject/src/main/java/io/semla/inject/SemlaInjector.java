@@ -359,7 +359,7 @@ public class SemlaInjector implements Injector {
 
             @Override
             public Binder add(Collection<Class<? extends E>> classes) {
-                getMultiBindings().addAll(classes.stream().map(clazz -> (Supplier<E>) () -> injector.getInstance(clazz)).collect(Collectors.toList()));
+                getMultiBindings().addAll(classes.stream().map(clazz -> (Supplier<E>) () -> injector.getInstance(clazz)).toList());
                 return SemlaBinder.this;
             }
 

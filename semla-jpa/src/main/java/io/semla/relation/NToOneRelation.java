@@ -24,5 +24,4 @@ public interface NToOneRelation<ParentType, ChildType> extends Relation<ParentTy
 
     @Override
     Map<ParentType, ChildType> getFor(Collection<ParentType> parents, PersistenceContext context, Include<ParentType, ChildType> include);
-
 }

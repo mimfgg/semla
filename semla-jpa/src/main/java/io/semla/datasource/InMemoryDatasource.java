@@ -116,19 +116,19 @@ public class InMemoryDatasource<T> extends Datasource<T> {
     @Override
     public long patch(Values<T> values, Predicates<T> predicates, Pagination<T> pagination) {
         return filter(predicates, pagination)
-                .peek(entity -> {
-                    values.forEach((key, value) -> key.setOn(entity, value));
-                    model().version().ifPresent(version -> version.member().setOn(entity, version.member().<Integer>getOn(entity) + 1));
-                })
-                .count();
+            .peek(entity -> {
+                values.forEach((key, value) -> key.setOn(entity, value));
+                model().version().ifPresent(version -> version.member().setOn(entity, version.member().<Integer>getOn(entity) + 1));
+            })
+            .count();
     }
 
     @Override
     public long delete(Predicates<T> predicates, Pagination<T> pagination) {
         return filter(predicates, pagination)
-                .collect(Collectors.toList()).stream()
-                .map(entity -> entities.remove(model().key().member().getOn(entity)) != null ? 1 : 0)
-                .reduce(0, Integer::sum);
+            .toList().stream() // we need to get those entities to be able to remove them
+            .map(entity -> entities.remove(model().key().member().getOn(entity)) != null ? 1 : 0)
+            .reduce(0, Integer::sum);
     }
 
     private Stream<T> stream(Predicates<T> predicates, Pagination<T> pagination) {
@@ -161,7 +161,8 @@ public class InMemoryDatasource<T> extends Datasource<T> {
                 };
             }
         }
-        return entity -> {};
+        return entity -> {
+        };
     }
 
     public static InMemoryDatasource.Configuration configure() {

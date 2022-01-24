@@ -53,17 +53,16 @@ public class EntityModel<T> extends Model<T> {
         super(clazz);
 
         tablename = Optional.ofNullable(clazz.getAnnotation(Table.class))
-                .filter(table -> !table.name().equals(""))
-                .map(Table::name)
-                .orElseGet(() -> Strings.toSnakeCase(clazz.getSimpleName()));
+            .filter(table -> !table.name().equals(""))
+            .map(Table::name)
+            .orElseGet(() -> Strings.toSnakeCase(clazz.getSimpleName()));
 
         Map<String, Column<T>> columnsByAccessor = new LinkedHashMap<>();
         Map<String, Index<T>> indicesByName = new LinkedHashMap<>();
 
         // first we look for the @Id member, if the fields are not properly ordered, the relations initialization can fail.
         List<Member<T>> ids = members().stream()
-                .filter(member -> member.annotation(Id.class).isPresent())
-                .collect(Collectors.toList());
+            .filter(member -> member.annotation(Id.class).isPresent()).toList();
         if (ids.size() == 1) {
             // simple primary key, things have only one id.
             key = new Column<>(ids.get(0));
@@ -73,10 +72,10 @@ public class EntityModel<T> extends Model<T> {
         } else {
             // nor embeddedIds
             members().stream()
-                    .filter(field -> field.annotation(EmbeddedId.class).isPresent())
-                    .findFirst().ifPresent(key -> {
-                throw new InvalidPersitenceAnnotationException("@EmbeddedId (nested composite keys) are not supported on " + clazz);
-            });
+                .filter(field -> field.annotation(EmbeddedId.class).isPresent())
+                .findFirst().ifPresent(key -> {
+                    throw new InvalidPersitenceAnnotationException("@EmbeddedId (nested composite keys) are not supported on " + clazz);
+                });
             throw new InvalidPersitenceAnnotationException("@Id is missing for on " + clazz);
         }
         indicesByName.put(key.member().getName(), new Index<>(key.member().getName(), true, true, key));
@@ -100,7 +99,7 @@ public class EntityModel<T> extends Model<T> {
             if (member.annotation(Indexed.class).isPresent()) {
                 Indexed indexed = member.annotation(Indexed.class).get();
                 index = new Index<>(Optional.of(indexed.name()).filter(Strings::notNullOrEmpty)
-                        .orElse(Strings.toSnakeCase(member.getName()) + "_idx"), indexed.unique(), false, column);
+                    .orElse(Strings.toSnakeCase(member.getName()) + "_idx"), indexed.unique(), false, column);
             }
 
             if (member.annotation(Version.class).isPresent()) {
@@ -149,21 +148,21 @@ public class EntityModel<T> extends Model<T> {
         // Indices defined on the type
         if (clazz.isAnnotationPresent(Indices.class)) {
             Stream.of(clazz.getAnnotation(Indices.class).value())
-                    .map(index -> Pair.of(
-                            Optional.of(index.name()).filter(Strings::notNullOrEmpty)
-                                    .orElse(Stream.of(index.properties())
-                                            .map(columnsByAccessor::get)
-                                            .map(Column::name)
-                                            .map(Strings::toSnakeCase)
-                                            .collect(Collectors.joining("_")) + "_idx"),
-                            index
-                    ))
-                    .filter(index -> !indicesByName.containsKey(index.getKey()))
-                    .forEach(index ->
-                            indicesByName.put(index.getKey(),
-                                    new Index<>(index.getKey(), index.getValue().unique(), false, Stream.of(index.getValue().properties()).map(columnsByAccessor::get).toArray(Column[]::new))
-                            )
-                    );
+                .map(index -> Pair.of(
+                    Optional.of(index.name()).filter(Strings::notNullOrEmpty)
+                        .orElse(Stream.of(index.properties())
+                            .map(columnsByAccessor::get)
+                            .map(Column::name)
+                            .map(Strings::toSnakeCase)
+                            .collect(Collectors.joining("_")) + "_idx"),
+                    index
+                ))
+                .filter(index -> !indicesByName.containsKey(index.getKey()))
+                .forEach(index ->
+                    indicesByName.put(index.getKey(),
+                        new Index<>(index.getKey(), index.getValue().unique(), false, Stream.of(index.getValue().properties()).map(columnsByAccessor::get).toArray(Column[]::new))
+                    )
+                );
         }
 
         this.columnsByFieldName = ImmutableMap.copyOf(columnsByAccessor);
@@ -217,9 +216,9 @@ public class EntityModel<T> extends Model<T> {
 
     public <R> Relation<T, R> getRelation(Member<T> member) {
         return (Relation<T, R>) relations.stream()
-                .filter(r -> r.member().equals(member))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(member + " is not a relation on " + getType()));
+            .filter(r -> r.member().equals(member))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException(member + " is not a relation on " + getType()));
     }
 
     public boolean isRelation(Member<T> member) {
@@ -228,9 +227,9 @@ public class EntityModel<T> extends Model<T> {
 
     public <R> Relation<T, R> getRelation(String fieldName) {
         return (Relation<T, R>) relations.stream()
-                .filter(r -> r.member().getName().equals(fieldName))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("couldn't find relation " + fieldName + " on " + getType()));
+            .filter(r -> r.member().getName().equals(fieldName))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("couldn't find relation " + fieldName + " on " + getType()));
     }
 
     public T newInstanceFromKey(Object key) {
@@ -269,7 +268,7 @@ public class EntityModel<T> extends Model<T> {
                         member.setOn(to, valueOnFrom);
                     } else {
                         throw new SemlaException(
-                                "couldn't merge already set value to '" + valueOnTo + "' for '" + member + "', was '" + valueOnFrom + "'");
+                            "couldn't merge already set value to '" + valueOnTo + "' for '" + member + "', was '" + valueOnFrom + "'");
                     }
                 }
             }
@@ -303,7 +302,7 @@ public class EntityModel<T> extends Model<T> {
     public static <T> EntityModel<T> of(T instance) {
         if (instance instanceof Class) {
             throw new IllegalArgumentException(
-                    "incorrect call of EntityModel.of(instance) giving a class as parameter, this is probably not intended!");
+                "incorrect call of EntityModel.of(instance) giving a class as parameter, this is probably not intended!");
         }
         try {
             return (EntityModel<T>) Model.of(instance);
@@ -337,8 +336,8 @@ public class EntityModel<T> extends Model<T> {
         EntityModel<T> model = EntityModel.of(instance);
         if (!model.key().member().isDefaultOn(instance)) {
             return model.members().stream()
-                    .filter(member -> !member.equals(model.key().member()))
-                    .allMatch(member -> member.isDefaultOn(instance));
+                .filter(member -> !member.equals(model.key().member()))
+                .allMatch(member -> member.isDefaultOn(instance));
         }
         return false;
     }
@@ -398,13 +397,12 @@ public class EntityModel<T> extends Model<T> {
                     Setter<T> setter = setters.get(getter.getName());
                     if (setter != null) {
                         if (isEntity(getter.getGenericType())) {
-                            if (!getter.annotation(JoinTable.class).isPresent()) { // foreign keys should not be copied if they are hosted in a joinTable
+                            if (getter.annotation(JoinTable.class).isEmpty()) { // foreign keys should not be copied if they are hosted in a joinTable
                                 setter.setOn(copy, EntityModel.referenceTo(value));
                             }
                         } else if (getter.annotation(Embedded.class).isPresent() && getter.isAnnotatedWithOneOf(Arrays.of(OneToMany.class, ManyToMany.class))) {
-                            setter.setOn(copy,
-                                    ((Collection<?>) value).stream().map(EntityModel::referenceTo)
-                                            .collect(Collectors.toCollection(Types.supplierOf(getter.getGenericType()))));
+                            setter.setOn(copy, ((Collection<?>) value).stream().map(EntityModel::referenceTo)
+                                .collect(Collectors.toCollection(Types.supplierOf(getter.getGenericType()))));
                         } else if (getter.annotation(Embedded.class).isPresent() || !getter.isAssignableToOneOf(Collection.class, Map.class)) {
                             setter.setOn(copy, getter.getOn(instance));
                         }
@@ -423,7 +421,7 @@ public class EntityModel<T> extends Model<T> {
             builder.append("{");
             if (!model.members().isEmpty()) {
                 model.members().forEach(getter ->
-                        builder.append(getter.getName()).append(": ").append(Strings.toString(((Getter<T>) getter).getOn(entity), printed)).append(", ")
+                    builder.append(getter.getName()).append(": ").append(Strings.toString(((Getter<T>) getter).getOn(entity), printed)).append(", ")
                 );
                 builder.delete(builder.length() - 2, builder.length());
             }

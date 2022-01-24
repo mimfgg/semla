@@ -68,11 +68,8 @@ public class Pair<L, R> implements Map.Entry<L, R> {
         return this;
     }
 
-    public Pair<L, R> ifLeft(Predicate<L> filter, Consumer<L> consumer) {
-        if (filter.test(left)) {
-            return forLeft(consumer);
-        }
-        return this;
+    public Then<L> ifLeft(Predicate<L> filter) {
+        return new Then<>(filter, left);
     }
 
     public Pair<L, R> forRight(Consumer<R> consumer) {
@@ -80,15 +77,30 @@ public class Pair<L, R> implements Map.Entry<L, R> {
         return this;
     }
 
-    public Pair<L, R> ifRight(Predicate<R> filter, Consumer<R> consumer) {
-        if (filter.test(right)) {
-            return forRight(consumer);
-        }
-        return this;
+    public Then<R> ifRight(Predicate<R> filter) {
+        return new Then<>(filter, right);
     }
 
     public static <L, R> Pair<L, R> of(L left, R right) {
         return new Pair<>(left, right);
+    }
+
+    public class Then<T> {
+
+        private final Predicate<T> filter;
+        private final T target;
+
+        public Then(Predicate<T> filter, T target) {
+            this.filter = filter;
+            this.target = target;
+        }
+
+        public Pair<L, R> then(Consumer<T> consumer) {
+            if (filter.test(target)) {
+                consumer.accept(target);
+            }
+            return Pair.this;
+        }
     }
 
     @Override

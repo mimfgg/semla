@@ -1,14 +1,14 @@
 package io.semla.util;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 import java.util.*;
 
-
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ImmutableList<E> implements List<E> {
 
     private final List<E> list = new ArrayList<>();
-
-    private ImmutableList() {
-    }
 
     private ImmutableList(Collection<E> list) {
         this.list.addAll(list);

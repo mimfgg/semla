@@ -1,13 +1,15 @@
 package io.semla.util;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collector;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Maps {
-
-    private Maps() {}
 
     public static <K, V> Map<K, V> copyOf(Map<K, V> map) {
         return new LinkedHashMap<>(map);

@@ -8,15 +8,14 @@ import io.semla.relation.IncludeType;
 import io.semla.util.Lists;
 import io.semla.util.Pair;
 import io.semla.util.Strings;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class PersistenceContext {
 
-    private static Logger logger = LoggerFactory.getLogger(PersistenceContext.class);
     private final EntityManagerFactory entityManagerFactory;
     private final RelationContext relationContext;
     private final InstanceContext instanceContext;
@@ -64,19 +63,19 @@ public class PersistenceContext {
 
     public <T> Optional<T> get(Object key, Includes<T> includes) {
         return cachingStrategy.ifApplicable(() -> factory().injector().getInstance(Cache.class), () -> Query.get(key, includes).toString(),
-                includes.model().getOptionalType(), () -> entityManagerFactory.of(includes.model().getType()).get(this, key, includes)
+            includes.model().getOptionalType(), () -> entityManagerFactory.of(includes.model().getType()).get(this, key, includes)
         );
     }
 
     public <K, T> Map<K, T> get(Collection<K> keys, Includes<T> includes) {
         return cachingStrategy.ifApplicable(() -> factory().injector().getInstance(Cache.class), () -> Query.get(keys, includes).toString(),
-                includes.model().getMapType(), () -> entityManagerFactory.of(includes.model().getType()).get(this, keys, includes)
+            includes.model().getMapType(), () -> entityManagerFactory.of(includes.model().getType()).get(this, keys, includes)
         );
     }
 
     public <T> long count(Predicates<T> predicates) {
         return cachingStrategy.ifApplicable(() -> factory().injector().getInstance(Cache.class), () -> Query.count(predicates).toString(),
-                long.class, () -> entityManagerFactory.of(predicates.model().getType()).count(predicates)
+            long.class, () -> entityManagerFactory.of(predicates.model().getType()).count(predicates)
         );
     }
 
@@ -114,13 +113,13 @@ public class PersistenceContext {
 
     public <T> Optional<T> first(Predicates<T> predicates, Pagination<T> pagination, Includes<T> includes) {
         return cachingStrategy.ifApplicable(() -> factory().injector().getInstance(Cache.class), () -> Query.first(predicates, pagination, includes).toString(),
-                includes.model().getOptionalType(), () -> entityManagerFactory.of(includes.model().getType()).first(this, predicates, pagination, includes)
+            includes.model().getOptionalType(), () -> entityManagerFactory.of(includes.model().getType()).first(this, predicates, pagination, includes)
         );
     }
 
     public <T> List<T> list(Predicates<T> predicates, Pagination<T> pagination, Includes<T> includes) {
         return cachingStrategy.ifApplicable(() -> factory().injector().getInstance(Cache.class), () -> Query.list(predicates, pagination, includes).toString(),
-                includes.model().getListType(), () -> entityManagerFactory.of(includes.model().getType()).list(this, predicates, pagination, includes)
+            includes.model().getListType(), () -> entityManagerFactory.of(includes.model().getType()).list(this, predicates, pagination, includes)
         );
     }
 
@@ -144,8 +143,8 @@ public class PersistenceContext {
 
     public <ParentType, ChildType> void createOrUpdate(Collection<ChildType> children, Include<ParentType, ChildType> include) {
         sortPersisted(children)
-                .ifLeft(persisted -> !persisted.isEmpty() && include.type().should(IncludeType.UPDATE), persisted -> update(persisted, include.includes()))
-                .ifRight(nonPersisted -> !nonPersisted.isEmpty() && include.type().should(IncludeType.CREATE), nonPersisted -> create(nonPersisted, include.includes()));
+            .ifLeft(persisted -> !persisted.isEmpty() && include.type().should(IncludeType.UPDATE)).then(persisted -> update(persisted, include.includes()))
+            .ifRight(nonPersisted -> !nonPersisted.isEmpty() && include.type().should(IncludeType.CREATE)).then(nonPersisted -> create(nonPersisted, include.includes()));
     }
 
     public <T> Pair<Collection<T>, Collection<T>> sortPersisted(Collection<T> entities) {
@@ -182,80 +181,80 @@ public class PersistenceContext {
 
     public <ParentType, ChildType> void fetchOn(ParentType parent, Include<ParentType, ChildType> include) {
         if (relationContext.shouldFetch(include.relation(), parent)) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("fetching {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parent));
+            if (log.isTraceEnabled()) {
+                log.trace("fetching {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parent));
             }
             include.relation().fetchOn(parent, this, include);
-        } else if (logger.isTraceEnabled()) {
-            logger.trace("skipping already fetched {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parent));
+        } else if (log.isTraceEnabled()) {
+            log.trace("skipping already fetched {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parent));
         }
     }
 
     public <ParentType, ChildType> void fetchOn(Collection<ParentType> parents, Include<ParentType, ChildType> include) {
         if (!parents.isEmpty()) {
             List<ParentType> toFetch = parents.stream().filter(Objects::nonNull)
-                    .filter(parent -> relationContext().shouldFetch(include.relation(), parent)).collect(Collectors.toList());
+                .filter(parent -> relationContext().shouldFetch(include.relation(), parent)).collect(Collectors.toList());
             if (!toFetch.isEmpty()) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("fetching {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(toFetch));
+                if (log.isTraceEnabled()) {
+                    log.trace("fetching {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(toFetch));
                 }
                 include.relation().fetchOn(toFetch, this, include);
-            } else if (logger.isTraceEnabled()) {
-                logger.trace("skipping already fetched {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parents));
+            } else if (log.isTraceEnabled()) {
+                log.trace("skipping already fetched {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parents));
             }
         }
     }
 
     public <ParentType, ChildType> void createOrUpdateOn(ParentType parent, Include<ParentType, ChildType> include) {
         if (relationContext().shouldCreateOrUpdate(include.relation(), parent)) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("creating or updating {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parent));
+            if (log.isTraceEnabled()) {
+                log.trace("creating or updating {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parent));
             }
             include.relation().createOrUpdateOn(parent, this, include);
-        } else if (logger.isTraceEnabled()) {
-            logger.trace("skipping already created or updated {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parent));
+        } else if (log.isTraceEnabled()) {
+            log.trace("skipping already created or updated {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parent));
         }
     }
 
     public <ParentType, ChildType> void createOrUpdateOn(Collection<ParentType> parents, Include<ParentType, ChildType> include) {
         if (!parents.isEmpty()) {
             List<ParentType> toPersist = parents.stream()
-                    .filter(parent -> relationContext().shouldCreateOrUpdate(include.relation(), parent))
-                    .collect(Collectors.toList());
+                .filter(parent -> relationContext().shouldCreateOrUpdate(include.relation(), parent))
+                .collect(Collectors.toList());
             if (!toPersist.isEmpty()) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("creating or updating {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(toPersist));
+                if (log.isTraceEnabled()) {
+                    log.trace("creating or updating {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(toPersist));
                 }
                 include.relation().createOrUpdateOn(toPersist, this, include);
-            } else if (logger.isTraceEnabled()) {
-                logger.trace("skipping already created or updated {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parents));
+            } else if (log.isTraceEnabled()) {
+                log.trace("skipping already created or updated {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parents));
             }
         }
     }
 
     public <ParentType, ChildType> void deleteOn(ParentType parent, Include<ParentType, ChildType> include) {
         if (relationContext().shouldDelete(include.relation(), parent)) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("removing {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parent));
+            if (log.isTraceEnabled()) {
+                log.trace("removing {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parent));
             }
             include.relation().deleteOn(parent, this, include);
-        } else if (logger.isTraceEnabled()) {
-            logger.trace("skipping already deleted {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parent));
+        } else if (log.isTraceEnabled()) {
+            log.trace("skipping already deleted {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parent));
         }
     }
 
     public <ParentType, ChildType> void deleteOn(Collection<ParentType> parents, Include<ParentType, ChildType> include) {
         if (!parents.isEmpty()) {
             List<ParentType> toCascade = parents.stream()
-                    .filter(parent -> relationContext().shouldDelete(include.relation(), parent))
-                    .collect(Collectors.toList());
+                .filter(parent -> relationContext().shouldDelete(include.relation(), parent))
+                .collect(Collectors.toList());
             if (!toCascade.isEmpty()) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("removing {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(toCascade));
+                if (log.isTraceEnabled()) {
+                    log.trace("removing {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(toCascade));
                 }
                 include.relation().deleteOn(toCascade, this, include);
-            } else if (logger.isTraceEnabled()) {
-                logger.trace("skipping already deleted {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parents));
+            } else if (log.isTraceEnabled()) {
+                log.trace("skipping already deleted {} {} on {}", include.relation().getClass().getSimpleName(), include.relation().member(), Strings.toString(parents));
             }
         }
     }

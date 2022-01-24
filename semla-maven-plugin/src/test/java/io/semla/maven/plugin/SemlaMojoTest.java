@@ -36,9 +36,9 @@ public class SemlaMojoTest extends AbstractMojoTestCase {
 
         Types.compileFromFiles(mojo.getClasspathElements(), files);
 
-        assertNotNull(Class.forName(Child.class.getCanonicalName() + "Manager"));
-        assertNotNull(Class.forName(Hobby.class.getCanonicalName() + "Manager"));
-        assertNotNull(Class.forName(Parent.class.getCanonicalName() + "Manager"));
+        assertNotNull(Types.forName(Child.class.getCanonicalName() + "Manager"));
+        assertNotNull(Types.forName(Hobby.class.getCanonicalName() + "Manager"));
+        assertNotNull(Types.forName(Parent.class.getCanonicalName() + "Manager"));
     }
 
     private MavenProject getMavenProject(String pomPath) throws Exception {

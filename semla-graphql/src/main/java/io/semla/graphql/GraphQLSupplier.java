@@ -491,47 +491,52 @@ public class GraphQLSupplier implements Supplier<GraphQL> {
     }
 
     protected void addSemlaTypes(StringBuilder builder) {
-        builder.append("\n" +
-                "input _IntPredicates {\n" +
-                "    is: Int\n" +
-                "    not: Int\n" +
-                "    in: [Int!]\n" +
-                "    notIn: [Int!]\n" +
-                "    greaterOrEquals: Int\n" +
-                "    greaterThan: Int\n" +
-                "    lessOrEquals: Int\n" +
-                "    lessThan: Int\n" +
-                "}\n\n" +
-                "input _FloatPredicates {\n" +
-                "    is: Float\n" +
-                "    not: Float\n" +
-                "    in: [Float!]\n" +
-                "    notIn: [Float!]\n" +
-                "    greaterOrEquals: Float\n" +
-                "    greaterThan: Float\n" +
-                "    lessOrEquals: Float\n" +
-                "    lessThan: Float\n" +
-                "}\n\n" +
-                "input _StringPredicates {\n" +
-                "    is: String\n" +
-                "    not: String\n" +
-                "    in: [String!]\n" +
-                "    notIn: [String!]\n" +
-                "    like: String\n" +
-                "    notLike: String\n" +
-                "    contains: String\n" +
-                "    doesNotContain: String\n" +
-                "    containedIn: String\n" +
-                "    notContainedIn: String\n" +
-                "}\n\n" +
-                "input _BooleanPredicates {\n" +
-                "    is: Boolean\n" +
-                "    not: Boolean\n" +
-                "}\n\n" +
-                "enum _Sort {\n" +
-                "    asc\n" +
-                "    desc\n" +
-                "}"
+        builder.append("""
+            
+            input _IntPredicates {
+                is: Int
+                not: Int
+                in: [Int!]
+                notIn: [Int!]
+                greaterOrEquals: Int
+                greaterThan: Int
+                lessOrEquals: Int
+                lessThan: Int
+            }
+
+            input _FloatPredicates {
+                is: Float
+                not: Float
+                in: [Float!]
+                notIn: [Float!]
+                greaterOrEquals: Float
+                greaterThan: Float
+                lessOrEquals: Float
+                lessThan: Float
+            }
+
+            input _StringPredicates {
+                is: String
+                not: String
+                in: [String!]
+                notIn: [String!]
+                like: String
+                notLike: String
+                contains: String
+                doesNotContain: String
+                containedIn: String
+                notContainedIn: String
+            }
+
+            input _BooleanPredicates {
+                is: Boolean
+                not: Boolean
+            }
+
+            enum _Sort {
+                asc
+                desc
+            }"""
         );
     }
 

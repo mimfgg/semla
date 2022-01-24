@@ -2,7 +2,6 @@ package io.semla.query;
 
 import io.semla.exception.SemlaException;
 import io.semla.model.EntityModel;
-import io.semla.model.Model;
 import io.semla.reflect.Member;
 import io.semla.util.Splitter;
 
@@ -15,7 +14,6 @@ import java.util.stream.Stream;
 public class Pagination<T> {
 
     public enum Sort {
-
         ASC, DESC
     }
 

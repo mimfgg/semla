@@ -26,14 +26,14 @@ public class SerializationSteps {
     public void the_following_json_gets_parsed_as_a(String type, String content) {
         this.content = content;
         throwableSteps.catchThrowable(() -> {
-            object = Json.read(content, Class.forName(type), Deserializer.IGNORE_UNKNOWN_PROPERTIES);
+            object = Json.read(content, Types.forName(type), Deserializer.IGNORE_UNKNOWN_PROPERTIES);
         });
     }
 
     @When("^the following yaml gets parsed as a (.*):$")
     public void the_following_yaml_gets_parsed_as_a(String type, String content) {
         this.content = content;
-        throwableSteps.catchThrowable(() -> object = Yaml.read(content, Class.forName(type), Deserializer.IGNORE_UNKNOWN_PROPERTIES));
+        throwableSteps.catchThrowable(() -> object = Yaml.read(content, Types.forName(type), Deserializer.IGNORE_UNKNOWN_PROPERTIES));
     }
 
     @Then("^it gets (pretty )?serialized as this json:$")

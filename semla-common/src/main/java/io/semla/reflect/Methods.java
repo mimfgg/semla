@@ -41,19 +41,17 @@ public final class Methods {
 
     private static synchronized void recursivelyFindAllMethodsOf(Class<?> clazz, Map<String, Method> methods) {
         Stream.of(clazz.getDeclaredMethods())
-                .filter(method -> !method.getDeclaringClass().equals(Object.class))
-                .filter(method -> clazz.isAnnotation() || !Modifier.is(method, Modifier.ABSTRACT))
-                .filter(method -> !methods.containsValue(method))
-                .forEach(method -> {
-                    try {
-                        if (!method.isAccessible()) {
-                            method.setAccessible(true);
-                        }
-                        methods.put(getMethodSignature(clazz, method.getName(), method.getParameterTypes()), method);
-                    } catch (Exception e) {
-                        log.debug("ignoring inaccessible {}", method);
-                    }
-                });
+            .filter(method -> !method.getDeclaringClass().equals(Object.class))
+            .filter(method -> clazz.isAnnotation() || !Modifier.is(method, Modifier.ABSTRACT))
+            .filter(method -> !methods.containsValue(method))
+            .forEach(method -> {
+                try {
+                    method.setAccessible(true);
+                } catch (Exception e) {
+                    log.debug("{} is inaccessible!", method);
+                }
+                methods.put(getMethodSignature(clazz, method.getName(), method.getParameterTypes()), method);
+            });
         ofNullable(clazz.getSuperclass()).ifPresent(superClass -> recursivelyFindAllMethodsOf(superClass, methods));
         Stream.of(clazz.getInterfaces()).forEach(interfaceClass -> recursivelyFindAllMethodsOf(interfaceClass, methods));
     }
@@ -76,23 +74,23 @@ public final class Methods {
     @SuppressWarnings("unchecked")
     private static <E, R> R invoke(Class<?> clazz, E instance, String name, Object... parameters) {
         Class<?>[] parameterTypes = Stream.of(parameters)
-                .map(value -> value != null ? value.getClass() : Object.class)
-                .toArray(Class<?>[]::new);
+            .map(value -> value != null ? value.getClass() : Object.class)
+            .toArray(Class<?>[]::new);
         return (R) unchecked(() -> getMethod(clazz, name, parameterTypes).invoke(instance, parameters));
     }
 
     public static Method getMethod(Class<?> clazz, String name, Class<?>... parameterTypes) {
         return unchecked(() -> findMethod(clazz, name, parameterTypes)
-                .orElseThrow(() -> new NoSuchMethodException("method '" + name + "' doesn't exist on " + clazz))
+            .orElseThrow(() -> new NoSuchMethodException("method '" + name + "' doesn't exist on " + clazz))
         );
     }
 
     public static Optional<Method> findMethod(Class<?> clazz, String name, Class<?>... parameterTypes) {
         return ofNullable(byName(clazz).computeIfAbsent(
-                getMethodSignature(clazz, name, parameterTypes),
-                methodSignature -> byName(clazz).values().stream()
-                        .filter(method -> isApplicableMethod(method, name, parameterTypes))
-                        .findFirst().orElse(null))
+            getMethodSignature(clazz, name, parameterTypes),
+            methodSignature -> byName(clazz).values().stream()
+                .filter(method -> isApplicableMethod(method, name, parameterTypes))
+                .findFirst().orElse(null))
         );
     }
 
@@ -116,22 +114,16 @@ public final class Methods {
 
     public static Stream<MethodInvocator> findAnnotatedWith(Class<?> type, Class<? extends Annotation> annotation) {
         return ANNOTATED_METHODS
-                .computeIfAbsent(type, t -> synchronizedMap(new LinkedHashMap<>()))
-                .computeIfAbsent(annotation, a ->
-                        Stream.of(type.getMethods())
-                                .filter(method -> method.isAnnotationPresent(a))
-                                .map(MethodInvocator::new)
-                                .collect(Collectors.toList())
-                ).stream();
+            .computeIfAbsent(type, t -> synchronizedMap(new LinkedHashMap<>()))
+            .computeIfAbsent(annotation, a ->
+                Stream.of(type.getMethods())
+                    .filter(method -> method.isAnnotationPresent(a))
+                    .map(MethodInvocator::new)
+                    .collect(Collectors.toList())
+            ).stream();
     }
 
-    public static class MethodInvocator {
-
-        private final Method method;
-
-        public MethodInvocator(Method method) {
-            this.method = method;
-        }
+    public record MethodInvocator(Method method) {
 
         public Object invoke(Object host, Object... parameters) {
             return unchecked(() -> method.invoke(host, parameters), Throwable::getCause);

@@ -36,9 +36,9 @@ public class Column<T> {
             .orElseGet(() -> Annotations.defaultOf(javax.persistence.Column.class));
         this.name = !jpaColumn.name().equals("") ? jpaColumn.name() : Strings.toSnakeCase(member.getName());
         this.unique = jpaColumn.unique();
-        this.nullable = jpaColumn.nullable() && !member.annotation(NotNull.class).isPresent() && (!isId || isGenerated);
-        this.insertable = (jpaColumn.insertable() && !this.isGenerated && !member.annotation(Version.class).isPresent()) || member.getType().equals(UUID.class);
-        this.updatable = jpaColumn.updatable() && !this.isGenerated && !member.annotation(Version.class).isPresent() && !isId;
+        this.nullable = jpaColumn.nullable() && member.annotation(NotNull.class).isEmpty() && (!isId || isGenerated);
+        this.insertable = (jpaColumn.insertable() && !this.isGenerated && member.annotation(Version.class).isEmpty()) || member.getType().equals(UUID.class);
+        this.updatable = jpaColumn.updatable() && !this.isGenerated && member.annotation(Version.class).isEmpty() && !isId;
         this.columnDefinition = !jpaColumn.columnDefinition().equals("") ? Optional.of(jpaColumn.columnDefinition()) : Optional.empty();
         this.length = jpaColumn.length();
         this.precision = jpaColumn.precision();

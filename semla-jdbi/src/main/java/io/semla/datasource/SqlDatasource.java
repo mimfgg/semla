@@ -45,15 +45,15 @@ import static io.semla.util.Unchecked.unchecked;
 public abstract class SqlDatasource<T> extends Datasource<T> {
 
     private static final Map<Class<?>, Throwables.BiFunction<ResultSet, String, ?>> PRIMITIVE_READERS =
-            ImmutableMap.<Class<?>, Throwables.BiFunction<ResultSet, String, ?>>builder()
-                    .put(byte.class, ResultSet::getByte)
-                    .put(short.class, ResultSet::getShort)
-                    .put(int.class, ResultSet::getInt)
-                    .put(long.class, ResultSet::getLong)
-                    .put(float.class, ResultSet::getFloat)
-                    .put(double.class, ResultSet::getDouble)
-                    .put(boolean.class, ResultSet::getBoolean)
-                    .build();
+        ImmutableMap.<Class<?>, Throwables.BiFunction<ResultSet, String, ?>>builder()
+            .put(byte.class, ResultSet::getByte)
+            .put(short.class, ResultSet::getShort)
+            .put(int.class, ResultSet::getInt)
+            .put(long.class, ResultSet::getLong)
+            .put(float.class, ResultSet::getFloat)
+            .put(double.class, ResultSet::getDouble)
+            .put(boolean.class, ResultSet::getBoolean)
+            .build();
 
     private static final Calendar UTC = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     private static final Calendar defaultCalendar = Calendar.getInstance(TimeZone.getDefault());
@@ -94,15 +94,15 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
                 });
             } else if (isEntity(type)) {
                 mappers.put(column, resultSet -> {
-                            Class<?> keyType = EntityModel.of(type).key().member().getType();
-                            Object keyValue;
-                            if (keyType.isPrimitive()) {
-                                keyValue = PRIMITIVE_READERS.get(keyType).apply(resultSet, column.name());
-                            } else {
-                                keyValue = resultSet.getObject(column.name(), keyType);
-                            }
-                            return keyValue != null ? EntityModel.referenceTo(type, keyValue) : null;
+                        Class<?> keyType = EntityModel.of(type).key().member().getType();
+                        Object keyValue;
+                        if (keyType.isPrimitive()) {
+                            keyValue = PRIMITIVE_READERS.get(keyType).apply(resultSet, column.name());
+                        } else {
+                            keyValue = resultSet.getObject(column.name(), keyType);
                         }
+                        return keyValue != null ? EntityModel.referenceTo(type, keyValue) : null;
+                    }
                 );
                 binders.put(column, EntityModel::keyOf);
             } else if (type.equals(Optional.class)) {
@@ -148,15 +148,15 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
             }
         });
         generatedColumns = model().columns().stream()
-                .filter(column -> column.isGenerated() && !column.member().getType().equals(UUID.class))
-                .map(Column::name).toArray(String[]::new);
+            .filter(column -> column.isGenerated() && !column.member().getType().equals(UUID.class))
+            .map(Column::name).toArray(String[]::new);
         extend();
         if (dbi != null && dbi.getConfig(SemlaJdbiConfig.class).autoCreateTable) {
             try {
                 dbi.withHandle(handle -> handle
-                        .createQuery("SELECT COUNT(*) FROM " + ddl().escape(ddl().tablename()))
-                        .mapTo(Long.class)
-                        .findOne()
+                    .createQuery("SELECT COUNT(*) FROM " + ddl().escape(ddl().tablename()))
+                    .mapTo(Long.class)
+                    .findOne()
                 );
             } catch (Exception e) {
                 dbi.withHandle(handle -> ddl().create().stream().map(handle::execute).reduce(Integer::sum));
@@ -192,7 +192,7 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
             Map<K, T> entitiesByKey = new LinkedHashMap<>();
             keys.forEach(key -> entitiesByKey.put(key, null));
             list(model().key().in(keys), Pagination.of(model().getType()).limitTo(keys.size()))
-                    .forEach(entity -> entitiesByKey.put(model().key().member().getOn(entity), entity));
+                .forEach(entity -> entitiesByKey.put(model().key().member().getOn(entity), entity));
             return entitiesByKey;
         } else {
             return new LinkedHashMap<>();
@@ -212,7 +212,7 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
             Update update = bind(handle.createUpdate(ddl().insert()), model().columns().stream().filter(Column::insertable), entity);
             if (generatedColumns.length > 0) {
                 update.executeAndReturnGeneratedKeys(generatedColumns).mapToMap().findFirst()
-                        .ifPresent(generatedKeys -> assignGeneratedValues(entity, Lists.from(generatedKeys.values())));
+                    .ifPresent(generatedKeys -> assignGeneratedValues(entity, Lists.from(generatedKeys.values())));
             } else {
                 int inserted = update.execute();
                 if (inserted == 0) {
@@ -224,17 +224,16 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
 
     @Override
     public void create(Collection<T> entities) {
-        Lists.chunk(entities, maxChunkSize).forEach(chunck ->
-                dbi.useHandle(handle -> {
-                    PreparedBatch preparedBatch = handle.prepareBatch(ddl().insert());
-                    chunck.forEach(entity -> bind(preparedBatch, model().columns().stream().filter(Column::insertable), entity).add());
-                    if (generatedColumns.length > 0) {
-                        List<Map<String, Object>> generatedKeys = preparedBatch.executeAndReturnGeneratedKeys(generatedColumns).mapToMap().list();
-                        IntStream.range(0, chunck.size()).forEach(i -> assignGeneratedValues(chunck.get(i), Lists.from(generatedKeys.get(i).values())));
-                    } else {
-                        preparedBatch.execute();
-                    }
-                })
+        Lists.chunk(entities, maxChunkSize).forEach(chunck -> dbi.useHandle(handle -> {
+                PreparedBatch preparedBatch = handle.prepareBatch(ddl().insert());
+                chunck.forEach(entity -> bind(preparedBatch, model().columns().stream().filter(Column::insertable), entity).add());
+                if (generatedColumns.length > 0) {
+                    List<Map<String, Object>> generatedKeys = preparedBatch.executeAndReturnGeneratedKeys(generatedColumns).mapToMap().list();
+                    IntStream.range(0, chunck.size()).forEach(i -> assignGeneratedValues(chunck.get(i), Lists.from(generatedKeys.get(i).values())));
+                } else {
+                    preparedBatch.execute();
+                }
+            })
         );
     }
 
@@ -245,11 +244,11 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
             Object key = binders.getOrDefault(model().key(), Function.identity()).apply(model().key().member().getOn(entity));
             update.bindByType(model().key().name(), key, key.getClass());
             model().version().ifPresent(version ->
-                    update.bindByType(version.name(), version.member().<Integer>getOn(entity), Integer.class)
+                update.bindByType(version.name(), version.member().<Integer>getOn(entity), Integer.class)
             );
             if (generatedColumns.length > 0) {
                 update.executeAndReturnGeneratedKeys(generatedColumns).mapToMap().findFirst()
-                        .ifPresent(generatedKeys -> assignGeneratedValues(entity, Lists.from(generatedKeys.values())));
+                    .ifPresent(generatedKeys -> assignGeneratedValues(entity, Lists.from(generatedKeys.values())));
             } else {
                 long updated = update.execute();
                 if (updated == 0) {
@@ -266,19 +265,19 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
     @Override
     public void update(Collection<T> entities) {
         Lists.chunk(entities, maxChunkSize).forEach(chunck ->
-                dbi.useHandle(handle -> {
-                    PreparedBatch preparedBatch = handle.prepareBatch(ddl().update());
-                    chunck.forEach(entity -> {
-                        Object key = binders.getOrDefault(model().key(), Function.identity()).apply(model().key().member().getOn(entity));
-                        bind(preparedBatch, model().columns().stream().filter(Column::updatable), entity)
-                                .bindByType(model().key().name(), key, key.getClass());
-                        model().version().ifPresent(version ->
-                                preparedBatch.bindByType(version.name(), version.member().<Integer>getOn(entity), Integer.class)
-                        );
-                        preparedBatch.add();
-                    });
-                    preparedBatch.execute();
-                })
+            dbi.useHandle(handle -> {
+                PreparedBatch preparedBatch = handle.prepareBatch(ddl().update());
+                chunck.forEach(entity -> {
+                    Object key = binders.getOrDefault(model().key(), Function.identity()).apply(model().key().member().getOn(entity));
+                    bind(preparedBatch, model().columns().stream().filter(Column::updatable), entity)
+                        .bindByType(model().key().name(), key, key.getClass());
+                    model().version().ifPresent(version ->
+                        preparedBatch.bindByType(version.name(), version.member().<Integer>getOn(entity), Integer.class)
+                    );
+                    preparedBatch.add();
+                });
+                preparedBatch.execute();
+            })
         );
     }
 
@@ -298,15 +297,15 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
     @Override
     public Optional<T> first(Predicates<T> predicates, Pagination<T> pagination) {
         return dbi.withHandle(handle ->
-                query(handle::createQuery, new StringBuilder("SELECT * FROM " + ddl().escape(ddl().tablename())), predicates, pagination)
-                        .map(this::mapRow).findFirst()
+            query(handle::createQuery, new StringBuilder("SELECT * FROM " + ddl().escape(ddl().tablename())), predicates, pagination)
+                .map(this::mapRow).findFirst()
         );
     }
 
     @Override
     public List<T> list(Predicates<T> predicates, Pagination<T> pagination) {
         return dbi.withHandle(handle -> query(handle::createQuery, new StringBuilder("SELECT * FROM " + ddl().escape(ddl().tablename())), predicates, pagination)
-                .map(this::mapRow).list());
+            .map(this::mapRow).list());
     }
 
 
@@ -354,8 +353,8 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
         return (long) dbi.withHandle(handle -> {
             StringBuilder sql = new StringBuilder("UPDATE " + ddl().escape(ddl().tablename()) + " SET ");
             values.keySet().stream()
-                    .map(member -> model().getColumn(member).name())
-                    .forEach(name -> sql.append(ddl().escape(name)).append(" = ").append(":").append(name).append(", "));
+                .map(member -> model().getColumn(member).name())
+                .forEach(name -> sql.append(ddl().escape(name)).append(" = ").append(":").append(name).append(", "));
             sql.delete(sql.length() - 2, sql.length());
             model().version().ifPresent(version -> {
                 String name = version.name();
@@ -378,17 +377,17 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
     @Override
     public long count(Predicates<T> predicates) {
         return dbi.withHandle(handle -> query(handle::createQuery, new StringBuilder("SELECT COUNT(*) FROM " + ddl().escape(ddl().tablename())), predicates,
-                Pagination.of(model().getType()))
-                .mapTo(Long.class).findOne().orElse(0L));
+            Pagination.of(model().getType()))
+            .mapTo(Long.class).findOne().orElse(0L));
     }
 
     protected T mapRow(ResultSet resultSet, StatementContext ctx) {
         return model().newInstance(instance -> {
             Map<String, Setter<T>> setters = Properties.settersOf(instance);
             model().columns().forEach(column -> {
-                        Object value = unchecked(() -> mappers.computeIfAbsent(column, c -> r -> r.getObject(c.name(), c.member().getType())).apply(resultSet));
-                        setters.get(column.member().getName()).setOn(instance, value);
-                    }
+                    Object value = unchecked(() -> mappers.computeIfAbsent(column, c -> r -> r.getObject(c.name(), c.member().getType())).apply(resultSet));
+                    setters.get(column.member().getName()).setOn(instance, value);
+                }
             );
         });
     }
@@ -412,12 +411,12 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
         if (!predicates.isEmpty()) {
             sql.append(" WHERE ");
             predicates.forEach((field, operators) -> {
-                        Column<T> column = model().getColumn(field);
-                        operators.forEach((predicate, value) -> {
-                            appendPredicate(sql, column, predicate, value, values);
-                            sql.append(" AND ");
-                        });
-                    }
+                    Column<T> column = model().getColumn(field);
+                    operators.forEach((predicate, value) -> {
+                        appendPredicate(sql, column, predicate, value, values);
+                        sql.append(" AND ");
+                    });
+                }
             );
             sql.delete(sql.length() - 5, sql.length());
         }
@@ -453,72 +452,56 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
 
     private void appendPredicate(StringBuilder sql, Column<T> column, Predicate predicate, Object value, Map<String, Object> values) {
         predicateHandlers.computeIfAbsent(predicate, newPredicate -> {
-            switch (newPredicate) {
-                case notIn:
-                case in:
-                    return (s, c, p, o, v) -> {
-                        s.append(ddl().escape(c.name())).append(" ");
-                        if (p == Predicate.notIn) {
-                            s.append("NOT ");
-                        }
-                        s.append("IN (");
-                        Collection<?> collection = (Collection<?>) o;
-                        if (!collection.isEmpty()) {
-                            collection.forEach(element -> {
-                                String columnName = c.name() + v.size();
-                                s.append(':').append(columnName).append(", ");
-                                v.put(columnName, binders.getOrDefault(c, Function.identity()).apply(element));
-                            });
-                            s.delete(s.length() - 2, s.length());
-                        }
-                        s.append(')');
-                    };
-                case is:
-                    return (s, c, p, o, v) -> {
-                        s.append(ddl().escape(c.name()));
-                        if (o == null) {
-                            s.append(" IS NULL");
-                        } else {
-                            appendPlaceholder(s.append(" = "), c, o, v);
-                        }
-                    };
-                case not:
-                    return (s, c, p, o, v) -> {
-                        s.append(ddl().escape(c.name()));
-                        if (o == null) {
-                            s.append(" IS NOT NULL");
-                        } else {
-                            appendPlaceholder(s.append(" != "), c, o, v);
-                        }
-                    };
-                case greaterOrEquals:
-                    return (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" >= "), c, o, v);
-                case greaterThan:
-                    return (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" > "), c, o, v);
-                case lessOrEquals:
-                    return (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" <= "), c, o, v);
-                case lessThan:
-                    return (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" < "), c, o, v);
-                case like:
-                    return (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" LIKE "), c, o, v);
-                case contains:
-                    return (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" LIKE "), c, "%" + o + "%", v);
-                case notLike:
-                    return (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" NOT LIKE "), c, o, v);
-                case doesNotContain:
-                    return (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" NOT LIKE "), c, "%" + o + "%", v);
-                case containedIn:
-                case notContainedIn:
-                    return (s, c, p, o, v) -> {
-                        appendPlaceholder(s, c, o, v);
-                        if (newPredicate == Predicate.notContainedIn) {
-                            s.append(" NOT");
-                        }
-                        s.append(" LIKE CONCAT('%', ").append(ddl().escape(c.name())).append(",'%')");
-                    };
-                default:
-                    throw new UnsupportedOperationException(predicate.toString());
-            }
+            return switch (newPredicate) {
+                case notIn, in -> (s, c, p, o, v) -> {
+                    s.append(ddl().escape(c.name())).append(" ");
+                    if (p == Predicate.notIn) {
+                        s.append("NOT ");
+                    }
+                    s.append("IN (");
+                    Collection<?> collection = (Collection<?>) o;
+                    if (!collection.isEmpty()) {
+                        collection.forEach(element -> {
+                            String columnName = c.name() + v.size();
+                            s.append(':').append(columnName).append(", ");
+                            v.put(columnName, binders.getOrDefault(c, Function.identity()).apply(element));
+                        });
+                        s.delete(s.length() - 2, s.length());
+                    }
+                    s.append(')');
+                };
+                case is -> (s, c, p, o, v) -> {
+                    s.append(ddl().escape(c.name()));
+                    if (o == null) {
+                        s.append(" IS NULL");
+                    } else {
+                        appendPlaceholder(s.append(" = "), c, o, v);
+                    }
+                };
+                case not -> (s, c, p, o, v) -> {
+                    s.append(ddl().escape(c.name()));
+                    if (o == null) {
+                        s.append(" IS NOT NULL");
+                    } else {
+                        appendPlaceholder(s.append(" != "), c, o, v);
+                    }
+                };
+                case greaterOrEquals -> (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" >= "), c, o, v);
+                case greaterThan -> (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" > "), c, o, v);
+                case lessOrEquals -> (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" <= "), c, o, v);
+                case lessThan -> (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" < "), c, o, v);
+                case like -> (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" LIKE "), c, o, v);
+                case contains -> (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" LIKE "), c, "%" + o + "%", v);
+                case notLike -> (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" NOT LIKE "), c, o, v);
+                case doesNotContain -> (s, c, p, o, v) -> appendPlaceholder(s.append(ddl().escape(c.name())).append(" NOT LIKE "), c, "%" + o + "%", v);
+                case containedIn, notContainedIn -> (s, c, p, o, v) -> {
+                    appendPlaceholder(s, c, o, v);
+                    if (newPredicate == Predicate.notContainedIn) {
+                        s.append(" NOT");
+                    }
+                    s.append(" LIKE CONCAT('%', ").append(ddl().escape(c.name())).append(",'%')");
+                };
+            };
         }).accept(sql, column, predicate, value, values);
     }
 
@@ -532,12 +515,8 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
         Date date = null;
         if (column.member().annotation(Temporal.class).isPresent()) {
             switch (column.member().annotation(Temporal.class).get().value()) {
-                case TIME:
-                    date = resultSet.getTime(column.name());
-                    break;
-                case DATE:
-                    date = resultSet.getDate(column.name(), UTC);
-                    break;
+                case TIME -> date = resultSet.getTime(column.name());
+                case DATE -> date = resultSet.getDate(column.name(), UTC);
             }
         }
         if (date == null) {

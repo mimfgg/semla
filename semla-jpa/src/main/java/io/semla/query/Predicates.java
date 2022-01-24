@@ -11,13 +11,11 @@ import io.semla.util.Splitter;
 import io.semla.util.Strings;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.semla.model.EntityModel.isEntity;
 import static io.semla.reflect.Types.isAssignableTo;
-
 
 @SuppressWarnings("unchecked")
 public class Predicates<T> extends LinkedHashMap<Member<T>, Map<Predicate, Object>> {

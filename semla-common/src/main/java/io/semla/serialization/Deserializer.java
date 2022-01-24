@@ -3,11 +3,8 @@ package io.semla.serialization;
 import io.semla.exception.DeserializationException;
 import io.semla.model.InstanceContext;
 import io.semla.model.Model;
-import io.semla.reflect.Annotations;
 import io.semla.reflect.Properties;
-import io.semla.reflect.Setter;
-import io.semla.reflect.TypeReference;
-import io.semla.reflect.Types;
+import io.semla.reflect.*;
 import io.semla.serialization.annotations.TypeInfo;
 import io.semla.serialization.annotations.When;
 import io.semla.serialization.io.CharacterReader;
@@ -74,7 +71,7 @@ public abstract class Deserializer<ContextType extends Deserializer<ContextType>
 
     public <E> E read(String content, Option... options) {
         return newContext(new StringReader(content), Option.concat(defaultOptions, options))
-                .applyTo(context -> read(context, context.getDefaultTypeFromToken()));
+            .applyTo(context -> read(context, context.getDefaultTypeFromToken()));
     }
 
     public <E> E read(String content, TypeReference<E> type, Option... options) {
@@ -83,12 +80,12 @@ public abstract class Deserializer<ContextType extends Deserializer<ContextType>
 
     public <E> E read(String content, Type type, Option... options) {
         return newContext(new StringReader(content), Option.concat(defaultOptions, options))
-                .applyTo(context -> read(context, type));
+            .applyTo(context -> read(context, type));
     }
 
     public <E> E read(InputStream inputStream, Option... options) {
         return newContext(new InputStreamReader(inputStream), Option.concat(defaultOptions, options))
-                .applyTo(context -> read(context, context.getDefaultTypeFromToken()));
+            .applyTo(context -> read(context, context.getDefaultTypeFromToken()));
     }
 
     public <E> E read(InputStream inputStream, TypeReference<E> type, Option... options) {
@@ -97,7 +94,7 @@ public abstract class Deserializer<ContextType extends Deserializer<ContextType>
 
     public <E> E read(InputStream inputStream, Type type, Option... options) {
         return newContext(new InputStreamReader(inputStream), Option.concat(defaultOptions, options))
-                .applyTo(context -> read(context, type));
+            .applyTo(context -> read(context, type));
     }
 
     protected <E> E read(ContextType context, Type type) {
@@ -105,44 +102,44 @@ public abstract class Deserializer<ContextType extends Deserializer<ContextType>
             return null;
         }
         return (E) readers.computeIfAbsent(type, thatType ->
-                CUSTOM_READERS.entrySet().stream()
-                        .filter(e -> e.getKey().test(thatType))
-                        .map(Map.Entry::getValue)
-                        .map(Types::<BiFunction<ContextType, Type, Object>>cast)
-                        .findFirst()
-                        .orElseGet(() -> {
-                            Class<?> rawType = rawTypeOf(thatType);
-                            if (isAssignableToOneOf(thatType, String.class, Character.class, Date.class, Temporal.class, Calendar.class, UUID.class) || rawType.isEnum()) {
-                                return createReader(STRING, c -> Strings.parse(read(c), rawType));
-                            } else if (isAssignableTo(thatType, Number.class)) {
-                                return createReader(NUMBER, c -> Strings.parse(read(c), rawType));
-                            } else if (isAssignableTo(thatType, Boolean.class)) {
-                                return createReader(BOOLEAN, c -> Strings.parse(read(c), rawType));
-                            } else if (isAssignableTo(thatType, Collection.class)) {
-                                return (c, t) -> readArray(c,
-                                        () -> optionalTypeArgumentOf(t).map(Types::rawTypeOf).orElseGet(c::getDefaultTypeFromToken), Types.supplierOf(t)
-                                );
-                            } else if (rawType.isArray()) {
-                                return (c, t) -> {
-                                    Collection<?> collection = readArray(c, () -> Types.wrap(rawTypeOf(t).getComponentType()), Types.supplierOf(List.class));
-                                    if (collection == null) {
-                                        return null;
-                                    }
-                                    return Arrays.toArray(collection, rawTypeOf(t).getComponentType());
-                                };
-                            } else if (rawType.isAnnotation()) {
-                                return (c, t) ->
-                                        Annotations.proxyOf((Class<Annotation>) rawType, readMap(c, c::getDefaultTypeFromToken, supplierOf(Map.class)));
-                            } else if (isAssignableTo(thatType, Map.class)) {
-                                return (c, t) -> readMap(c,
-                                        () -> optionalRawTypeArgumentOf(thatType, 1).orElseGet(c::getDefaultTypeFromToken),
-                                        Types.supplierOf(thatType)
-                                );
-                            } else if (rawType.equals(Optional.class)) {
-                                return (c, t) -> Optional.ofNullable(read(c, typeArgumentOf(thatType)));
+            CUSTOM_READERS.entrySet().stream()
+                .filter(e -> e.getKey().test(thatType))
+                .map(Map.Entry::getValue)
+                .map(Types::<BiFunction<ContextType, Type, Object>>cast)
+                .findFirst()
+                .orElseGet(() -> {
+                    Class<?> rawType = rawTypeOf(thatType);
+                    if (isAssignableToOneOf(thatType, String.class, Character.class, Date.class, Temporal.class, Calendar.class, UUID.class) || rawType.isEnum()) {
+                        return createReader(STRING, c -> Strings.parse(read(c), rawType));
+                    } else if (isAssignableTo(thatType, Number.class)) {
+                        return createReader(NUMBER, c -> Strings.parse(read(c), rawType));
+                    } else if (isAssignableTo(thatType, Boolean.class)) {
+                        return createReader(BOOLEAN, c -> Strings.parse(read(c), rawType));
+                    } else if (isAssignableTo(thatType, Collection.class)) {
+                        return (c, t) -> readArray(c,
+                            () -> optionalTypeArgumentOf(t).map(Types::rawTypeOf).orElseGet(c::getDefaultTypeFromToken), Types.supplierOf(t)
+                        );
+                    } else if (rawType.isArray()) {
+                        return (c, t) -> {
+                            Collection<?> collection = readArray(c, () -> Types.wrap(rawTypeOf(t).getComponentType()), Types.supplierOf(List.class));
+                            if (collection == null) {
+                                return null;
                             }
-                            return (c, t) -> readObject(c, rawType);
-                        })
+                            return Arrays.toArray(collection, rawTypeOf(t).getComponentType());
+                        };
+                    } else if (rawType.isAnnotation()) {
+                        return (c, t) ->
+                            Annotations.proxyOf((Class<Annotation>) rawType, readMap(c, c::getDefaultTypeFromToken, supplierOf(Map.class)));
+                    } else if (isAssignableTo(thatType, Map.class)) {
+                        return (c, t) -> readMap(c,
+                            () -> optionalRawTypeArgumentOf(thatType, 1).orElseGet(c::getDefaultTypeFromToken),
+                            Types.supplierOf(thatType)
+                        );
+                    } else if (rawType.equals(Optional.class)) {
+                        return (c, t) -> Optional.ofNullable(read(c, typeArgumentOf(thatType)));
+                    }
+                    return (c, t) -> readObject(c, rawType);
+                })
         ).apply(context, type);
     }
 
@@ -170,7 +167,7 @@ public abstract class Deserializer<ContextType extends Deserializer<ContextType>
                         context.pop(PROPERTY);
                     } else {
                         throw new DeserializationException("while using polymorphic deserialization on " + clazz + ", " +
-                                "'" + type + "' must be the first property, was '" + firstProperty + "'");
+                            "'" + type + "' must be the first property, was '" + firstProperty + "'");
                     }
                 }
                 object = model.newInstance(instance -> {
@@ -208,8 +205,8 @@ public abstract class Deserializer<ContextType extends Deserializer<ContextType>
                                             break;
                                         case NOT_EMPTY:
                                             if (value != null
-                                                    && ((isAssignableTo(value.getClass(), Collection.class) && ((Collection<?>) value).isEmpty())
-                                                    || (isAssignableTo(value.getClass(), Map.class) && ((Map<?, ?>) value).isEmpty()))
+                                                && ((isAssignableTo(value.getClass(), Collection.class) && ((Collection<?>) value).isEmpty())
+                                                || (isAssignableTo(value.getClass(), Map.class) && ((Map<?, ?>) value).isEmpty()))
                                             ) {
                                                 if (log.isTraceEnabled()) {
                                                     log.trace("skipping empty value");
@@ -266,9 +263,7 @@ public abstract class Deserializer<ContextType extends Deserializer<ContextType>
                     if (log.isTraceEnabled()) {
                         log.trace("merging values: " + value);
                     }
-                    for (Map.Entry<K, V> entry : ((Map<K, V>) value).entrySet()) {
-                        map.put(entry.getKey(), entry.getValue());
-                    }
+                    map.putAll(((Map<K, V>) value));
                 } else {
                     if (log.isTraceEnabled()) {
                         log.trace("property: " + key + " with value: " + value);
@@ -387,22 +382,14 @@ public abstract class Deserializer<ContextType extends Deserializer<ContextType>
         }
 
         protected <E> Class<E> getDefaultTypeFromToken() {
-            switch (currentOrNext()) {
-                case NULL:
-                case OBJECT:
-                    return (Class<E>) Map.class;
-                case NUMBER:
-                    return (Class<E>) Number.class;
-                case BOOLEAN:
-                    return (Class<E>) Boolean.class;
-                case STRING:
-                case PROPERTY:
-                    return (Class<E>) String.class;
-                case ARRAY:
-                    return (Class<E>) List.class;
-                default:
-                    throw new IllegalStateException("cannot deduct type from token " + current);
-            }
+            return switch (currentOrNext()) {
+                case NULL, OBJECT -> (Class<E>) Map.class;
+                case NUMBER -> (Class<E>) Number.class;
+                case BOOLEAN -> (Class<E>) Boolean.class;
+                case STRING, PROPERTY -> (Class<E>) String.class;
+                case ARRAY -> (Class<E>) List.class;
+                default -> throw new IllegalStateException("cannot deduct type from token " + current);
+            };
         }
 
         public InstanceContext cache() {
@@ -428,7 +415,7 @@ public abstract class Deserializer<ContextType extends Deserializer<ContextType>
             if (e != null) {
                 Token nextToken = evaluateNextToken();
                 if (!nextToken.equals(END)) {
-                    throw new DeserializationException(String.format("unexpected trailing content of type %s in %s", nextToken, reader()));
+                    throw new DeserializationException("unexpected trailing content of type %s in %s".formatted(nextToken, reader()));
                 }
             }
             return e;

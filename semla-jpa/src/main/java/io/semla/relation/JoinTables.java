@@ -7,16 +7,16 @@ import io.semla.reflect.Types;
 import io.semla.util.Javassist;
 import io.semla.util.Singleton;
 import io.semla.util.Strings;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class JoinTables {
-
-    private JoinTables() {
-    }
 
     public static <JoinType> Singleton<Class<JoinType>> create(String parentFieldName,
                                                                String childFieldName,
@@ -39,7 +39,7 @@ public class JoinTables {
             .orElseGet(() -> Strings.toSnakeCase(childFieldName));
 
         return Singleton.of(
-            Javassist.getOrCreate(generateName(member, parentModel), clazz -> clazz
+            Javassist.getOrCreate(generateName(member, parentModel), parentModel.getType(), clazz -> clazz
                 .addAnnotation(Entity.class)
                 .addAnnotation(Table.class, annotation -> annotation.set("name", tableName))
                 .addField("id", Integer.class, idField -> idField
@@ -62,21 +62,22 @@ public class JoinTables {
 
     public static String generateName(Member<?> member, EntityModel<?> parentModel) {
         return Stream.<Supplier<String>>of(
-            () -> parentModel.getType().getCanonicalName() + Types.optionalRawTypeArgumentOf(member.getGenericType())
-                .map(Class::getSimpleName).orElse(member.getType().getSimpleName()),  // ParentChild
-            () -> parentModel.getType().getCanonicalName() + "_" + Types.optionalRawTypeArgumentOf(member.getGenericType())
-                .map(Class::getSimpleName).orElse(member.getType().getSimpleName()), // Parent_Child
-            () -> {
-                String name = Strings.capitalize(member.getName());
-                if (name.equals(member.getType().getSimpleName())) {
-                    name = "_" + name;
-                }
-                return parentModel.getType().getCanonicalName() + "_" + name;
-            } // Parent_Children
-        ).map(Supplier::get)
+                () -> parentModel.getType().getCanonicalName() + Types.optionalRawTypeArgumentOf(member.getGenericType())
+                    .map(Class::getSimpleName).orElse(member.getType().getSimpleName()),  // ParentChild
+                () -> parentModel.getType().getCanonicalName() + "_" + Types.optionalRawTypeArgumentOf(member.getGenericType())
+                    .map(Class::getSimpleName).orElse(member.getType().getSimpleName()), // Parent_Child
+                () -> {
+                    String name = Strings.capitalize(member.getName());
+                    if (name.equals(member.getType().getSimpleName())) {
+                        name = "_" + name;
+                    }
+                    return parentModel.getType().getCanonicalName() + "_" + name;
+                } // Parent_Children
+            )
+            .map(Supplier::get)
             .filter(className -> {
                 try {
-                    Class.forName(className);
+                    Types.forName(className);
                 } catch (ClassNotFoundException e) {
                     return true;
                 }

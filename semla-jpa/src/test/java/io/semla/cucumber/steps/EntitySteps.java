@@ -22,6 +22,7 @@ import io.semla.persistence.EntityManagerFactory;
 import io.semla.persistence.PersistenceContext;
 import io.semla.query.Query;
 import io.semla.reflect.TypeReference;
+import io.semla.reflect.Types;
 import io.semla.relation.JoinedRelation;
 import io.semla.serialization.json.Json;
 import io.semla.serialization.yaml.Yaml;
@@ -69,7 +70,7 @@ public class EntitySteps {
 
                 @Override
                 public UUID get() {
-                    return UUID.fromString(String.format("00000000-0000-0000-0000-%012d", counter.incrementAndGet()));
+                    return UUID.fromString("00000000-0000-0000-0000-%012d".formatted(counter.incrementAndGet()));
                 }
             })
             .withModules(modules)
@@ -155,7 +156,7 @@ public class EntitySteps {
 
     @When("^" + Patterns.THAT + "the model of ([{}\\w.]+) is generated$")
     public void the_model_is_generated(String name) {
-        throwables.catchThrowable(() -> Model.of(Class.forName(objects.resolve(name))));
+        throwables.catchThrowable(() -> Model.of(Types.forName(objects.resolve(name))));
     }
 
     @Given("^th(?:is|ose|ese) ([^ ]+) entit(?:ies|y):$")

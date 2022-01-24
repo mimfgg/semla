@@ -23,9 +23,10 @@ public class MysqlDatasourceConfigurationTest {
 
     @Test
     public void parse() {
-        Datasource.Configuration configuration = Yaml.read("" +
-                "type: mysql\n" +
-                "jdbcUrl: \"jdbc:mysql://test:3306/test\"\n"
+        Datasource.Configuration configuration = Yaml.read("""
+                type: mysql
+                jdbcUrl: "jdbc:mysql://test:3306/test"
+                """
             , Datasource.Configuration.class);
         assertThat(configuration).isInstanceOf(MysqlDatasource.Configuration.class);
     }

@@ -4,6 +4,7 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.semla.datasource.SqlDatasource;
 import io.semla.model.EntityModel;
+import io.semla.reflect.Types;
 import org.jdbi.v3.core.Jdbi;
 
 import java.util.function.Function;
@@ -24,7 +25,7 @@ public class SqlSteps {
 
     @Given("^" + THAT + CLASS_NAME + " is the default datasource$")
     public void the_default_datasource_is(String name) throws ClassNotFoundException {
-        Class<?> clazz = Class.forName(name);
+        Class<?> clazz = Types.forName(name);
         sqlDatasourceGenerator = entityModel -> unchecked(() -> (SqlDatasource<?>) clazz
             .getConstructor(EntityModel.class, Jdbi.class, String.class)
             .newInstance(entityModel, null, entityModel.tablename()));
@@ -33,7 +34,7 @@ public class SqlSteps {
     @Then("^the schema of " + CLASS_NAME + " is equal to:$")
     public void its_schema_is_equal_to(String className, String schema) throws ClassNotFoundException {
         className = objects.resolve(className);
-        Class<?> clazz = Class.forName(className);
+        Class<?> clazz = Types.forName(className);
         SqlDatasource<?> sqlDatasource = sqlDatasourceGenerator.apply(EntityModel.of(clazz));
         assertThat(String.join("", sqlDatasource.ddl().create())).isEqualTo(schema);
     }

@@ -40,7 +40,9 @@ public class RedisDatasourceConfigurationTest {
 
     @Test
     public void parse() {
-        Datasource.Configuration configuration = Yaml.read("type: redis", Datasource.Configuration.class);
+        Datasource.Configuration configuration = Yaml.read("""
+            type: redis
+            """, Datasource.Configuration.class);
         assertThat(configuration).isInstanceOf(RedisDatasource.Configuration.class);
     }
 }

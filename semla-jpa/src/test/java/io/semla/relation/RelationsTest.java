@@ -87,10 +87,10 @@ public class RelationsTest {
     @Test
     public void includeASecondDegreeParentAndAMatchingGrandChild() {
         Fruit apple = fruits.where().name().is("apple").first(fruit ->
-            fruit.genus(genus ->
-                genus.family(family ->
-                    family.genuses(allGenuses ->
-                        allGenuses.fruits())))).get();
+                fruit.genus(genus ->
+                        genus.family(family ->
+                                family.genuses(allGenuses ->
+                                        allGenuses.fruits())))).get();
         Assertions.assertThat(apple.genus).isNotNull();
         Assertions.assertThat(apple.genus.family).isNotNull();
         Assertions.assertThat(apple.genus.family.name).isEqualTo("Rosaceae");
@@ -177,15 +177,15 @@ public class RelationsTest {
     @Test
     public void safeJoinTableNameGenerations() {
         assertThat(JoinTables.generateName(families.model().member("genuses"), families.model())).isEqualTo("io.semla.model.FamilyGenus");
-        Javassist.getOrCreate("io.semla.model.FamilyGenus", UnaryOperator.identity());
+        Javassist.getOrCreate("io.semla.model.FamilyGenus", Family.class, UnaryOperator.identity());
         assertThat(JoinTables.generateName(families.model().member("genuses"), families.model())).isEqualTo("io.semla.model.Family_Genus");
-        Javassist.getOrCreate("io.semla.model.Family_Genus", UnaryOperator.identity());
+        Javassist.getOrCreate("io.semla.model.Family_Genus", Family.class, UnaryOperator.identity());
         assertThat(JoinTables.generateName(families.model().member("genuses"), families.model())).isEqualTo("io.semla.model.Family_Genuses");
 
         assertThat(JoinTables.generateName(genuses.model().member("family"), genuses.model())).isEqualTo("io.semla.model.GenusFamily");
-        Javassist.getOrCreate("io.semla.model.GenusFamily", UnaryOperator.identity());
+        Javassist.getOrCreate("io.semla.model.GenusFamily", Family.class, UnaryOperator.identity());
         assertThat(JoinTables.generateName(genuses.model().member("family"), genuses.model())).isEqualTo("io.semla.model.Genus_Family");
-        Javassist.getOrCreate("io.semla.model.Genus_Family", UnaryOperator.identity());
+        Javassist.getOrCreate("io.semla.model.Genus_Family", Family.class, UnaryOperator.identity());
         assertThat(JoinTables.generateName(genuses.model().member("family"), genuses.model())).isEqualTo("io.semla.model.Genus__Family");
     }
 

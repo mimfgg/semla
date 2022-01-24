@@ -14,5 +14,4 @@ public @interface Index {
     String name() default "";
 
     boolean unique() default false;
-
 }

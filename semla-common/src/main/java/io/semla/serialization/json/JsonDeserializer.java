@@ -89,48 +89,27 @@ public class JsonDeserializer extends Deserializer<JsonDeserializer.Context> {
             if (log.isTraceEnabled()) {
                 log.trace("evaluating: " + c);
             }
-            switch (c) {
-                case '"':
+            return switch (c) {
+                case '"' -> {
                     if (last() == Token.OBJECT) {
-                        return Token.PROPERTY;
+                        yield Token.PROPERTY;
                     }
-                    return Token.STRING;
-                case 't':
-                case 'f':
-                    return Token.BOOLEAN;
-                case 'n':
+                    yield Token.STRING;
+                }
+                case 't', 'f' -> Token.BOOLEAN;
+                case 'n' -> {
                     reader().assertNextCharactersAre("ull");
-                    return Token.NULL;
-                case '{':
-                    return Token.OBJECT;
-                case '[':
-                    return Token.ARRAY;
-                case '0':
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-                case '.':
-                    return Token.NUMBER;
-                case ':':
-                case ',':
-                case '\n':
-                case '\r':
-                    return evaluateNextToken();
-                case EOF:
-                    return Token.END;
-                case '}':
-                    return Token.OBJECT_END;
-                case ']':
-                    return Token.ARRAY_END;
-                default:
-                    throw new DeserializationException("unexpected character '" + c + "' at " + reader().index() + "/" + reader().length());
-            }
+                    yield Token.NULL;
+                }
+                case '{' -> Token.OBJECT;
+                case '[' -> Token.ARRAY;
+                case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.' -> Token.NUMBER;
+                case ':', ',', '\n', '\r' -> evaluateNextToken();
+                case EOF -> Token.END;
+                case '}' -> Token.OBJECT_END;
+                case ']' -> Token.ARRAY_END;
+                default -> throw new DeserializationException("unexpected character '" + c + "' at " + reader().index() + "/" + reader().length());
+            };
         }
     }
 }

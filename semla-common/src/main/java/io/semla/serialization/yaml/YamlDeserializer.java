@@ -1,6 +1,7 @@
 package io.semla.serialization.yaml;
 
 import io.semla.exception.DeserializationException;
+import io.semla.reflect.Types;
 import io.semla.serialization.Deserializer;
 import io.semla.serialization.Token;
 import io.semla.serialization.io.CharacterReader;
@@ -231,7 +232,7 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                                     }
                                 } else {
                                     try {
-                                        Class<?> clazz = Class.forName(tag);
+                                        Class<?> clazz = Types.forName(tag);
                                         explicitToken = Token.fromType(clazz);
                                     } catch (ClassNotFoundException e) {
                                         throw new DeserializationException("unknown class: " + tag + " @" + reader(), e);
@@ -378,12 +379,8 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
 
             for (int i = structure().size() - 1; i >= 0; i--) {
                 switch (structure().get(i)) {
-                    case OBJECT:
-                        enqueue(Token.OBJECT_END);
-                        break;
-                    case ARRAY:
-                        enqueue(Token.ARRAY_END);
-                        break;
+                    case OBJECT -> enqueue(Token.OBJECT_END);
+                    case ARRAY -> enqueue(Token.ARRAY_END);
                 }
             }
 
@@ -419,9 +416,7 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                         reader().stashCurrent();
                     } else {
                         if (delta > 1) {
-                            for (int i = 1; i < delta; i++) {
-                                buffer.append(System.lineSeparator());
-                            }
+                            buffer.append(String.valueOf(System.lineSeparator()).repeat(delta - 1));
                         } else {
                             if (!backslashed) {
                                 buffer.append(" ");
@@ -464,19 +459,18 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                             break;
                         case '"':
                             switch (quoting) {
-                                case DOUBLE_QUOTED:
+                                case DOUBLE_QUOTED -> {
                                     if (!backslashed) {
                                         read = false;
                                         break;
                                     }
                                     buffer.append(backslashed(s));
                                     backslashed = false;
-                                    break;
-                                case SINGLE_QUOTED:
-                                case PLAIN:
+                                }
+                                case SINGLE_QUOTED, PLAIN -> {
                                     buffer.append(backslashed ? backslashed(s) : s);
                                     backslashed = false;
-                                    break;
+                                }
                             }
                             break;
                         case '#':
@@ -498,22 +492,15 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
         }
 
         private char backslashed(char c) {
-            switch (c) {
-                case 't':
-                    return '\t';
-                case 'b':
-                    return '\b';
-                case 'n':
-                    return '\n';
-                case 'r':
-                    return '\r';
-                case 'f':
-                    return '\f';
-                case '"':
-                    return '\"';
-                default:
-                    return c;
-            }
+            return switch (c) {
+                case 't' -> '\t';
+                case 'b' -> '\b';
+                case 'n' -> '\n';
+                case 'r' -> '\r';
+                case 'f' -> '\f';
+                case '"' -> '\"';
+                default -> c;
+            };
         }
 
         private void bufferBlock(BlockStyle blockStyle, BlockChomping chomping) {
@@ -534,26 +521,20 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                             case STRIP:
                                 break;
                             case KEEP:
-                                for (int i = 0; i <= delta; i++) {
-                                    buffer.append(System.lineSeparator());
-                                }
+                                buffer.append(String.valueOf(System.lineSeparator()).repeat(Math.max(0, delta + 1)));
                                 break;
                         }
                     } else {
                         switch (blockStyle) {
                             case FOLDED:
                                 if (delta > 1) {
-                                    for (int i = 1; i < delta; i++) {
-                                        buffer.append(System.lineSeparator());
-                                    }
+                                    buffer.append(String.valueOf(System.lineSeparator()).repeat(delta - 1));
                                 } else {
                                     buffer.append(" ");
                                 }
                                 break;
                             case LITERAL:
-                                for (int i = 0; i < delta; i++) {
-                                    buffer.append(System.lineSeparator());
-                                }
+                                buffer.append(String.valueOf(System.lineSeparator()).repeat(Math.max(0, delta)));
                                 break;
                         }
                     }
@@ -701,12 +682,8 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
             LinkedList<Token> pops = new LinkedList<>();
             for (int i = structure().size() - 1; i >= 0 && columns.get(i) > column; i--) {
                 switch (structure().get(i)) {
-                    case OBJECT:
-                        pops.add(Token.OBJECT_END);
-                        break;
-                    case ARRAY:
-                        pops.add(Token.ARRAY_END);
-                        break;
+                    case OBJECT -> pops.add(Token.OBJECT_END);
+                    case ARRAY -> pops.add(Token.ARRAY_END);
                 }
             }
             return pops;
@@ -727,21 +704,14 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
     }
 
     private Token explicitTokenOf(String tag) {
-        switch (tag) {
-            case "!str":
-                return Token.STRING;
-            case "!int":
-            case "!float":
-                return Token.NUMBER;
-            case "!bool":
-                return Token.BOOLEAN;
-            case "!map":
-                return Token.OBJECT;
-            case "!seq":
-                return Token.ARRAY;
-            default:
-                return null;
-        }
+        return switch (tag) {
+            case "!str" -> Token.STRING;
+            case "!int", "!float" -> Token.NUMBER;
+            case "!bool" -> Token.BOOLEAN;
+            case "!map" -> Token.OBJECT;
+            case "!seq" -> Token.ARRAY;
+            default -> null;
+        };
     }
 
     private enum FlowStyle {
@@ -772,15 +742,14 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
         CLIP, STRIP, KEEP;
 
         static BlockChomping from(char indicator) {
-            switch (indicator) {
-                case '\n':
-                    return CLIP;
-                case '-':
-                    return STRIP;
-                case '+':
-                    return KEEP;
-            }
-            throw new DeserializationException("unsupported BlockChomping: " + indicator);
+            return switch (indicator) {
+                case '\n' -> CLIP;
+                case '-' -> STRIP;
+                case '+' -> KEEP;
+                default -> {
+                    throw new DeserializationException("unsupported BlockChomping: " + indicator);
+                }
+            };
         }
     }
 }

@@ -15,6 +15,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Optional;
@@ -139,7 +140,7 @@ public class TypedEntityManagerTest {
         calendar.setTimeInMillis(315532800000L);
         Calendar lastLogin = Calendar.getInstance();
         lastLogin.setTimeInMillis(3600);
-        LocalDateTime localDateTime = LocalDateTime.now();
+        LocalDateTime localDateTime = LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS);
 
         User user = users.newUser("bob", new Date(347155200000L))
                 .created(1)
@@ -166,7 +167,7 @@ public class TypedEntityManagerTest {
                 .eyecolor(User.EyeColor.brown)
                 .create();
 
-        User reloaded = users.where().id().is(user.id).first().get();
+        User reloaded = users.where().id().is(user.id).first().orElseThrow();
         assertThat(Json.write(reloaded, PRETTY)).isEqualTo(Json.write(user, PRETTY));
 
         assertThat(users.where().created().is(1l).first().get().id).isEqualTo(user.id);

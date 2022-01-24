@@ -24,7 +24,7 @@ public class PostgresqlDatasource<T> extends SqlDatasource<T> {
     @Override
     protected void extend() {
         if (model().key().member().annotation(GeneratedValue.class).isPresent()) {
-            if (!model().key().columnDefinition().isPresent() && isAssignableToOneOf(model().key().member().getType(), Integer.class, Long.class)) {
+            if (model().key().columnDefinition().isEmpty() && isAssignableToOneOf(model().key().member().getType(), Integer.class, Long.class)) {
                 ddl().withColumnDefinition(model().key()::equals, "SERIAL PRIMARY KEY");
             }
         }

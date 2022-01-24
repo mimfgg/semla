@@ -1,13 +1,15 @@
 package io.semla.util;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.stream.Stream;
 
 @SuppressWarnings("unchecked")
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Arrays {
-
-    private Arrays() {}
 
     public static Object[] emptyIfNull(Object[] objects) {
         return objects == null ? new Object[0] : objects;
@@ -19,24 +21,17 @@ public final class Arrays {
         }
         Class<?> componentType = value.getClass().getComponentType();
         if (componentType.isPrimitive()) {
-            switch (componentType.getSimpleName()) {
-                case "long":
-                    return (E[]) box((long[]) value);
-                case "int":
-                    return (E[]) box((int[]) value);
-                case "short":
-                    return (E[]) box((short[]) value);
-                case "char":
-                    return (E[]) box((char[]) value);
-                case "byte":
-                    return (E[]) box((byte[]) value);
-                case "boolean":
-                    return (E[]) box((boolean[]) value);
-                case "float":
-                    return (E[]) box((float[]) value);
-                case "double":
-                    return (E[]) box((double[]) value);
-            }
+            return switch (componentType.getSimpleName()) {
+                case "long" -> (E[]) box((long[]) value);
+                case "int" -> (E[]) box((int[]) value);
+                case "short" -> (E[]) box((short[]) value);
+                case "char" -> (E[]) box((char[]) value);
+                case "byte" -> (E[]) box((byte[]) value);
+                case "boolean" -> (E[]) box((boolean[]) value);
+                case "float" -> (E[]) box((float[]) value);
+                case "double" -> (E[]) box((double[]) value);
+                default -> (E[]) value;
+            };
         }
         return (E[]) value;
     }
@@ -108,24 +103,17 @@ public final class Arrays {
     public static Object unbox(Object[] value) {
         Class<?> componentType = value.getClass().getComponentType();
         if (!componentType.isPrimitive()) {
-            switch (componentType.getSimpleName()) {
-                case "Long":
-                    return unbox((Long[]) value);
-                case "Integer":
-                    return unbox((Integer[]) value);
-                case "Short":
-                    return unbox((Short[]) value);
-                case "Character":
-                    return unbox((Character[]) value);
-                case "Byte":
-                    return unbox((Byte[]) value);
-                case "Boolean":
-                    return unbox((Boolean[]) value);
-                case "Float":
-                    return unbox((Float[]) value);
-                case "Double":
-                    return unbox((Double[]) value);
-            }
+            return switch (componentType.getSimpleName()) {
+                case "Long" -> unbox((Long[]) value);
+                case "Integer" -> unbox((Integer[]) value);
+                case "Short" -> unbox((Short[]) value);
+                case "Character" -> unbox((Character[]) value);
+                case "Byte" -> unbox((Byte[]) value);
+                case "Boolean" -> unbox((Boolean[]) value);
+                case "Float" -> unbox((Float[]) value);
+                case "Double" -> unbox((Double[]) value);
+                default -> value;
+            };
         }
         return value;
     }
