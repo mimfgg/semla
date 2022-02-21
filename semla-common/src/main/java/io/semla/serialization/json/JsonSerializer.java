@@ -110,7 +110,7 @@ public class JsonSerializer extends Serializer<JsonSerializer.Context> {
         private boolean pretty;
 
         public Context(CharacterWriter writer, Set<Option> options) {
-            super(writer);
+            super(writer, options);
             if (options.contains(PRETTY)) {
                 this.pretty = true;
             }

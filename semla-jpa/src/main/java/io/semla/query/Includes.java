@@ -59,7 +59,7 @@ public class Includes<T> {
                 case '[':
                     closingBracket = Strings.getClosingBracketIndex(include, i, '[', ']');
                     if (closingBracket > -1) {
-                        IncludeType[] includeTypes = Yaml.getDeserializer()
+                        IncludeType[] includeTypes = Yaml.defaultDeserializer()
                             .<List<IncludeType>>read(include.substring(i, closingBracket), Types.parameterized(List.class, IncludeType.class))
                             .toArray(new IncludeType[0]);
                         relations.computeIfAbsent(model.getRelation(sb.toString()), relation -> new Include<>(relation, new IncludeTypes(includeTypes)));

@@ -39,8 +39,11 @@ public class SerializationSteps {
     @Then("^it gets (pretty )?serialized as this json:$")
     public void it_gets_serialized_as_this_json(String pretty, String content) {
         throwableSteps.assertNothingWasThrown();
-        Assertions.assertThat(Json.write(object, pretty != null ? new Serializer.Option[]{JsonSerializer.PRETTY} : new Serializer.Option[0]))
-            .isEqualTo(content);
+        if (pretty != null) {
+            Assertions.assertThat(Json.write(object, JsonSerializer.PRETTY)).isEqualTo(content);
+        } else {
+            Assertions.assertThat(Json.write(object)).isEqualTo(content);
+        }
     }
 
     @And("^it gets serialized as this yaml:$")

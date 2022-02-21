@@ -12,11 +12,11 @@ public class Yaml {
     private static final YamlSerializer YAML_SERIALIZER = new YamlSerializer();
     private static final YamlDeserializer YAML_DESERIALIZER = new YamlDeserializer();
 
-    public static YamlDeserializer getDeserializer() {
+    public static YamlDeserializer defaultDeserializer() {
         return YAML_DESERIALIZER;
     }
 
-    public static YamlSerializer getSerializer() {
+    public static YamlSerializer defaultSerializer() {
         return YAML_SERIALIZER;
     }
 

@@ -13,11 +13,11 @@ public class Json {
     private static final JsonSerializer JSON_SERIALIZER = new JsonSerializer();
     private static final JsonDeserializer JSON_DESERIALIZER = new JsonDeserializer();
 
-    public static JsonDeserializer getDeserializer() {
+    public static JsonDeserializer defaultDeserializer() {
         return JSON_DESERIALIZER;
     }
 
-    public static JsonSerializer getSerializer() {
+    public static JsonSerializer defaultSerializer() {
         return JSON_SERIALIZER;
     }
 

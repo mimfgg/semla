@@ -38,17 +38,18 @@ public class SomeType {
     @Deserialize(NEVER)
     public String typeThatShouldBeIgnored;
 
+    @Serialize(order = 17)
     @Deserialize(NEVER)
     public int getSomeReadOnlyValue() {
         return someReadOnlyValue;
     }
 
-    @Serialize
+    @Serialize(order = 18)
     public int someCalculation() {
         return someReadOnlyValue * 2;
     }
 
-    @Serialize(as = "doubleThatCalculation")
+    @Serialize(as = "doubleThatCalculation", order = 19)
     public int someCalculation2() {
         return someCalculation() * 2;
     }

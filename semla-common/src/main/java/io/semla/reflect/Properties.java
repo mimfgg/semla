@@ -1,5 +1,7 @@
 package io.semla.reflect;
 
+import io.semla.util.ImmutableList;
+import io.semla.util.ImmutableMap;
 import io.semla.util.Maps;
 import io.semla.util.Singleton;
 
@@ -35,21 +37,21 @@ public class Properties {
                 }
             });
             methodsByName.forEach((name, methods) -> {
-                        Field field = Fields.getField(clazz, name);
-                        if (field != null) {
-                            Method getter = methods[0];
-                            if (getter != null && !getter.getReturnType().equals(field.getType())) {
-                                getter = null;
-                            }
-                            Method setter = methods[1];
-                            if (setter != null && !setter.getParameterTypes()[0].equals(field.getType())) {
-                                setter = null;
-                            }
-                            membersByName.put(name, Member.from(field, getter, setter));
+                    Field field = Fields.getField(clazz, name);
+                    if (field != null) {
+                        Method getter = methods[0];
+                        if (getter != null && !getter.getReturnType().equals(field.getType())) {
+                            getter = null;
                         }
+                        Method setter = methods[1];
+                        if (setter != null && !setter.getParameterTypes()[0].equals(field.getType())) {
+                            setter = null;
+                        }
+                        membersByName.put(name, Member.from(field, getter, setter));
                     }
+                }
             );
-            return sortByFieldOrder(membersByName, clazz);
+            return ImmutableMap.copyOf(sortByFieldOrder(membersByName, clazz));
         }).get();
     }
 
@@ -64,7 +66,6 @@ public class Properties {
     @SuppressWarnings("unchecked")
     public static <T> List<Getter<T>> gettersOf(T instance) {
         return gettersOf((Class<T>) instance.getClass());
-
     }
 
     public static <T> List<Getter<T>> gettersOf(Class<T> clazz) {
@@ -83,7 +84,7 @@ public class Properties {
                 }
             });
 
-            return new ArrayList<>(sortByFieldOrder(gettersByName, clazz).values());
+            return ImmutableList.copyOf(sortByFieldOrder(gettersByName, clazz).values());
         }).get();
     }
 
@@ -108,7 +109,7 @@ public class Properties {
                 }
             });
 
-            return settersByName;
+            return ImmutableMap.copyOf(settersByName);
         }).get();
     }
 
@@ -116,17 +117,17 @@ public class Properties {
         // methods come in random order, but at least we can try to match the fields order
         List<String> fieldsNames = new ArrayList<>(Fields.byName(clazz).keySet());
         return propertiesByName.entrySet().stream()
-                .sorted((o1, o2) -> {
-                    if (fieldsNames.contains(o1.getKey()) && fieldsNames.contains(o2.getKey())) {
-                        return Integer.compare(fieldsNames.indexOf(o1.getKey()), fieldsNames.indexOf(o2.getKey()));
-                    } else if (fieldsNames.contains(o1.getKey())) {
-                        return -1;
-                    } else if (fieldsNames.contains(o2.getKey())) {
-                        return 1;
-                    }
-                    return 0;
-                })
-                .collect(Maps.collect(Map.Entry::getKey, Map.Entry::getValue));
+            .sorted((o1, o2) -> {
+                if (fieldsNames.contains(o1.getKey()) && fieldsNames.contains(o2.getKey())) {
+                    return Integer.compare(fieldsNames.indexOf(o1.getKey()), fieldsNames.indexOf(o2.getKey()));
+                } else if (fieldsNames.contains(o1.getKey())) {
+                    return -1;
+                } else if (fieldsNames.contains(o2.getKey())) {
+                    return 1;
+                }
+                return 0;
+            })
+            .collect(Maps.collect(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     public static boolean hasMember(Class<?> clazz, String name) {

@@ -510,7 +510,7 @@ Here are some usage examples:
  String content = Json.write(list);
  String content = Yaml.write(list);
  String content = Json.write(list, JsonSerializer.PRETTY); // enable pretty serialization only for this method call
- Json.getSerializer().options().add(JsonSerializer.PRETTY); // enable pretty serialization for all
+ Json.defaultSerializer().defaultOptions().add(JsonSerializer.PRETTY); // enable pretty serialization for all
 ```
 
 While less configurable than Jackson, it should be sufficient for most projects. Current options are:

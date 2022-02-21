@@ -2,15 +2,17 @@ package io.semla.util;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static java.util.Collections.synchronizedMap;
+
 @Slf4j
 public class Singleton<T> implements Supplier<T> {
 
-    private static final Map<String, Singleton<?>> GLOBAL = new LinkedHashMap<>();
+    private static final Map<String, Singleton<?>> GLOBAL = synchronizedMap(new HashMap<>());
 
     private Supplier<T> supplier;
     private volatile T instance;

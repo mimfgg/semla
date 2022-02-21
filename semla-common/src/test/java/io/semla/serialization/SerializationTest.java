@@ -8,6 +8,7 @@ import io.semla.model.Score;
 import io.semla.reflect.Annotations;
 import io.semla.reflect.TypeReference;
 import io.semla.reflect.Types;
+import io.semla.serialization.annotations.Serialize;
 import io.semla.serialization.io.OutputStreamWriter;
 import io.semla.serialization.json.Json;
 import io.semla.serialization.json.JsonSerializer;
@@ -16,6 +17,9 @@ import io.semla.util.Lists;
 import io.semla.util.Maps;
 import io.semla.util.Splitter;
 import io.semla.util.Strings;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Value;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -38,7 +42,7 @@ public class SerializationTest {
     @Test
     public void deserializerCanUseTypeReference() {
         String content = "[1,2,3,4,5]";
-        Set<Integer> set = Yaml.getDeserializer().read(content, new TypeReference<Set<Integer>>() {
+        Set<Integer> set = Yaml.defaultDeserializer().read(content, new TypeReference<Set<Integer>>() {
         });
         assertThat(Json.write(set)).isEqualTo(content);
     }
@@ -54,38 +58,39 @@ public class SerializationTest {
     public void deserializeFromAndToAStream() {
         String content = "[1,2,3,4,5]";
         ByteArrayInputStream inputStream = new ByteArrayInputStream(content.getBytes());
-        List<Integer> list = Json.getDeserializer().read(inputStream);
+        List<Integer> list = Json.defaultDeserializer().read(inputStream);
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        Json.getSerializer().write(list, byteArrayOutputStream);
+        Json.defaultSerializer().write(list, byteArrayOutputStream);
         assertThat(byteArrayOutputStream.toString()).isEqualTo(content);
 
         ByteArrayOutputStream yamlByteArrayOutputStream = new ByteArrayOutputStream();
-        Yaml.getSerializer().write(list, yamlByteArrayOutputStream);
-        assertThat(yamlByteArrayOutputStream.toString()).isEqualTo(
-                "- 1\n" +
-                        "- 2\n" +
-                        "- 3\n" +
-                        "- 4\n" +
-                        "- 5");
+        Yaml.defaultSerializer().write(list, yamlByteArrayOutputStream);
+        assertThat(yamlByteArrayOutputStream.toString()).isEqualTo("""
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5""");
 
-        assertThat(Json.getDeserializer().<List<Integer>>read(new ByteArrayInputStream(content.getBytes()), Types.parameterized(List.class, Integer.class)))
-                .isEqualTo(Lists.of(1, 2, 3, 4, 5));
-        assertThat(Json.getDeserializer().read(new ByteArrayInputStream(content.getBytes()), new TypeReference<List<Integer>>() {}))
-                .isEqualTo(Lists.of(1, 2, 3, 4, 5));
+        assertThat(Json.defaultDeserializer().<List<Integer>>read(new ByteArrayInputStream(content.getBytes()), Types.parameterized(List.class, Integer.class)))
+            .isEqualTo(Lists.of(1, 2, 3, 4, 5));
+        assertThat(Json.defaultDeserializer().read(new ByteArrayInputStream(content.getBytes()), new TypeReference<List<Integer>>() {
+        }))
+            .isEqualTo(Lists.of(1, 2, 3, 4, 5));
     }
 
     @Test
     public void failingStreams() {
-        assertThatThrownBy(() -> Json.getDeserializer().read(new InputStream() {
+        assertThatThrownBy(() -> Json.defaultDeserializer().read(new InputStream() {
             @Override
             public synchronized int read() throws IOException {
                 throw new IOException("something went wrong");
             }
         }))
-                .isInstanceOf(DeserializationException.class)
-                .hasMessage("something went wrong");
+            .isInstanceOf(DeserializationException.class)
+            .hasMessage("something went wrong");
 
-        assertThatThrownBy(() -> Json.getDeserializer().read(new InputStream() {
+        assertThatThrownBy(() -> Json.defaultDeserializer().read(new InputStream() {
             @Override
             public int read() throws IOException {
                 return 0;
@@ -96,17 +101,17 @@ public class SerializationTest {
                 throw new IOException("something went wrong");
             }
         }))
-                .isInstanceOf(DeserializationException.class)
-                .hasMessage("something went wrong");
+            .isInstanceOf(DeserializationException.class)
+            .hasMessage("something went wrong");
 
-        assertThatThrownBy(() -> Json.getSerializer().write(new LinkedHashMap<>(), new OutputStream() {
+        assertThatThrownBy(() -> Json.defaultSerializer().write(new LinkedHashMap<>(), new OutputStream() {
             @Override
             public void write(int b) throws IOException {
                 throw new IOException("something went wrong");
             }
         }))
-                .isInstanceOf(SerializationException.class)
-                .hasMessage("something went wrong");
+            .isInstanceOf(SerializationException.class)
+            .hasMessage("something went wrong");
     }
 
     @Test
@@ -160,7 +165,7 @@ public class SerializationTest {
                 return blocking ? 0 : 1;
             }
         };
-        List<Integer> list = Json.getDeserializer().read(inputStream);
+        List<Integer> list = Json.defaultDeserializer().read(inputStream);
         StringBuilder output = new StringBuilder();
         OutputStream outputStream = new OutputStream() {
             boolean blocking = true;
@@ -179,7 +184,7 @@ public class SerializationTest {
             }
         };
 
-        Json.getSerializer().write(list, outputStream);
+        Json.defaultSerializer().write(list, outputStream);
         assertThat(output.toString()).isEqualTo(content);
     }
 
@@ -203,11 +208,11 @@ public class SerializationTest {
         assertThat(Yaml.<Object>read("1 and some content")).isEqualTo("1 and some content");
         assertThat(Json.<Object>read("\"1 and some content\"")).isEqualTo("1 and some content");
         assertThatThrownBy(() -> Json.read("1 and some content"))
-                .isInstanceOf(DeserializationException.class)
-                .hasMessage("unexpected character 'a' at 2/18");
+            .isInstanceOf(DeserializationException.class)
+            .hasMessage("unexpected character 'a' at 2/18");
         assertThatThrownBy(() -> Json.read("1 \"and some content\""))
-                .isInstanceOf(DeserializationException.class)
-                .hasMessage("unexpected trailing content of type STRING in column: 2 line: 0 character: '\"' @2/20");
+            .isInstanceOf(DeserializationException.class)
+            .hasMessage("unexpected trailing content of type STRING in column: 2 line: 0 character: '\"' @2/20");
     }
 
     @Test
@@ -215,34 +220,34 @@ public class SerializationTest {
         Types.registerSubType(Child.class);
         assertThat(Yaml.read("type: child", Parent.class)).isNotNull().isInstanceOf(Child.class);
         assertThatThrownBy(() -> Yaml.read("name: bob\ntype: child", Parent.class))
-                .isInstanceOf(DeserializationException.class)
-                .hasMessage("while using polymorphic deserialization on interface io.semla.model.Parent," +
-                        " 'type' must be the first property, was 'name'");
+            .isInstanceOf(DeserializationException.class)
+            .hasMessage("while using polymorphic deserialization on interface io.semla.model.Parent," +
+                " 'type' must be the first property, was 'name'");
     }
 
     @Test
     public void wrong_context() {
         assertThatThrownBy(() -> Yaml.read("true", Score.class))
-                .isInstanceOf(DeserializationException.class)
-                .hasMessage("cannot deserialize a class io.semla.model.Score out of a BOOLEAN");
+            .isInstanceOf(DeserializationException.class)
+            .hasMessage("cannot deserialize a class io.semla.model.Score out of a BOOLEAN");
         assertThatThrownBy(() -> Yaml.read("true", List.class))
-                .isInstanceOf(DeserializationException.class)
-                .hasMessage("cannot deserialize a class java.util.ArrayList out of a BOOLEAN");
+            .isInstanceOf(DeserializationException.class)
+            .hasMessage("cannot deserialize a class java.util.ArrayList out of a BOOLEAN");
         assertThatThrownBy(() -> Yaml.read("true", Map.class))
-                .isInstanceOf(DeserializationException.class)
-                .hasMessage("cannot deserialize a class java.util.LinkedHashMap out of a BOOLEAN");
+            .isInstanceOf(DeserializationException.class)
+            .hasMessage("cannot deserialize a class java.util.LinkedHashMap out of a BOOLEAN");
     }
 
     @Test
     public void options() {
-        Json.getSerializer().options().add(JsonSerializer.PRETTY);
-        Json.getSerializer().options().remove(JsonSerializer.PRETTY);
+        Json.defaultSerializer().defaultOptions().add(JsonSerializer.PRETTY);
+        Json.defaultSerializer().defaultOptions().remove(JsonSerializer.PRETTY);
     }
 
     @Test
     public void customReaderAndWriter() {
-        Yaml.getDeserializer().read(SplittedContent.class).as(Token.STRING, value -> Splitter.on('.').split(value).map(SplittedContent::new));
-        Yaml.getSerializer().write(SplittedContent.class).as(splittedContent -> String.join(".", splittedContent.getValues()));
+        Yaml.defaultDeserializer().read(SplittedContent.class).as(Token.STRING, value -> Splitter.on('.').split(value).map(SplittedContent::new));
+        Yaml.defaultSerializer().write(SplittedContent.class).as(splittedContent -> String.join(".", splittedContent.getValues()));
         SplittedContent splittedContent = Yaml.read("a.b.c.d", SplittedContent.class);
         assertThat(splittedContent.getValues()).isEqualTo(Lists.of("a", "b", "c", "d"));
         assertThat(Yaml.write(splittedContent)).isEqualTo("a.b.c.d");
@@ -264,7 +269,7 @@ public class SerializationTest {
     @Test
     public void unexpectedCharacters() {
         assertThatThrownBy(() -> Json.read("{\"value\": nice}"))
-                .hasMessage("expected the next non white space character to be 'u' but it was 'i' at index: 11/15");
+            .hasMessage("expected the next non white space character to be 'u' but it was 'i' at index: 11/15");
     }
 
     @Test
@@ -275,13 +280,13 @@ public class SerializationTest {
     @Test
     public void invalidFlowScalar() {
         assertThatThrownBy(() -> Yaml.read("something:\ntest "))
-                .hasMessage("Plain flow scalars cannot be placed at the same indentation level than their property @column: 0 line: 1 character: 't' @11/16");
+            .hasMessage("Plain flow scalars cannot be placed at the same indentation level than their property @column: 0 line: 1 character: 't' @11/16");
     }
 
     @Test
     public void escapedContent() {
         assertThat(Json.<Map<String, String>>read("{\"content\":\"value with a \\\\ and a \\\"\"}"))
-                .isEqualTo(Maps.of("content", "value with a \\ and a \""));
+            .isEqualTo(Maps.of("content", "value with a \\ and a \""));
         assertThat(Json.write("\t\n\b\r\f\\\"")).isEqualTo("\"\\t\\n\\b\\r\\f\\\\\\\"\"");
     }
 
@@ -298,4 +303,45 @@ public class SerializationTest {
         String value();
 
     }
+
+
+    @Test
+    public void propertyAlphabeticallySorted() {
+        assertThat(Json.write(SomeObject.builder().a("a").b("b").c("c").build(), JsonSerializer.PRETTY, JsonSerializer.SORT_ALPHABETICALLY))
+            .isEqualTo("""
+                {
+                  "a": "a",
+                  "b": "b",
+                  "c": "c"
+                }""");
+    }
+
+    @Test
+    public void propertySortedByAnnotation() {
+        assertThat(Json.write(SomeObject.builder().a("a").b("b").c("c").build(), JsonSerializer.PRETTY))
+            .isEqualTo("""
+                {
+                  "b": "b",
+                  "a": "a",
+                  "c": "c"
+                }""");
+
+    }
+
+
+
+    @Builder
+    public static class SomeObject {
+
+        @Serialize(order = 2)
+        public String c;
+
+        @Serialize(order = 0)
+        public String b;
+
+        @Serialize(order = 1)
+        public String a;
+
+    }
+
 }

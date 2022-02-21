@@ -214,7 +214,7 @@ public class YamlSerializer extends Serializer<YamlSerializer.Context> {
         private int depth = 0;
 
         public Context(CharacterWriter writer, Set<Option> options) {
-            super(writer);
+            super(writer, options);
             this.noBreak = options.contains(NO_BREAK);
         }
 

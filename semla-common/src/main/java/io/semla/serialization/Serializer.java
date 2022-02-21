@@ -1,15 +1,16 @@
 package io.semla.serialization;
 
 import io.semla.model.Model;
+import io.semla.reflect.Getter;
+import io.semla.reflect.Property;
 import io.semla.reflect.Types;
+import io.semla.serialization.annotations.Serialize;
 import io.semla.serialization.annotations.TypeInfo;
 import io.semla.serialization.annotations.TypeName;
 import io.semla.serialization.io.CharacterWriter;
 import io.semla.serialization.io.OutputStreamWriter;
 import io.semla.serialization.io.StringWriter;
-import io.semla.util.Lists;
-import io.semla.util.Strings;
-import io.semla.util.WithBuilder;
+import io.semla.util.*;
 
 import java.io.OutputStream;
 import java.lang.reflect.Type;
@@ -26,6 +27,8 @@ import java.util.stream.Stream;
 import static io.semla.reflect.Properties.gettersOf;
 import static io.semla.reflect.Types.*;
 import static io.semla.serialization.annotations.When.NEVER;
+import static java.util.Comparator.comparing;
+import static java.util.Comparator.comparingInt;
 
 @SuppressWarnings("unchecked")
 public abstract class Serializer<ContextType extends Serializer<?>.Context> {
@@ -34,7 +37,7 @@ public abstract class Serializer<ContextType extends Serializer<?>.Context> {
     private final Map<Type, BiConsumer<ContextType, Object>> writers = new LinkedHashMap<>();
     private final Set<Option> defaultOptions = new LinkedHashSet<>();
 
-    public Set<Option> options() {
+    public Set<Option> defaultOptions() {
         return defaultOptions;
     }
 
@@ -115,7 +118,35 @@ public abstract class Serializer<ContextType extends Serializer<?>.Context> {
             }
         });
 
-        gettersOf(model.getType()).forEach(getter -> {
+        List<Getter<T>> getters;
+        if (context.sortAlphabetically()) {
+            getters = Singleton.named("Serializer.sortedGettersOf." + model.getType(),
+                gettersOf(model.getType()).stream().sorted(comparing(Property::getName))::toList
+            ).get();
+        } else {
+            getters = Singleton.named("Serializer.gettersOf." + model.getType(),
+                () -> {
+                    List<Getter<T>> original = new ArrayList<>(gettersOf(model.getType()));
+                    Map<Integer, Getter<T>> fixedIndexes = new LinkedHashMap<>();
+                    for (int i = 0; i < original.size(); i++) {
+                        Optional<Serialize> serialize = original.get(i).annotation(Serialize.class);
+                        if (serialize.isPresent() && serialize.get().order() > -1) {
+                            fixedIndexes.put(serialize.get().order(), original.get(i));
+                            original.remove(i--);
+                        }
+                    }
+                    if (!fixedIndexes.isEmpty()) {
+                        fixedIndexes.entrySet().stream()
+                            .sorted(comparingInt(Map.Entry::getKey))
+                            .forEach(e -> {
+                                original.add(e.getKey(), e.getValue());
+                            });
+                    }
+                    return ImmutableList.copyOf(original);
+                }
+            ).get();
+        }
+        getters.forEach(getter -> {
             if (getter.serializeWhen() != NEVER) {
                 Object value = getter.getOn(object);
                 switch (getter.serializeWhen()) {
@@ -226,13 +257,19 @@ public abstract class Serializer<ContextType extends Serializer<?>.Context> {
 
         private final Set<Object> serialized = new HashSet<>();
         private final CharacterWriter writer;
+        private final boolean sortAlphabetically;
 
-        public Context(CharacterWriter writer) {
+        public Context(CharacterWriter writer, Set<Option> options) {
             this.writer = writer;
+            this.sortAlphabetically = options.contains(SORT_ALPHABETICALLY);
         }
 
         public CharacterWriter writer() {
             return writer;
+        }
+
+        public boolean sortAlphabetically() {
+            return sortAlphabetically;
         }
 
         public boolean hasBeenSerialized(Object object) {
@@ -258,6 +295,8 @@ public abstract class Serializer<ContextType extends Serializer<?>.Context> {
             return Stream.concat(defaultOptions.stream(), Stream.of(options)).collect(Collectors.toSet());
         }
     }
+
+    public static final Option SORT_ALPHABETICALLY = new Option();
 
     public static WithBuilder<BiConsumer<Serializer<?>.Context, Object>> write(Predicate<Type> predicate) {
         return new WithBuilder<>(writer -> CUSTOM_WRITERS.put(predicate, writer));

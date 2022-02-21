@@ -13,4 +13,6 @@ public @interface Serialize {
     When value() default When.ALWAYS;
 
     String as() default "";
+
+    int order() default -1;
 }
