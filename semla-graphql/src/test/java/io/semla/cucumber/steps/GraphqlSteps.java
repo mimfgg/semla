@@ -1,13 +1,12 @@
 package io.semla.cucumber.steps;
 
+import graphql.ExecutionResult;
+import graphql.GraphQL;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import graphql.ExecutionResult;
-import graphql.GraphQL;
 import io.semla.graphql.GraphQLSupplier;
 import io.semla.inject.GraphQLModule;
-import io.semla.reflect.Types;
 import io.semla.serialization.yaml.Yaml;
 
 import static io.semla.cucumber.steps.Patterns.CLASS_NAME;
@@ -16,10 +15,10 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 
 public class GraphqlSteps {
 
-    private final ObjectSteps objects;
+    private final TypesSteps objects;
     private ExecutionResult result;
 
-    public GraphqlSteps(ObjectSteps objects) {
+    public GraphqlSteps(TypesSteps objects) {
         this.objects = objects;
     }
 
@@ -31,7 +30,7 @@ public class GraphqlSteps {
     @SuppressWarnings("unchecked")
     @Then("^the graphql schema of " + CLASS_NAME + " is equal to:$")
     public <T> void its_schema_is_equal_to(String className, String schema) throws ClassNotFoundException {
-        Class<T> clazz = (Class<T>) Types.forName(objects.resolve(className));
+        Class<T> clazz = (Class<T>) Class.forName(objects.resolve(className));
         EntitySteps.datasourceOf(clazz);
         the_schema_is_equal_to(schema);
     }
@@ -53,6 +52,6 @@ public class GraphqlSteps {
 
     @Then("^we receive:$")
     public void we_receive(String expected) {
-        assertThat(Yaml.write((Object) result.getData())).isEqualTo(expected);
+        assertThat(Yaml.write(result.getData())).isEqualTo(expected);
     }
 }

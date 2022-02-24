@@ -17,9 +17,10 @@ import io.semla.util.Lists;
 import io.semla.util.Maps;
 import io.semla.util.Splitter;
 import io.semla.util.Strings;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.Value;
+import lombok.NoArgsConstructor;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -342,6 +343,43 @@ public class SerializationTest {
         @Serialize(order = 1)
         public String a;
 
+    }
+
+    @Test
+    public void serializeOnlyTheNonDefaultProperties() {
+        assertThat(Json.write(SomeObjectWithDefault.builder().name("bob").city("paris").age(25).height(150).build(), JsonSerializer.PRETTY))
+            .isEqualTo("""
+                {
+                  "city": "paris",
+                  "age": 25,
+                  "name": "bob",
+                  "height": 150
+                }""");
+
+        assertThat(Json.write(SomeObjectWithDefault.builder().city("paris").age(25).build(), JsonSerializer.PRETTY, Serializer.NON_DEFAULT))
+            .isEqualTo("""
+                {
+                  "city": "paris",
+                  "age": 25
+                }""");
+
+    }
+
+    @Builder
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
+    @AllArgsConstructor
+    public static class SomeObjectWithDefault {
+
+        @Serialize(order = 2)
+        @Builder.Default
+        public String name = "test";
+
+        public String city;
+
+        public Integer age;
+
+        @Builder.Default
+        public int height = 170;
     }
 
 }

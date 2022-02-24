@@ -38,7 +38,7 @@ public abstract class Deserializer<ContextType extends Deserializer<ContextType>
     private final Map<Type, BiFunction<ContextType, Type, Object>> readers = new LinkedHashMap<>();
     private final Set<Option> defaultOptions = new LinkedHashSet<>();
 
-    public Set<Option> options() {
+    public Set<Option> defaultOptions() {
         return defaultOptions;
     }
 
@@ -259,11 +259,11 @@ public abstract class Deserializer<ContextType extends Deserializer<ContextType>
                 K key = read(context, context.getDefaultTypeFromToken());
                 context.next();
                 V value = read(context, valueClassSupplier.get());
-                if (key.equals("<<") && value instanceof Map) {
+                if (key.equals("<<") && value instanceof Map subMap) {
                     if (log.isTraceEnabled()) {
                         log.trace("merging values: " + value);
                     }
-                    map.putAll(((Map<K, V>) value));
+                    map.putAll(subMap);
                 } else {
                     if (log.isTraceEnabled()) {
                         log.trace("property: " + key + " with value: " + value);

@@ -58,7 +58,7 @@ public class SemlaMojo extends AbstractMojo {
             List<String> classpathElements = getClasspathElements();
             List<File> jarList = classpathElements.stream().map(File::new).toList();
             for (File file : jarList) {
-                Types.addToClassLoaders(file.toURI().toURL());
+                Types.addToClassLoader(file.toURI().toURL());
             }
 
             List<File> processedSources = TypedEntityManager.preProcessSources(classpathElements, outputPath, sources);

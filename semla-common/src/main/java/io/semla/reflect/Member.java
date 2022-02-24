@@ -16,6 +16,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import static io.semla.reflect.Modifier.PRIVATE;
+import static org.burningwave.core.assembler.StaticComponentContainer.Modules;
 
 @SuppressWarnings("unchecked")
 public class Member<T> implements Getter<T>, Setter<T> {

@@ -22,10 +22,9 @@
             <version>2.0.2</version>
         </dependency>
         <dependency>
-            <groupId>io.semla</groupId>
-            <artifactId>semla-testing</artifactId>
-            <version>1.2.0</version>
-            <scope>test</scope>
+            <groupId>com.decathlon.tzatziki</groupId>
+            <artifactId>tzatziki-common</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>

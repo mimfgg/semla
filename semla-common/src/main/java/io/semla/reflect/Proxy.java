@@ -22,7 +22,7 @@ public final class Proxy {
 
     public static <T> T of(Class<T> clazz, Class<?>[] constructorTypes, Object[] constructorArgs, InvocationHandler invocationHandler) {
         if (clazz.isInterface()) {
-            return (T) java.lang.reflect.Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{clazz}, invocationHandler);
+            return (T) java.lang.reflect.Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[]{clazz}, invocationHandler);
         } else {
             ProxyFactory factory = new ProxyFactory();
             factory.setSuperclass(clazz);

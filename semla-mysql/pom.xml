@@ -23,12 +23,6 @@
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
-            <artifactId>semla-testing</artifactId>
-            <version>1.2.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.semla</groupId>
             <artifactId>semla-jpa</artifactId>
             <classifier>tests</classifier>
             <version>1.2.0</version>

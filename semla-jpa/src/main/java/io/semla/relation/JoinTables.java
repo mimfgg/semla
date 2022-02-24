@@ -77,7 +77,7 @@ public class JoinTables {
             .map(Supplier::get)
             .filter(className -> {
                 try {
-                    Types.forName(className);
+                    Class.forName(className);
                 } catch (ClassNotFoundException e) {
                     return true;
                 }

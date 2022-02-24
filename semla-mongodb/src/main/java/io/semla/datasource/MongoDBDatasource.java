@@ -252,8 +252,8 @@ public class MongoDBDatasource<T> extends Datasource<T> {
         if (value != null) {
             if (EntityModel.isEntity(value)) {
                 value = EntityModel.keyOf(value);
-            } else if (value instanceof Collection && EntityModel.containsEntities((Collection<?>) value)) {
-                value = ((Collection<?>) value).stream().map(EntityModel::keyOf).collect(Collectors.toList());
+            } else if (value instanceof Collection collection && EntityModel.containsEntities(collection)) {
+                value = ((Collection<?>) collection).stream().map(EntityModel::keyOf).collect(Collectors.toList());
             } else if (Types.isEqualToOneOf(column.member().getType(), BigInteger.class, BigDecimal.class) ||
                 !Types.isAssignableToOneOf(column.member().getType(), Number.class, Boolean.class, String.class)) {
                 if (column.member().annotation(Embedded.class).isPresent()) {
@@ -367,7 +367,7 @@ public class MongoDBDatasource<T> extends Datasource<T> {
         private Integer port = DEFAULT_PORT;
         private String database = "default";
 
-        private Singleton<MongoClient> client = Singleton.lazy(() -> new MongoClient(host, port));
+        private final Singleton<MongoClient> client = Singleton.lazy(() -> new MongoClient(host, port));
 
         public MongoClient client() {
             return client.get();

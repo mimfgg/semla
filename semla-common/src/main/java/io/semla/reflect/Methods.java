@@ -8,6 +8,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.semla.reflect.Types.asAccessible;
 import static io.semla.util.Unchecked.unchecked;
 import static java.util.Collections.synchronizedMap;
 import static java.util.Optional.ofNullable;
@@ -44,14 +45,9 @@ public final class Methods {
             .filter(method -> !method.getDeclaringClass().equals(Object.class))
             .filter(method -> clazz.isAnnotation() || !Modifier.is(method, Modifier.ABSTRACT))
             .filter(method -> !methods.containsValue(method))
-            .forEach(method -> {
-                try {
-                    method.setAccessible(true);
-                } catch (Exception e) {
-                    log.debug("{} is inaccessible!", method);
-                }
-                methods.put(getMethodSignature(clazz, method.getName(), method.getParameterTypes()), method);
-            });
+            .forEach(method ->
+                methods.put(getMethodSignature(clazz, method.getName(), method.getParameterTypes()), asAccessible(method))
+            );
         ofNullable(clazz.getSuperclass()).ifPresent(superClass -> recursivelyFindAllMethodsOf(superClass, methods));
         Stream.of(clazz.getInterfaces()).forEach(interfaceClass -> recursivelyFindAllMethodsOf(interfaceClass, methods));
     }
