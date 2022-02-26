@@ -1,6 +1,5 @@
-package io.semla.cucumber.steps;
+package com.decathlon.tzatziki.steps;
 
-import com.decathlon.tzatziki.steps.ObjectSteps;
 import com.decathlon.tzatziki.utils.Guard;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.docstring.DocString;

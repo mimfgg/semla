@@ -1,5 +1,7 @@
-package io.semla.cucumber.steps;
+package com.decathlon.tzatziki.steps;
 
+import com.decathlon.tzatziki.steps.EntitySteps;
+import com.decathlon.tzatziki.utils.Types;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import io.cucumber.java.Before;
@@ -9,29 +11,24 @@ import io.semla.graphql.GraphQLSupplier;
 import io.semla.inject.GraphQLModule;
 import io.semla.serialization.yaml.Yaml;
 
-import static io.semla.cucumber.steps.Patterns.CLASS_NAME;
+import java.lang.reflect.Type;
+
+import static com.decathlon.tzatziki.utils.Patterns.TYPE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 public class GraphqlSteps {
 
-    private final TypesSteps objects;
     private ExecutionResult result;
-
-    public GraphqlSteps(TypesSteps objects) {
-        this.objects = objects;
-    }
 
     @Before
     public void before() {
         EntitySteps.addModule(new GraphQLModule());
     }
 
-    @SuppressWarnings("unchecked")
-    @Then("^the graphql schema of " + CLASS_NAME + " is equal to:$")
-    public <T> void its_schema_is_equal_to(String className, String schema) throws ClassNotFoundException {
-        Class<T> clazz = (Class<T>) Class.forName(objects.resolve(className));
-        EntitySteps.datasourceOf(clazz);
+    @Then("^the graphql schema of " + TYPE + " is equal to:$")
+    public <T> void its_schema_is_equal_to(Type type, String schema) throws ClassNotFoundException {
+        EntitySteps.datasourceOf(Types.rawTypeOf(type));
         the_schema_is_equal_to(schema);
     }
 

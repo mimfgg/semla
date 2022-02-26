@@ -1,6 +1,6 @@
 package io.semla.persistence;
 
-import io.semla.cucumber.steps.EntitySteps;
+import com.decathlon.tzatziki.steps.EntitySteps;
 import io.semla.datasource.SoftKeyValueDatasource;
 import io.semla.model.EntityModel;
 import io.semla.model.IndexedUserManager;

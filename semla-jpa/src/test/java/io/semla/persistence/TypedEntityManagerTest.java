@@ -1,6 +1,6 @@
 package io.semla.persistence;
 
-import io.semla.cucumber.steps.EntitySteps;
+import com.decathlon.tzatziki.steps.EntitySteps;
 import io.semla.model.*;
 import io.semla.reflect.Methods;
 import io.semla.serialization.json.Json;

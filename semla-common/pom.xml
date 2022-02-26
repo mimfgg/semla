@@ -102,9 +102,8 @@
                         </goals>
                         <configuration>
                             <includes>
-                                <include>**/io/semla/cucumber/steps/*</include>
+                                <include>**/com/decathlon/tzatziki/steps/*</include>
                                 <include>**/com/decathlon/tzatziki/utils/*</include>
-                                <include>**/io/semla/model/**</include>
                             </includes>
                         </configuration>
                     </execution>

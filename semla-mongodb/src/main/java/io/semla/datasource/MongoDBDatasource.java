@@ -108,7 +108,7 @@ public class MongoDBDatasource<T> extends Datasource<T> {
         try {
             collection.insertOne(toDocument(entity));
         } catch (MongoWriteException e) {
-            if (e.getCode() == 11000) {
+            if (e.getError().getCode() == 11000) {
                 throw alreadyExists(model().key().member().getOn(entity));
             }
             throw e;

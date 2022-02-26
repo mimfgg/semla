@@ -1,6 +1,6 @@
 package io.semla.query;
 
-import io.semla.cucumber.steps.EntitySteps;
+import com.decathlon.tzatziki.steps.EntitySteps;
 import io.semla.model.Genus;
 import io.semla.model.Player;
 import io.semla.util.Lists;
@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static io.semla.cucumber.steps.EntitySteps.newContext;
+import static com.decathlon.tzatziki.steps.EntitySteps.newContext;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 

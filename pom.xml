@@ -21,8 +21,10 @@
         <module>method-runner-maven-plugin</module>
         <module>semla-logging</module>
         <module>semla-common</module>
+        <module>semla-common-test</module>
         <module>semla-inject</module>
         <module>semla-jpa</module>
+        <module>semla-jpa-test</module>
         <module>semla-jackson</module>
         <module>semla-graphql</module>
         <module>semla-jdbi</module>
@@ -33,7 +35,6 @@
         <module>semla-redis</module>
         <module>semla-maven-plugin</module>
         <module>report</module>
-        <module>semla-common-test</module>
     </modules>
     <scm>
         <connection>scm:git:git://github.com/mimfgg/semla.git</connection>
@@ -49,8 +50,8 @@
         <maven.compiler.release>17</maven.compiler.release>
         <maven.version>3.6.2</maven.version>
         <sl4fj.version>1.7.33</sl4fj.version>
-        <jdbi.version>3.27.0</jdbi.version>
-        <testcontainers.version>1.16.2</testcontainers.version>
+        <jdbi.version>3.27.1</jdbi.version>
+        <testcontainers.version>1.16.3</testcontainers.version>
     </properties>
     <dependencyManagement>
         <dependencies>

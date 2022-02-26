@@ -1,6 +1,6 @@
 package io.semla.cache;
 
-import io.semla.cucumber.steps.EntitySteps;
+import com.decathlon.tzatziki.steps.EntitySteps;
 import io.semla.util.Lists;
 import org.junit.After;
 import org.junit.Test;

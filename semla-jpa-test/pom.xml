@@ -8,31 +8,18 @@
         <version>1.2.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>semla-inject</artifactId>
-    <packaging>jar</packaging>
+    <artifactId>semla-jpa-test</artifactId>
     <dependencies>
-        <dependency>
-            <groupId>io.semla</groupId>
-            <artifactId>semla-common</artifactId>
-            <version>1.2.0</version>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.enterprise</groupId>
-            <artifactId>jakarta.enterprise.cdi-api</artifactId>
-            <version>2.0.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.22</version>
-            <scope>provided</scope>
-        </dependency>
-        <!-- tests -->
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-common-test</artifactId>
             <version>1.2.0</version>
-            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.semla</groupId>
+            <artifactId>semla-jpa</artifactId>
+            <classifier>test-libs</classifier>
+            <version>1.2.0</version>
         </dependency>
     </dependencies>
 </project>

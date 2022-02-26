@@ -26,16 +26,17 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
+        <!-- test -->
         <dependency>
             <groupId>io.semla</groupId>
-            <artifactId>semla-jpa</artifactId>
-            <classifier>tests</classifier>
+            <artifactId>semla-jpa-test</artifactId>
             <version>1.2.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
-            <artifactId>semla-common</artifactId>
+            <artifactId>semla-jpa</artifactId>
             <classifier>tests</classifier>
             <version>1.2.0</version>
             <scope>test</scope>
@@ -53,6 +54,10 @@
                 <exclusion>
                     <groupId>junit</groupId>
                     <artifactId>junit</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.jetbrains</groupId>
+                    <artifactId>annotations</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

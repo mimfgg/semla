@@ -1,7 +1,7 @@
 package io.semla;
 
 import io.semla.cache.Cache;
-import io.semla.cucumber.steps.EntitySteps;
+import com.decathlon.tzatziki.steps.EntitySteps;
 import io.semla.datasource.HsqlDatasource;
 import org.junit.BeforeClass;
 

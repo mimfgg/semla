@@ -1,4 +1,4 @@
-package io.semla.cucumber.steps;
+package com.decathlon.tzatziki.steps;
 
 import com.decathlon.tzatziki.steps.ObjectSteps;
 import com.decathlon.tzatziki.utils.Guard;

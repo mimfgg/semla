@@ -93,6 +93,44 @@
                             </sources>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>attach-test-libs-jars</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <!-- Attach the test-libs artifact. -->
+                                <artifact>
+                                    <file>
+                                        ${project.build.directory}/${project.build.finalName}-test-libs.jar
+                                    </file>
+                                    <type>jar</type>
+                                    <classifier>test-libs</classifier>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <jar destfile="${project.build.directory}/${project.build.finalName}-test-libs.jar"
+                                     basedir="${project.build.directory}/test-classes"
+                                     includes="com/decathlon/tzatziki/steps/EntitySteps.class,com/decathlon/tzatziki/steps/EntitySteps$1.class"/>
+                            </target>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -108,7 +146,6 @@
                             <includes>
                                 <include>**/io/semla/CoreTest*</include>
                                 <include>**/io/semla/**Suite*</include>
-                                <include>**/io/semla/cucumber/steps/*</include>
                                 <include>**/io/semla/model/**</include>
                                 <include>**/io/semla/persistence/**</include>
                                 <include>**/io/semla/cache/**</include>
