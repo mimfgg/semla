@@ -9,7 +9,6 @@ import io.semla.util.WithBuilder;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.burningwave.core.assembler.StaticComponentContainer;
 
 import javax.tools.ToolProvider;
 import java.io.ByteArrayOutputStream;
@@ -150,10 +149,12 @@ public final class Types {
         addToClassLoader(unchecked(() -> new File(tmpDir).toURI().toURL()));
         return unchecked(() -> Files.walk(new File(tmpDir).toPath()))
             .filter(file -> file.getFileName().toString().endsWith(".class"))
-            .map(file -> file.toAbsolutePath().toString().replace(tmpDir, "").replace(File.separator, ".").replace(".class", ""))
+            .map(file -> file.toAbsolutePath().toString()
+                    .replace(tmpDir, "")
+                    .replace(File.separator, ".")
+                    .replace(".class", ""))
             .map(classname -> unchecked(() -> Class.forName(classname)))
             .collect(Collectors.toList());
-
     }
 
     public static void addToClassLoader(URL url) {

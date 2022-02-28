@@ -20,7 +20,7 @@
         <dependency>
             <groupId>com.decathlon.tzatziki</groupId>
             <artifactId>tzatziki-core</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>${tzatziki.version}</version>
         </dependency>
     </dependencies>
 </project>
