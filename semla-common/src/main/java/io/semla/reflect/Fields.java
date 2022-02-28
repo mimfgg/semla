@@ -1,6 +1,5 @@
 package io.semla.reflect;
 
-import io.semla.util.Unchecked;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Field;
@@ -9,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import static io.semla.reflect.Types.asAccessible;
 import static io.semla.util.Unchecked.rethrow;
 import static io.semla.util.Unchecked.unchecked;
 import static java.util.Collections.synchronizedMap;
@@ -76,12 +76,7 @@ public final class Fields {
     private static void recursivelyCacheFieldsOf(Class<?> clazz, Map<String, Field> fields) {
         for (Field field : clazz.getDeclaredFields()) {
             if (!field.getName().equals("$jacocoData") && !fields.containsKey(field.getName())) {
-                try {
-                    field.setAccessible(true);
-                } catch (Exception e) {
-                    log.debug("{} is inaccessible!", field);
-                }
-                fields.put(field.getName(), field);
+                fields.put(field.getName(), asAccessible(field));
             }
         }
         if (clazz.getSuperclass() != null) {

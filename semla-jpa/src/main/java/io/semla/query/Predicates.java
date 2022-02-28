@@ -42,11 +42,11 @@ public class Predicates<T> extends LinkedHashMap<Member<T>, Map<Predicate, Objec
             if (value instanceof String && ((String) value).startsWith("[") && ((String) value).endsWith("]")) {
                 value = adjustedValue(Splitter.on(',').omitEmptyStrings().trim().split(((String) value).substring(1, ((String) value).length() - 1)).toList(), member);
             }
-            if (value instanceof Collection) {
-                if (((Collection<?>) value).isEmpty()) {
+            if (value instanceof Collection collection) {
+                if (collection.isEmpty()) {
                     throw new IllegalStateException("can't check collection predicate against empty values");
                 }
-                value = new ArrayList<>(((Collection<?>) value));
+                value = new ArrayList<T>(collection);
                 T first = ((List<T>) value).get(0);
                 if (!isAssignableTo(first.getClass(), member.getType())) {
                     if (first instanceof String) {
@@ -58,8 +58,8 @@ public class Predicates<T> extends LinkedHashMap<Member<T>, Map<Predicate, Objec
                     }
                 }
             } else if (!isAssignableTo(value.getClass(), member.getType())) {
-                if (value instanceof String) {
-                    value = Strings.parse((String) value, member.getType());
+                if (value instanceof String string) {
+                    value = Strings.parse(string, member.getType());
                 } else if ((isEntity(member.getType()) && !isAssignableTo(value.getClass(), member.getType()))) {
                     value = Strings.parse(String.valueOf(value), member.getType());
                 } else if (model.key().member().isAssignableTo(Long.class) && Types.isAssignableTo(value.getClass(), Integer.class)) {
@@ -257,9 +257,9 @@ public class Predicates<T> extends LinkedHashMap<Member<T>, Map<Predicate, Objec
         }
 
         public CallBackType in(Object value, Object... values) {
-            if (value instanceof Collection && values.length == 0) {
+            if (value instanceof Collection valueAsCollection && values.length == 0) {
                 // fix for single collection being given as an argument
-                return in((Collection<?>) value);
+                return in(valueAsCollection);
             }
             return in(Lists.of(value, values));
         }
@@ -273,9 +273,9 @@ public class Predicates<T> extends LinkedHashMap<Member<T>, Map<Predicate, Objec
         }
 
         public CallBackType notIn(Object value, Object... values) {
-            if (value instanceof Collection && values.length == 0) {
+            if (value instanceof Collection valueAsCollection && values.length == 0) {
                 // fix for single collection being given as an argument
-                return notIn((Collection<?>) value);
+                return notIn(valueAsCollection);
             }
             return notIn(Lists.of(value, values));
         }

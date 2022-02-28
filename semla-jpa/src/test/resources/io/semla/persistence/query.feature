@@ -43,9 +43,9 @@ Feature: Query parsing
 
   Scenario: update
     When we patch the fruits where name contains "e" with:
-    """
-    price: 4
-    """
+      """yaml
+      price: 4
+      """
     Then counting the fruits where price is 4 returns 2
 
   Scenario: order

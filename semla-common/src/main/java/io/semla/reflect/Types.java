@@ -6,8 +6,6 @@ import io.semla.serialization.json.Json;
 import io.semla.util.ImmutableMap;
 import io.semla.util.Strings;
 import io.semla.util.WithBuilder;
-import javassist.ClassPool;
-import javassist.LoaderClassPath;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,9 +14,8 @@ import javax.tools.ToolProvider;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.lang.reflect.Member;
+import java.lang.reflect.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -32,11 +29,16 @@ import java.util.stream.Stream;
 
 import static io.semla.util.Arrays.toArray;
 import static io.semla.util.Unchecked.unchecked;
+import static org.burningwave.core.assembler.StaticComponentContainer.Modules;
 
 @SuppressWarnings("unchecked")
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Slf4j
 public final class Types {
+
+    static {
+        Modules.exportPackageToAllUnnamed("java.base", "jdk.internal.loader");
+    }
 
     private static final Map<Class<?>, Class<?>> WRAPPER_BY_PRIMITIVE = ImmutableMap.<Class<?>, Class<?>>builder()
         .put(byte.class, Byte.class)
@@ -51,7 +53,6 @@ public final class Types {
     private static final Map<Predicate<Class<?>>, BiFunction<Class<?>, Object, Object>> CUSTOM_UNWRAPPERS = new LinkedHashMap<>();
     private static final Map<Class<?>, Map<Class<? extends Annotation>, Optional<Class<?>>>> ANNOTATED_SUPER_CLASSES = new LinkedHashMap<>();
     private static final Map<Class<?>, Map<String, Map<String, Class<?>>>> SUB_TYPES = new LinkedHashMap<>();
-    private static ExtendedURLClassLoader extendedURLClassLoader;
 
     public static <E> E safeNull(Type type, E value) {
         return safeNull(rawTypeOf(type), value);
@@ -119,7 +120,7 @@ public final class Types {
     }
 
     public static <E> Class<E> rawTypeOf(Type type) {
-        return type instanceof ParameterizedType ? (Class<E>) ((ParameterizedType) type).getRawType() : (Class<E>) type;
+        return type instanceof ParameterizedType parameterizedType ? (Class<E>) parameterizedType.getRawType() : (Class<E>) type;
     }
 
     public static List<Class<?>> compileFromFiles(List<String> classPathElements, File... files) {
@@ -145,34 +146,20 @@ public final class Types {
                 + "\noutput:" + out
                 + "\narguments: " + arguments);
         }
-        addToClassLoaders(unchecked(() -> new File(tmpDir).toURI().toURL()));
+        addToClassLoader(unchecked(() -> new File(tmpDir).toURI().toURL()));
         return unchecked(() -> Files.walk(new File(tmpDir).toPath()))
             .filter(file -> file.getFileName().toString().endsWith(".class"))
-            .map(file -> file.toAbsolutePath().toString().replace(tmpDir, "").replace(File.separator, ".").replace(".class", ""))
-            .map(classname -> unchecked(() -> Types.forName(classname)))
+            .map(file -> file.toAbsolutePath().toString()
+                    .replace(tmpDir, "")
+                    .replace(File.separator, ".")
+                    .replace(".class", ""))
+            .map(classname -> unchecked(() -> Class.forName(classname)))
             .collect(Collectors.toList());
-
     }
 
-    public static synchronized void addToClassLoaders(URL url) {
-        if (extendedURLClassLoader == null) {
-            try {
-                Object ucp = Fields.getValue(Types.class.getClassLoader(), "ucp");
-                Methods.invoke(ucp, "addURL", url);
-            } catch (Exception e) {
-                log.debug("""
-                    Modiying the classloader requires to open java.lang for ReflectAsm to find and access the newly added classes.
-                    If this message is not printed during the generation of the Managers and that you encounter errors mentioning classloaders,
-                    please add the following flags to your test or application configuration:
-                        --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED
-                    """);
-                extendedURLClassLoader = new ExtendedURLClassLoader(new URL[]{url});
-                // for Javassist to find our newly added classloader
-                ClassPool.getDefault().appendClassPath(new LoaderClassPath(extendedURLClassLoader));
-            }
-        } else {
-            extendedURLClassLoader.addURL(url);
-        }
+    public static void addToClassLoader(URL url) {
+        Object ucp = Fields.getValue(Types.class.getClassLoader(), "ucp");
+        Methods.invoke(ucp, "addURL", url);
     }
 
     public static List<Class<?>> compileFromSources(String... sources) {
@@ -332,8 +319,8 @@ public final class Types {
 
     public static <E> E unwrap(Class<E> type, Object value) {
         if (value != null && !Types.isAssignableTo(value.getClass(), type)) {
-            if (value instanceof String) {
-                value = Json.isJson((String) value) ? Json.read((String) value, type) : Strings.parse((String) value, type);
+            if (value instanceof String string) {
+                value = Json.isJson(string) ? Json.read(string, type) : Strings.parse(string, type);
             } else {
                 value = CUSTOM_UNWRAPPERS.entrySet().stream()
                     .filter(unwrapper -> unwrapper.getKey().test(type))
@@ -387,11 +374,19 @@ public final class Types {
         return Object.class;
     }
 
-    public static <E> Class<E> forName(String type) throws ClassNotFoundException {
-        if (extendedURLClassLoader != null) {
-            return (Class<E>) Class.forName(type, true, extendedURLClassLoader);
+    public static <E extends AccessibleObject & Member> E asAccessible(E target) {
+        try {
+            target.setAccessible(true);
+        } catch (Exception first) {
+            log.debug("auto exporting {}!", target.getDeclaringClass().getPackageName());
+            try {
+                Modules.exportPackageToAllUnnamed("java.base", target.getDeclaringClass().getPackageName());
+                target.setAccessible(true);
+            } catch (Exception second) {
+                log.debug("cannot export package: " + target.getDeclaringClass().getPackageName());
+            }
         }
-        return (Class<E>) Class.forName(type);
+        return target;
     }
 
     public record ParameterizedTypeBuilder(Class<?> rawType) {

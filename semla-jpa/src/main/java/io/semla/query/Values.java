@@ -32,8 +32,8 @@ public class Values<T> extends LinkedHashMap<Member<T>, Object> {
         if (value != null) {
             if (isEntity(member.getType()) && !isAssignableTo(value.getClass(), member.getType())) {
                 value = Strings.parse(String.valueOf(value), member.getType());
-            } else if (value instanceof String && !member.getType().equals(String.class)) {
-                value = Strings.parse((String) value, member.getType());
+            } else if (value instanceof String string && !member.getType().equals(String.class)) {
+                value = Strings.parse(string, member.getType());
             }
             Types.assertIsAssignableTo(value, member.getType());
         }

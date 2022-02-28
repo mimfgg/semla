@@ -1,6 +1,6 @@
 package io.semla.persistence;
 
-import io.semla.cucumber.steps.EntitySteps;
+import com.decathlon.tzatziki.steps.EntitySteps;
 import io.semla.exception.InvalidQueryException;
 import io.semla.model.IndexedUser;
 import io.semla.model.Player;

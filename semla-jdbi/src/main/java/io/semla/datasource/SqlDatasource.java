@@ -337,11 +337,11 @@ public abstract class SqlDatasource<T> extends Datasource<T> {
                 generatedValue = ((Long) generatedValue).intValue();
             } else if (isAssignableTo(generatedValue.getClass(), Integer.class) && isAssignableTo(keyType, Long.class)) {
                 generatedValue = ((Integer) generatedValue).longValue();
-            } else if (generatedValue instanceof BigInteger) {
+            } else if (generatedValue instanceof BigInteger bigInteger) {
                 if (isAssignableTo(keyType, Integer.class)) {
-                    generatedValue = ((BigInteger) generatedValue).intValue();
+                    generatedValue = bigInteger.intValue();
                 } else if (isAssignableTo(keyType, Long.class)) {
-                    generatedValue = ((BigInteger) generatedValue).longValue();
+                    generatedValue = bigInteger.longValue();
                 }
             }
             key.setOn(entity, generatedValue);

@@ -1,8 +1,6 @@
 package io.semla.inject;
 
-import ch.qos.logback.classic.Level;
 import io.semla.exception.InjectionException;
-import io.semla.logging.Logging;
 import io.semla.reflect.TypeReference;
 import io.semla.reflect.Types;
 import io.semla.util.ImmutableSet;

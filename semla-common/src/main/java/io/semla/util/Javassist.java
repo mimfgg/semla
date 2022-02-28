@@ -226,8 +226,8 @@ public class Javassist {
                 return new LongMemberValue((Long) value, constPool);
             } else if (Types.isAssignableTo(value.getClass(), Short.class)) {
                 return new ShortMemberValue((Short) value, constPool);
-            } else if (value instanceof String) {
-                return new StringMemberValue((String) value, constPool);
+            } else if (value instanceof String string) {
+                return new StringMemberValue(string, constPool);
             } else {
                 throw new IllegalArgumentException("cannot create a ctMember value out of " + value.getClass());
             }

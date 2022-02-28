@@ -5,7 +5,7 @@
     <parent>
         <artifactId>semla</artifactId>
         <groupId>io.semla</groupId>
-        <version>1.2.0</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>semla-maven-plugin</artifactId>
@@ -38,7 +38,7 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-jpa</artifactId>
-            <version>1.2.0</version>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>

@@ -1,7 +1,7 @@
 package io.semla.datasource;
 
 import io.semla.JdbiTest;
-import io.semla.cucumber.steps.EntitySteps;
+import com.decathlon.tzatziki.steps.EntitySteps;
 import io.semla.model.User;
 import org.junit.Test;
 

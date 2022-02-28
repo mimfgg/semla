@@ -327,8 +327,8 @@ public class EntityModel<T> extends Model<T> {
     }
 
     public static <T> boolean isReference(T instance) {
-        if (instance instanceof Collection) {
-            return EntityModel.containsOnlyReferences((Collection<?>) instance);
+        if (instance instanceof Collection collection) {
+            return EntityModel.containsOnlyReferences(collection);
         }
         if (!isEntity(instance)) {
             return false;

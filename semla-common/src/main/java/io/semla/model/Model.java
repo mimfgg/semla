@@ -23,6 +23,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static io.semla.reflect.Types.asAccessible;
+
 @Slf4j
 @SuppressWarnings("unchecked")
 public class Model<T> {
@@ -105,7 +107,7 @@ public class Model<T> {
 
     public T newInstance() {
         try {
-            return clazz.getDeclaredConstructor().newInstance();
+            return asAccessible(clazz.getDeclaredConstructor()).newInstance();
         } catch (InvocationTargetException | NoSuchMethodException | InstantiationException | IllegalAccessException e) {
             throw new SemlaException("couldn't create a new instance of " + clazz, e);
         }
@@ -174,7 +176,7 @@ public class Model<T> {
     public static <T> Model<T> of(Class<T> clazz) {
         if (!isInitialized.getAndSet(true)) {
             try {
-                Types.forName("io.semla.model.EntityModel");
+                Class.forName("io.semla.model.EntityModel");
             } catch (Throwable e) {
                 log.warn("EntityModel not available...");
             }
@@ -222,7 +224,7 @@ public class Model<T> {
             .findFirst()
             .orElseGet(() -> {
                 try {
-                    return (Class<T>) Types.forName(name);
+                    return (Class<T>) Class.forName(name);
                 } catch (ClassNotFoundException ex) {
                     throw new SemlaException("could not find any class known by the name '" + name + "'", ex);
                 }

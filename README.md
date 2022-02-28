@@ -45,7 +45,7 @@ Get it from maven central:
 <dependency>
     <groupId>io.semla</groupId>
     <artifactId>semla-mysql</artifactId>
-    <version>1.2.x</version>
+    <version>1.x.x</version>
     <scope>compile</scope>
 </dependency>
 ```
@@ -67,7 +67,7 @@ your project:
 <plugin>
     <groupId>io.semla</groupId>
     <artifactId>semla-maven-plugin</artifactId>
-    <version>1.2.x</version>
+    <version>1.x.x</version>
     <configuration>
         <sources>
             <source>/src/main/java/package/of/your/model/**</source>

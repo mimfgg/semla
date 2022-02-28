@@ -379,8 +379,8 @@ public class Query<T, ReturnType> {
                 }
                 if (predicates.isKeyOnly()) {
                     Object key = predicates.toKey();
-                    if (key instanceof Collection) {
-                        yield delete((Collection<?>) key, includes);
+                    if (key instanceof Collection keys) {
+                        yield delete(keys, includes);
                     }
                     yield delete(key, includes);
                 }
@@ -416,8 +416,8 @@ public class Query<T, ReturnType> {
                     Includes.defaultEagersOf(model).addTo(includes);
                 }
                 Object key = predicates.toKey();
-                if (key instanceof Collection) {
-                    yield get((Collection<?>) key, includes);
+                if (key instanceof Collection keys) {
+                    yield get(keys, includes);
                 }
                 yield get(key, includes);
             }

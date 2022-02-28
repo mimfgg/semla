@@ -1,38 +1,34 @@
-package io.semla.cucumber.steps;
+package com.decathlon.tzatziki.steps;
 
+import com.decathlon.tzatziki.steps.EntitySteps;
+import com.decathlon.tzatziki.utils.Types;
+import graphql.ExecutionResult;
+import graphql.GraphQL;
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import graphql.ExecutionResult;
-import graphql.GraphQL;
 import io.semla.graphql.GraphQLSupplier;
 import io.semla.inject.GraphQLModule;
-import io.semla.reflect.Types;
 import io.semla.serialization.yaml.Yaml;
 
-import static io.semla.cucumber.steps.Patterns.CLASS_NAME;
+import java.lang.reflect.Type;
+
+import static com.decathlon.tzatziki.utils.Patterns.TYPE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 
 public class GraphqlSteps {
 
-    private final ObjectSteps objects;
     private ExecutionResult result;
-
-    public GraphqlSteps(ObjectSteps objects) {
-        this.objects = objects;
-    }
 
     @Before
     public void before() {
         EntitySteps.addModule(new GraphQLModule());
     }
 
-    @SuppressWarnings("unchecked")
-    @Then("^the graphql schema of " + CLASS_NAME + " is equal to:$")
-    public <T> void its_schema_is_equal_to(String className, String schema) throws ClassNotFoundException {
-        Class<T> clazz = (Class<T>) Types.forName(objects.resolve(className));
-        EntitySteps.datasourceOf(clazz);
+    @Then("^the graphql schema of " + TYPE + " is equal to:$")
+    public <T> void its_schema_is_equal_to(Type type, String schema) throws ClassNotFoundException {
+        EntitySteps.datasourceOf(Types.rawTypeOf(type));
         the_schema_is_equal_to(schema);
     }
 
@@ -53,6 +49,6 @@ public class GraphqlSteps {
 
     @Then("^we receive:$")
     public void we_receive(String expected) {
-        assertThat(Yaml.write((Object) result.getData())).isEqualTo(expected);
+        assertThat(Yaml.write(result.getData())).isEqualTo(expected);
     }
 }

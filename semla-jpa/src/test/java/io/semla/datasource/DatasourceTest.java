@@ -1,6 +1,6 @@
 package io.semla.datasource;
 
-import io.semla.cucumber.steps.EntitySteps;
+import com.decathlon.tzatziki.steps.EntitySteps;
 import io.semla.model.Player;
 import io.semla.model.VersionedEntity;
 import io.semla.model.VersionedEntityManager;

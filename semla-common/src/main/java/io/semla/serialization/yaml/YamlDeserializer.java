@@ -1,7 +1,6 @@
 package io.semla.serialization.yaml;
 
 import io.semla.exception.DeserializationException;
-import io.semla.reflect.Types;
 import io.semla.serialization.Deserializer;
 import io.semla.serialization.Token;
 import io.semla.serialization.io.CharacterReader;
@@ -232,7 +231,7 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                                     }
                                 } else {
                                     try {
-                                        Class<?> clazz = Types.forName(tag);
+                                        Class<?> clazz = Class.forName(tag);
                                         explicitToken = Token.fromType(clazz);
                                     } catch (ClassNotFoundException e) {
                                         throw new DeserializationException("unknown class: " + tag + " @" + reader(), e);
@@ -489,6 +488,9 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                     log.trace("block buffer: '" + buffer + "'");
                 }
             } while (read && reader().current() != EOF && reader().column() >= initialColumn);
+            if (reader().current() != EOF) {
+                reader().stashCurrent();
+            }
         }
 
         private char backslashed(char c) {

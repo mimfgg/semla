@@ -133,7 +133,7 @@ public class GraphQLSupplier implements Supplier<GraphQL> {
             model.relations().stream().map(relation -> (Relation<T, R>) relation)
                     .forEach(relation ->
                             relationWiring.dataFetcher(relation.member().getName(), environment -> {
-                                GraphQLContext context = environment.getContext();
+                                GraphQLContext context = environment.getGraphQlContext();
                                 if (!context.hasKey(PersistenceContext.class.getCanonicalName())) {
                                     context.put(PersistenceContext.class.getCanonicalName(), factory.newContext());
                                 }
@@ -492,51 +492,51 @@ public class GraphQLSupplier implements Supplier<GraphQL> {
 
     protected void addSemlaTypes(StringBuilder builder) {
         builder.append("""
-            
-            input _IntPredicates {
-                is: Int
-                not: Int
-                in: [Int!]
-                notIn: [Int!]
-                greaterOrEquals: Int
-                greaterThan: Int
-                lessOrEquals: Int
-                lessThan: Int
-            }
+                            
+                input _IntPredicates {
+                    is: Int
+                    not: Int
+                    in: [Int!]
+                    notIn: [Int!]
+                    greaterOrEquals: Int
+                    greaterThan: Int
+                    lessOrEquals: Int
+                    lessThan: Int
+                }
 
-            input _FloatPredicates {
-                is: Float
-                not: Float
-                in: [Float!]
-                notIn: [Float!]
-                greaterOrEquals: Float
-                greaterThan: Float
-                lessOrEquals: Float
-                lessThan: Float
-            }
+                input _FloatPredicates {
+                    is: Float
+                    not: Float
+                    in: [Float!]
+                    notIn: [Float!]
+                    greaterOrEquals: Float
+                    greaterThan: Float
+                    lessOrEquals: Float
+                    lessThan: Float
+                }
 
-            input _StringPredicates {
-                is: String
-                not: String
-                in: [String!]
-                notIn: [String!]
-                like: String
-                notLike: String
-                contains: String
-                doesNotContain: String
-                containedIn: String
-                notContainedIn: String
-            }
+                input _StringPredicates {
+                    is: String
+                    not: String
+                    in: [String!]
+                    notIn: [String!]
+                    like: String
+                    notLike: String
+                    contains: String
+                    doesNotContain: String
+                    containedIn: String
+                    notContainedIn: String
+                }
 
-            input _BooleanPredicates {
-                is: Boolean
-                not: Boolean
-            }
+                input _BooleanPredicates {
+                    is: Boolean
+                    not: Boolean
+                }
 
-            enum _Sort {
-                asc
-                desc
-            }"""
+                enum _Sort {
+                    asc
+                    desc
+                }"""
         );
     }
 

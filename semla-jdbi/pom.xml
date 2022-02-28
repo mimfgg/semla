@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.semla</groupId>
         <artifactId>semla</artifactId>
-        <version>1.2.0</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>semla-jdbi</artifactId>
     <packaging>jar</packaging>
@@ -13,7 +13,7 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-jpa</artifactId>
-            <version>1.2.0</version>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.jdbi</groupId>
@@ -59,23 +59,26 @@
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
-            <artifactId>semla-testing</artifactId>
-            <version>1.2.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.semla</groupId>
             <artifactId>semla-jpa</artifactId>
             <classifier>tests</classifier>
-            <version>1.2.0</version>
+            <version>1.0.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
-            <artifactId>semla-common</artifactId>
-            <classifier>tests</classifier>
-            <version>1.2.0</version>
+            <artifactId>semla-jpa-test</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.checkerframework</groupId>
+                    <artifactId>checker-qual</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.errorprone</groupId>
+                    <artifactId>error_prone_annotations</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
     <build>
@@ -91,7 +94,7 @@
                         </goals>
                         <configuration>
                             <includes>
-                                <include>**/io/semla/cucumber/steps/*</include>
+                                <include>**/com/decathlon/tzatziki/steps/*</include>
                             </includes>
                         </configuration>
                     </execution>

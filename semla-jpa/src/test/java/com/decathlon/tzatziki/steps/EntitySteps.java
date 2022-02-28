@@ -1,5 +1,6 @@
-package io.semla.cucumber.steps;
+package com.decathlon.tzatziki.steps;
 
+import com.decathlon.tzatziki.utils.Guard;
 import io.cucumber.datatable.DataTable;
 import io.cucumber.docstring.DocString;
 import io.cucumber.java.After;
@@ -22,7 +23,6 @@ import io.semla.persistence.EntityManagerFactory;
 import io.semla.persistence.PersistenceContext;
 import io.semla.query.Query;
 import io.semla.reflect.TypeReference;
-import io.semla.reflect.Types;
 import io.semla.relation.JoinedRelation;
 import io.semla.serialization.json.Json;
 import io.semla.serialization.yaml.Yaml;
@@ -36,12 +36,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.decathlon.tzatziki.utils.Guard.GUARD;
+import static com.decathlon.tzatziki.utils.Patterns.A_USER;
+import static com.decathlon.tzatziki.utils.Patterns.THAT;
+import static io.semla.util.Unchecked.unchecked;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class EntitySteps {
 
     static {
-        ObjectSteps.addHandler(type -> {
+        TypesSteps.addHandler(type -> {
             if (EntityModel.isEntity(type)) {
                 try {
                     EntitySteps.datasourceOf(type);
@@ -85,11 +89,9 @@ public class EntitySteps {
     );
 
     private final ObjectSteps objects;
-    private final ThrowableSteps throwables;
 
-    public EntitySteps(ObjectSteps objects, ThrowableSteps throwables) {
+    public EntitySteps(ObjectSteps objects) {
         this.objects = objects;
-        this.throwables = throwables;
     }
 
     public static EntityManagerFactory factory() {
@@ -154,9 +156,9 @@ public class EntitySteps {
         cleanups.forEach(Runnable::run);
     }
 
-    @When("^" + Patterns.THAT + "the model of ([{}\\w.]+) is generated$")
-    public void the_model_is_generated(String name) {
-        throwables.catchThrowable(() -> Model.of(Types.forName(objects.resolve(name))));
+    @When(THAT + GUARD + "the model of ([{}\\w.]+) is generated$")
+    public void the_model_is_generated(Guard guard, String name) {
+        guard.in(objects, () -> Model.of(unchecked(() -> Class.forName(objects.resolve(name)))));
     }
 
     @Given("^th(?:is|ose|ese) ([^ ]+) entit(?:ies|y):$")
@@ -172,13 +174,13 @@ public class EntitySteps {
         }
     }
 
-    @Then("^" + Patterns.THAT + Patterns.A_USER + " ((?:fetch|get|list|delete|count|patch) [^:]+)$")
+    @Then(THAT + A_USER + "((?:fetch|get|list|delete|count|patch) [^:]+)$")
     public void to_query(String query) {
         Query.parse(query).in(newContext());
     }
 
-    @Then("^" + Patterns.THAT + Patterns.A_USER + "((?:fetching|getting|listing|deleting|counting|patching) .*) returns:$")
-    @When("^" + Patterns.THAT + Patterns.A_USER + "((?:fetching|getting|listing|deleting|counting|patching) .*) returns (.*)$")
+    @Then(THAT + "((?:fetching|getting|listing|deleting|counting|patching) .*) returns:$")
+    @When(THAT + "((?:fetching|getting|listing|deleting|counting|patching) .*) returns (.*)$")
     public void to_query_returns(String queryAsString, Object expected) {
         Query<?, ?> query = Query.parse(queryAsString);
         Object result = query.in(newContext());
@@ -189,7 +191,8 @@ public class EntitySteps {
         assertThat(Yaml.write(result)).isEqualTo(expectedString);
     }
 
-    @Then("^" + Patterns.THAT + Patterns.A_USER + "((?:create|creating|update|updating|patch|patching) .*):$")
+    @Then(THAT + A_USER + "((?:create|update|patch) .*):$")
+    @Then(THAT + "((?:creating|updating|patching) .*):$")
     public void to_query_with_payload(String query, Object payload) {
         if (payload instanceof DocString) {
             payload = ((DocString) payload).getContent();

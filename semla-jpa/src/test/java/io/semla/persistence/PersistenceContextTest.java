@@ -1,13 +1,12 @@
 package io.semla.persistence;
 
-import io.semla.cucumber.steps.EntitySteps;
+import com.decathlon.tzatziki.steps.EntitySteps;
 import io.semla.model.Author;
 import io.semla.model.AuthorManager;
 import io.semla.model.IndexedUser;
 import io.semla.model.IndexedUserManager;
 import io.semla.util.Lists;
 import io.semla.util.Pair;
-import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Test;
 

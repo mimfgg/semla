@@ -2,7 +2,7 @@ package io.semla;
 
 import io.semla.cache.Cache;
 import io.semla.cache.CacheTest;
-import io.semla.cucumber.steps.EntitySteps;
+import com.decathlon.tzatziki.steps.EntitySteps;
 import io.semla.datasource.*;
 import io.semla.persistence.KeyValueCachedEntityManagerTest;
 import io.semla.persistence.KeyValueCachedTypedEntityManagerTest;

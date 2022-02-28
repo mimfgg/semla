@@ -15,15 +15,16 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-    <version>1.2.0</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <modules>
         <module>method-runner-maven-plugin</module>
         <module>semla-logging</module>
-        <module>semla-testing</module>
         <module>semla-common</module>
+        <module>semla-common-test</module>
         <module>semla-inject</module>
         <module>semla-jpa</module>
+        <module>semla-jpa-test</module>
         <module>semla-jackson</module>
         <module>semla-graphql</module>
         <module>semla-jdbi</module>
@@ -49,8 +50,9 @@
         <maven.compiler.release>17</maven.compiler.release>
         <maven.version>3.6.2</maven.version>
         <sl4fj.version>1.7.33</sl4fj.version>
-        <jdbi.version>3.27.0</jdbi.version>
-        <testcontainers.version>1.16.2</testcontainers.version>
+        <jdbi.version>3.27.1</jdbi.version>
+        <tzatziki.version>1.0.16</tzatziki.version>
+        <testcontainers.version>1.16.3</testcontainers.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -92,9 +94,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>3.0.0-M5</version>
-                    <configuration>
-                        <argLine>@{argLine} --add-opens=java.base/jdk.internal.loader=ALL-UNNAMED</argLine>
-                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

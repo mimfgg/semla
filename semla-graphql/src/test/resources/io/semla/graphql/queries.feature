@@ -6,362 +6,362 @@ Feature: a graphql translation layer for semla
     * source prepend "import java.util.*;"
 
   Scenario: we can get an entity by id
-    Given the class:
-    """
-    @Entity
-    public class Something {
+    Given this type:
+      """java
+      @Entity
+      public class Something {
 
-      @Id
-      @GeneratedValue
-      public int id;
+        @Id
+        @GeneratedValue
+        public int id;
 
-      public String name;
-    }
-    """
+        public String name;
+      }
+      """
     And that we query graphql with:
-    """
-    mutation {
-      createSomething(something: {
-        name: "test"
-      }) {
-        id name
+      """graphql
+      mutation {
+        createSomething(something: {
+          name: "test"
+        }) {
+          id name
+        }
       }
-    }
-    """
+      """
 
     When we query graphql with:
-    """
-    query {
-      getSomething(id: 1) {
-        id name
+      """graphql
+      query {
+        getSomething(id: 1) {
+          id name
+        }
       }
-    }
-    """
+      """
     Then we receive:
-    """
-    getSomething:
-      id: 1
-      name: test
-    """
-
-    When we query graphql with:
-    """
-    mutation {
-      updateSomething(something: {
+      """yaml
+      getSomething:
         id: 1
-        name: "bob"
-      }) {
-        id name
-      }
-    }
-    """
-    Then we receive:
-    """
-    updateSomething:
-      id: 1
-      name: bob
-    """
+        name: test
+      """
 
     When we query graphql with:
-    """
-    mutation {
-      updateSomethings(somethings: [{
-        id: 1
-        name: "max"
-      }]) {
-        id name
+      """graphql
+      mutation {
+        updateSomething(something: {
+          id: 1
+          name: "bob"
+        }) {
+          id name
+        }
       }
-    }
-    """
+      """
     Then we receive:
-    """
-    updateSomethings:
-      - id: 1
+      """yaml
+      updateSomething:
+        id: 1
+        name: bob
+      """
+
+    When we query graphql with:
+      """graphql
+      mutation {
+        updateSomethings(somethings: [{
+          id: 1
+          name: "max"
+        }]) {
+          id name
+        }
+      }
+      """
+    Then we receive:
+      """yaml
+      updateSomethings:
+        - id: 1
+          name: max
+      """
+
+    When we query graphql with:
+      """graphql
+      query {
+        firstSomething(where: {name: {is: "max"}}){
+          id name
+        }
+      }
+      """
+    Then we receive:
+      """yaml
+      firstSomething:
+        id: 1
         name: max
-    """
+      """
 
     When we query graphql with:
-    """
-    query {
-      firstSomething(where: {name: {is: "max"}}){
-        id name
+      """graphql
+      mutation {
+        deleteSomething(id: 1)
       }
-    }
-    """
+      """
     Then we receive:
-    """
-    firstSomething:
-      id: 1
-      name: max
-    """
-
-    When we query graphql with:
-    """
-    mutation {
-      deleteSomething(id: 1)
-    }
-    """
-    Then we receive:
-    """
-    deleteSomething: true
-    """
+      """yaml
+      deleteSomething: true
+      """
 
   Scenario: bi-directional onetomany relationship
-    Given the classes:
-    """
-    @Entity
-    public class Parent {
+    Given those types:
+      """java
+      @Entity
+      public class Parent {
 
-        @Id
-        @GeneratedValue
-        public int id;
+          @Id
+          @GeneratedValue
+          public int id;
 
-        public String name;
+          public String name;
 
-        @OneToMany(mappedBy = "parent", cascade = CascadeType.PERSIST)
-        public List<Child> children;
-    }
-    ---
-    @Entity
-    public class Child {
-
-        @Id
-        @GeneratedValue
-        public int id;
-
-        public String name;
-
-        @ManyToOne
-        public Parent parent;
-
-    }
-    """
-    And that we query graphql with:
-    """
-    mutation {
-      createParent(parent: {
-        name: "parent1",
-        children: [{
-          name: "child1"
-        },{
-          name: "child2"
-        }]
-      }){
-        id
+          @OneToMany(mappedBy = "parent", cascade = CascadeType.PERSIST)
+          public List<Child> children;
       }
-    }
-    """
+
+      @Entity
+      public class Child {
+
+          @Id
+          @GeneratedValue
+          public int id;
+
+          public String name;
+
+          @ManyToOne
+          public Parent parent;
+
+      }
+      """
+    And that we query graphql with:
+      """graphql
+      mutation {
+        createParent(parent: {
+          name: "parent1",
+          children: [{
+            name: "child1"
+          },{
+            name: "child2"
+          }]
+        }){
+          id
+        }
+      }
+      """
 
     When we query graphql with:
-    """
-    query {
-      getParent(id: 1) {
-        id
-        children {
+      """graphql
+      query {
+        getParent(id: 1) {
+          id
+          children {
+            id
+            parent {
+              id
+            }
+          }
+        }
+      }
+      """
+    Then we receive:
+      """yaml
+      getParent:
+        id: 1
+        children:
+          - id: 1
+            parent:
+              id: 1
+          - id: 2
+            parent:
+              id: 1
+      """
+
+    When we query graphql with:
+      """graphql
+      query {
+        listChildren(where: {parent: {is: 1}}, orderBy: {id: desc}) {
+          id
+        }
+      }
+      """
+    Then we receive:
+      """yaml
+      listChildren:
+        - id: 2
+        - id: 1
+      """
+
+    When we query graphql with:
+      """graphql
+      query {
+        listChildren(where: {parent: {is: 1}}, orderBy: {id: desc}, startAt: 1, limitTo: 1) {
+          id
+        }
+      }
+      """
+    Then we receive:
+      """yaml
+      listChildren:
+        - id: 1
+      """
+
+    When we query graphql with:
+      """graphql
+      query {
+        getChildren(ids: [1, 2]) {
           id
           parent {
             id
           }
         }
       }
-    }
-    """
+      """
     Then we receive:
-    """
-    getParent:
-      id: 1
-      children:
+      """yaml
+      getChildren:
         - id: 1
           parent:
             id: 1
         - id: 2
           parent:
             id: 1
-    """
+      """
 
     When we query graphql with:
-    """
-    query {
-      listChildren(where: {parent: {is: 1}}, orderBy: {id: desc}) {
-        id
-      }
-    }
-    """
-    Then we receive:
-    """
-    listChildren:
-      - id: 2
-      - id: 1
-    """
-
-    When we query graphql with:
-    """
-    query {
-      listChildren(where: {parent: {is: 1}}, orderBy: {id: desc}, startAt: 1, limitTo: 1) {
-        id
-      }
-    }
-    """
-    Then we receive:
-    """
-    listChildren:
-      - id: 1
-    """
-
-    When we query graphql with:
-    """
-    query {
-      getChildren(ids: [1, 2]) {
-        id
-        parent {
+      """graphql
+      mutation {
+        createParent(parent: {name: "parent2"} ) {
+          id
+        }
+        updateChildren(children: [{
+          id: 1
+          parent: 2
+        }]) {
           id
         }
       }
-    }
-    """
+      """
+    And that we query graphql with:
+      """graphql
+      query {
+        listChildren(where: {parent: {is: 2}}) {
+          id
+        }
+      }
+      """
     Then we receive:
-    """
-    getChildren:
-      - id: 1
-        parent:
-          id: 1
-      - id: 2
-        parent:
-          id: 1
-    """
+      """yaml
+      listChildren:
+        - id: 1
+      """
 
     When we query graphql with:
-    """
-    mutation {
-      createParent(parent: {name: "parent2"} ) {
-        id
+      """graphql
+      mutation {
+        patchChildren(values: {parent: 2}, where: {parent: {is: 1}})
       }
-      updateChildren(children: [{
-        id: 1
-        parent: 2
-      }]) {
-        id
-      }
-    }
-    """
+      """
     And that we query graphql with:
-    """
-    query {
-      listChildren(where: {parent: {is: 2}}) {
-        id
+      """graphql
+      query {
+        listChildren(where: {parent: {is: 2}}) {
+          id
+        }
       }
-    }
-    """
+      """
     Then we receive:
-    """
-    listChildren:
-      - id: 1
-    """
-
-    When we query graphql with:
-    """
-    mutation {
-      patchChildren(values: {parent: 2}, where: {parent: {is: 1}})
-    }
-    """
-    And that we query graphql with:
-    """
-    query {
-      listChildren(where: {parent: {is: 2}}) {
-        id
-      }
-    }
-    """
-    Then we receive:
-    """
-    listChildren:
-      - id: 1
-      - id: 2
-    """
+      """yaml
+      listChildren:
+        - id: 1
+        - id: 2
+      """
 
     And we query graphql with:
-    """
-    query {
-      countChildren(where: {parent: {is: 2}})
-    }
-    """
+      """graphql
+      query {
+        countChildren(where: {parent: {is: 2}})
+      }
+      """
     Then we receive:
-    """
-    countChildren: 2
-    """
+      """yaml
+      countChildren: 2
+      """
 
     When we query graphql with:
-    """
-    mutation {
-      deleteChildren(ids: [1, 2])
-    }
-    """
+      """graphql
+      mutation {
+        deleteChildren(ids: [1, 2])
+      }
+      """
     Then we receive:
-    """
-    deleteChildren: 2
-    """
+      """yaml
+      deleteChildren: 2
+      """
 
   Scenario: bi-directional manytomany lazy relationship
-    Given the classes:
-    """
-    @Entity
-    public class Parent {
+    Given those types:
+      """java
+      @Entity
+      public class Parent {
 
-        @Id
-        public int id;
+          @Id
+          public int id;
 
-        @ManyToMany
-        public List<Child> children;
+          @ManyToMany
+          public List<Child> children;
 
-    }
-    ---
-    @Entity
-    public class Child {
+      }
 
-        @Id
-        public int id;
+      @Entity
+      public class Child {
 
-        @ManyToMany(mappedBy="children")
-        public List<Parent> parents;
+          @Id
+          public int id;
 
-    }
-    """
+          @ManyToMany(mappedBy="children")
+          public List<Parent> parents;
+
+      }
+      """
     And that we query graphql with:
-    """
-    mutation {
-      createParent(parent: {id: 1} ) {
-        id
-      }
-
-      createChild(child: {id: 1}) {
-        id
-      }
-
-      createParentChild(parentChild: {parent: 1, child: 1}) {
-        id
-      }
-    }
-    """
-    When we query graphql with:
-    """
-    query {
-      getParent(id: 1) {
-        id
-        children {
+      """graphql
+      mutation {
+        createParent(parent: {id: 1} ) {
           id
-          parents {
+        }
+
+        createChild(child: {id: 1}) {
+          id
+        }
+
+        createParentChild(parentChild: {parent: 1, child: 1}) {
+          id
+        }
+      }
+      """
+    When we query graphql with:
+      """graphql
+      query {
+        getParent(id: 1) {
+          id
+          children {
             id
+            parents {
+              id
+            }
           }
         }
       }
-    }
-    """
+      """
     Then we receive:
-    """
-    getParent:
-      id: 1
-      children:
-        - id: 1
-          parents:
-            - id: 1
-    """
+      """yaml
+      getParent:
+        id: 1
+        children:
+          - id: 1
+            parents:
+              - id: 1
+      """

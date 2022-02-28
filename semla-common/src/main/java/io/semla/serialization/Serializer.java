@@ -7,6 +7,7 @@ import io.semla.reflect.Types;
 import io.semla.serialization.annotations.Serialize;
 import io.semla.serialization.annotations.TypeInfo;
 import io.semla.serialization.annotations.TypeName;
+import io.semla.serialization.annotations.When;
 import io.semla.serialization.io.CharacterWriter;
 import io.semla.serialization.io.OutputStreamWriter;
 import io.semla.serialization.io.StringWriter;
@@ -29,6 +30,7 @@ import static io.semla.reflect.Types.*;
 import static io.semla.serialization.annotations.When.NEVER;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.comparingInt;
+import static java.util.Optional.ofNullable;
 
 @SuppressWarnings("unchecked")
 public abstract class Serializer<ContextType extends Serializer<?>.Context> {
@@ -57,8 +59,8 @@ public abstract class Serializer<ContextType extends Serializer<?>.Context> {
     public Consumer<ContextType> getWriterFor(Object value) {
         if (value == null) {
             return this::writeNull;
-        } else if (value instanceof Optional) {
-            return this.getWriterFor(((Optional<?>) value).orElse(null));
+        } else if (value instanceof Optional optional) {
+            return this.getWriterFor(optional.orElse(null));
         } else {
             return context -> getWriterForType(value.getClass()).accept(context, value);
         }
@@ -147,9 +149,10 @@ public abstract class Serializer<ContextType extends Serializer<?>.Context> {
             ).get();
         }
         getters.forEach(getter -> {
-            if (getter.serializeWhen() != NEVER) {
+            When serializeWhen = context.serializeWhen().orElseGet(getter::serializeWhen);
+            if (serializeWhen != NEVER) {
                 Object value = getter.getOn(object);
-                switch (getter.serializeWhen()) {
+                switch (serializeWhen) {
                     case NOT_NULL:
                         if (value == null) {
                             return;
@@ -258,10 +261,16 @@ public abstract class Serializer<ContextType extends Serializer<?>.Context> {
         private final Set<Object> serialized = new HashSet<>();
         private final CharacterWriter writer;
         private final boolean sortAlphabetically;
+        private final When serializeWhen;
 
         public Context(CharacterWriter writer, Set<Option> options) {
             this.writer = writer;
             this.sortAlphabetically = options.contains(SORT_ALPHABETICALLY);
+            if (options.contains(NON_DEFAULT)) {
+                serializeWhen = When.NOT_DEFAULT;
+            } else {
+                serializeWhen = null;
+            }
         }
 
         public CharacterWriter writer() {
@@ -270,6 +279,10 @@ public abstract class Serializer<ContextType extends Serializer<?>.Context> {
 
         public boolean sortAlphabetically() {
             return sortAlphabetically;
+        }
+
+        public Optional<When> serializeWhen() {
+            return ofNullable(serializeWhen);
         }
 
         public boolean hasBeenSerialized(Object object) {
@@ -297,6 +310,8 @@ public abstract class Serializer<ContextType extends Serializer<?>.Context> {
     }
 
     public static final Option SORT_ALPHABETICALLY = new Option();
+
+    public static final Option NON_DEFAULT = new Option();
 
     public static WithBuilder<BiConsumer<Serializer<?>.Context, Object>> write(Predicate<Type> predicate) {
         return new WithBuilder<>(writer -> CUSTOM_WRITERS.put(predicate, writer));
