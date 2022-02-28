@@ -60,12 +60,6 @@
         <!-- tests -->
         <dependency>
             <groupId>com.decathlon.tzatziki</groupId>
-            <artifactId>tzatziki-logback</artifactId>
-            <version>${tzatziki.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.decathlon.tzatziki</groupId>
             <artifactId>tzatziki-core</artifactId>
             <version>${tzatziki.version}</version>
             <scope>test</scope>

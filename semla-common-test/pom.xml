@@ -19,6 +19,17 @@
         </dependency>
         <dependency>
             <groupId>com.decathlon.tzatziki</groupId>
+            <artifactId>tzatziki-logback</artifactId>
+            <version>${tzatziki.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.semla</groupId>
+                    <artifactId>semla-logging</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.decathlon.tzatziki</groupId>
             <artifactId>tzatziki-core</artifactId>
             <version>${tzatziki.version}</version>
         </dependency>
