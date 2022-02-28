@@ -5,7 +5,7 @@
     <parent>
         <artifactId>semla</artifactId>
         <groupId>io.semla</groupId>
-        <version>1.2.0</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -14,7 +14,7 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-jpa</artifactId>
-            <version>1.2.0</version>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.graphql-java</groupId>
@@ -30,20 +30,20 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-common-test</artifactId>
-            <version>1.2.0</version>
+            <version>1.0.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-jpa-test</artifactId>
-            <version>1.2.0</version>
+            <version>1.0.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-jpa</artifactId>
             <classifier>tests</classifier>
-            <version>1.2.0</version>
+            <version>1.0.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

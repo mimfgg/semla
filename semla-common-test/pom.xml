@@ -5,7 +5,7 @@
     <parent>
         <artifactId>semla</artifactId>
         <groupId>io.semla</groupId>
-        <version>1.2.0</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -14,7 +14,7 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-common</artifactId>
-            <version>1.2.0</version>
+            <version>1.0.0-SNAPSHOT</version>
             <classifier>tests</classifier>
         </dependency>
         <dependency>
@@ -35,7 +35,7 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-logging</artifactId>
-            <version>1.2.0</version>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.decathlon.tzatziki</groupId>

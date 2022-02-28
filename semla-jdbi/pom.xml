@@ -5,7 +5,7 @@
     <parent>
         <groupId>io.semla</groupId>
         <artifactId>semla</artifactId>
-        <version>1.2.0</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>semla-jdbi</artifactId>
     <packaging>jar</packaging>
@@ -13,7 +13,7 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-jpa</artifactId>
-            <version>1.2.0</version>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.jdbi</groupId>
@@ -61,13 +61,13 @@
             <groupId>io.semla</groupId>
             <artifactId>semla-jpa</artifactId>
             <classifier>tests</classifier>
-            <version>1.2.0</version>
+            <version>1.0.0-SNAPSHOT</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-jpa-test</artifactId>
-            <version>1.2.0</version>
+            <version>1.0.0-SNAPSHOT</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>semla</artifactId>
         <groupId>io.semla</groupId>
-        <version>1.2.0</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>semla-jpa-test</artifactId>
@@ -13,13 +13,13 @@
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-common-test</artifactId>
-            <version>1.2.0</version>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.semla</groupId>
             <artifactId>semla-jpa</artifactId>
             <classifier>test-libs</classifier>
-            <version>1.2.0</version>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>
