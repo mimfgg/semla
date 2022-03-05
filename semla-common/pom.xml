@@ -64,6 +64,12 @@
             <version>${tzatziki.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.semla</groupId>
+            <artifactId>semla-logging</artifactId>
+            <version>1.0.0-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
