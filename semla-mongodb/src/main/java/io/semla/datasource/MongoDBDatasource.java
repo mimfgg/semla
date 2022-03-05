@@ -189,8 +189,8 @@ public class MongoDBDatasource<T> extends Datasource<T> {
     public long patch(Values<T> values, Predicates<T> predicates, Pagination<T> pagination) {
         Bson update = toBson(values);
         if (pagination.isPaginated()) {
-            // there is not pagination on updateMany, so we have to first query and then update;
-            predicates.where(model().key().member().getName()).in(
+            // there is no pagination on updateMany, so we have to first query and then update;
+            predicates = Predicates.of(model()).where(model().key().member().getName()).in(
                 list(predicates, pagination).stream().map(model().key().member()::getOn).collect(Collectors.toList())
             );
         }
@@ -200,8 +200,8 @@ public class MongoDBDatasource<T> extends Datasource<T> {
     @Override
     public long delete(Predicates<T> predicates, Pagination<T> pagination) {
         if (pagination.isPaginated()) {
-            // there is not pagination on deleteMany, so we have to first query and then delete the keys;
-            predicates.where(model().key().member().getName()).in(
+            // there is no pagination on deleteMany, so we have to first query and then delete the keys;
+            predicates = Predicates.of(model()).where(model().key().member().getName()).in(
                 list(predicates, pagination).stream().map(model().key().member()::getOn).collect(Collectors.toList())
             );
         }

@@ -48,7 +48,7 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <maven.compiler.release>17</maven.compiler.release>
-        <maven.version>3.6.2</maven.version>
+        <maven.version>3.6.1</maven.version>
         <sl4fj.version>1.7.33</sl4fj.version>
         <jdbi.version>3.27.1</jdbi.version>
         <tzatziki.version>1.0.18</tzatziki.version>
