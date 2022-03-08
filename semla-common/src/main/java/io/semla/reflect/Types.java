@@ -120,7 +120,12 @@ public final class Types {
     }
 
     public static <E> Class<E> rawTypeOf(Type type) {
-        return type instanceof ParameterizedType parameterizedType ? (Class<E>) parameterizedType.getRawType() : (Class<E>) type;
+        if (type instanceof ParameterizedType parameterizedType) {
+            return (Class<E>) parameterizedType.getRawType();
+        } else if (type instanceof Class<?> clazz) {
+            return (Class<E>) clazz;
+        }
+        return null;
     }
 
     public static List<Class<?>> compileFromFiles(List<String> classPathElements, File... files) {
@@ -150,9 +155,9 @@ public final class Types {
         return unchecked(() -> Files.walk(new File(tmpDir).toPath()))
             .filter(file -> file.getFileName().toString().endsWith(".class"))
             .map(file -> file.toAbsolutePath().toString()
-                    .replace(tmpDir, "")
-                    .replace(File.separator, ".")
-                    .replace(".class", ""))
+                .replace(tmpDir, "")
+                .replace(File.separator, ".")
+                .replace(".class", ""))
             .map(classname -> unchecked(() -> Class.forName(classname)))
             .collect(Collectors.toList());
     }
@@ -405,7 +410,8 @@ public final class Types {
                     "type %s expects %d argument%s but got %d".formatted(
                         rawType, rawType.getTypeParameters().length,
                         rawType.getTypeParameters().length > 1 ? "s" : "",
-                        actualTypeArguments.length));
+                        actualTypeArguments.length
+                    ));
             }
             this.actualTypeArguments = actualTypeArguments;
         }
@@ -428,7 +434,8 @@ public final class Types {
         @Override
         public String toString() {
             return "%s<%s>".formatted(rawType.getTypeName(),
-                Stream.of(actualTypeArguments).map(Type::getTypeName).collect(Collectors.joining(", ")));
+                Stream.of(actualTypeArguments).map(Type::getTypeName).collect(Collectors.joining(", "))
+            );
         }
     }
 

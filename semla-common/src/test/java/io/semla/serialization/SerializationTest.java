@@ -1,7 +1,9 @@
 package io.semla.serialization;
 
+import ch.qos.logback.classic.Level;
 import io.semla.exception.DeserializationException;
 import io.semla.exception.SerializationException;
+import io.semla.logging.Logging;
 import io.semla.model.Child;
 import io.semla.model.Parent;
 import io.semla.model.Score;
@@ -9,6 +11,8 @@ import io.semla.reflect.Annotations;
 import io.semla.reflect.TypeReference;
 import io.semla.reflect.Types;
 import io.semla.serialization.annotations.Serialize;
+import io.semla.serialization.annotations.TypeInfo;
+import io.semla.serialization.annotations.TypeName;
 import io.semla.serialization.io.OutputStreamWriter;
 import io.semla.serialization.json.Json;
 import io.semla.serialization.json.JsonSerializer;
@@ -330,7 +334,6 @@ public class SerializationTest {
     }
 
 
-
     @Builder
     public static class SomeObject {
 
@@ -381,5 +384,17 @@ public class SerializationTest {
         @Builder.Default
         public int height = 170;
     }
+
+    @Test
+    public void aSubTypeWithoutParametersIsProperyDeserializedFromYaml() {
+        Types.registerSubTypes(MyConcreteType.class);
+        assertThat(Yaml.read("--- !<my-concrete-type> {}", MyType.class)).isInstanceOf(MyConcreteType.class);
+    }
+
+    @TypeInfo
+    public interface MyType {}
+
+    @TypeName("my-concrete-type")
+    public static class MyConcreteType implements MyType {}
 
 }

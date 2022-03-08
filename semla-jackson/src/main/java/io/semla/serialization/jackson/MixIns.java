@@ -33,36 +33,39 @@ public class MixIns {
     public static Class<?> createFor(Class<?>... classes) {
         Types.registerSubTypes(classes);
 
-        Set<Class<?>> superType = Stream.of(classes)
+        Set<Class<?>> supertypes = Stream.of(classes)
             .map(clazz -> Types.getParentClassAnnotatedWith(clazz, TypeInfo.class).orElse(null))
             .filter(Objects::nonNull)
             .sorted(Comparator.comparing(Class::getName))
             .collect(Collectors.toCollection(LinkedHashSet::new));
 
 
-        if (superType.size() > 1) {
+        if (supertypes.size() > 1) {
             throw new IllegalArgumentException(
-                "classes: " + Arrays.toString(classes) + " don't all share the same superType! found: " + superType);
+                "classes: " + Arrays.toString(classes) + " don't all share the same unique superType! found: " + supertypes);
         }
 
 
-        String property = superType.iterator().next().getAnnotation(TypeInfo.class).property();
+        String property = supertypes.stream().findFirst().map(supertype -> supertype.getAnnotation(TypeInfo.class).property())
+            .orElseThrow(() -> new IllegalArgumentException(
+                "classes: " + Arrays.toString(classes) + " don't share any superType!"));
 
         return Javassist.getOrCreate(MixIns.class.getName() + "$$" + mixins.getAndIncrement(),
-                MixIns.class,
-                builder -> builder
-                    .addAnnotation(JsonTypeInfo.class, annotation -> annotation
-                        .set("use", JsonTypeInfo.Id.NAME)
-                        .set("property", property)
-                    )
-                    .addAnnotation(JsonSubTypes.class, annotation -> annotation
-                        .set("value", Stream.of(classes).map(clazz ->
-                            Annotations.proxyOf(JsonSubTypes.Type.class, Maps.of(
-                                "value", clazz,
-                                "name", clazz.getAnnotation(TypeName.class).value()))).toArray()))
-                    .addAnnotation(JsonDeserialize.class, annotation -> annotation
-                        .set("using", Deserializer.class))
-            );
+            MixIns.class,
+            builder -> builder
+                .addAnnotation(JsonTypeInfo.class, annotation -> annotation
+                    .set("use", JsonTypeInfo.Id.NAME)
+                    .set("property", property)
+                )
+                .addAnnotation(JsonSubTypes.class, annotation -> annotation
+                    .set("value", Stream.of(classes).map(clazz ->
+                        Annotations.proxyOf(JsonSubTypes.Type.class, Maps.of(
+                            "value", clazz,
+                            "name", clazz.getAnnotation(TypeName.class).value()
+                        ))).toArray()))
+                .addAnnotation(JsonDeserialize.class, annotation -> annotation
+                    .set("using", Deserializer.class))
+        );
     }
 
     // The Deserializer is required because of the semla @Deserialize annotations
@@ -83,11 +86,9 @@ public class MixIns {
                              final DeserializationContext ctxt)
             throws IOException {
             Map<String, Object> asMap = new LinkedHashMap<>();
-            asMap.put("type", clazz.getAnnotation(TypeName.class).value());
-            while (!jp.currentToken().equals(JsonToken.END_OBJECT)) {
-                jp.nextToken();
+            asMap.put("!type", clazz.getAnnotation(TypeName.class).value());
+            while (jp.nextToken() != null && !jp.currentToken().equals(JsonToken.END_OBJECT)) {
                 asMap.put(jp.currentName(), jp.getValueAsString());
-                jp.nextToken();
             }
             // let's write/read it again
             return Json.read(Json.write(asMap), clazz);

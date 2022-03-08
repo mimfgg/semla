@@ -8,6 +8,7 @@ import io.semla.query.Values;
 import io.semla.reflect.Types;
 import io.semla.serialization.annotations.TypeName;
 import io.semla.serialization.json.Json;
+import lombok.Builder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

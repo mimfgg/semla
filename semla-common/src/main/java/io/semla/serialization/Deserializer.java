@@ -161,7 +161,7 @@ public abstract class Deserializer<ContextType extends Deserializer<ContextType>
                     String type = clazz.getAnnotation(TypeInfo.class).property();
                     context.push(PROPERTY);
                     String firstProperty = read(context);
-                    if (firstProperty.equals(type)) {
+                    if (firstProperty.equals(type) || firstProperty.equals("!type")) {
                         context.next();
                         model = Model.of(getSubTypeOf(clazz, type, read(context, String.class)));
                         context.pop(PROPERTY);

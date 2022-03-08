@@ -213,7 +213,8 @@ public class Strings {
                         // naive parsing
                         return s -> Arrays.toArray(Splitter.on(',').trim().omitEmptyStrings().split(s.substring(1, s.length() - 1)).stream()
                                 .map(token -> parse(token, clazz.getComponentType())).collect(Collectors.toList()),
-                            clazz.getComponentType());
+                            clazz.getComponentType()
+                        );
                     }
                     return s -> s;
                 })).apply(value);
@@ -288,11 +289,12 @@ public class Strings {
         return Lists.fromArray(values).contains(text);
     }
 
-    public static boolean firstNonWhitespaceCharacterIs(String text, char... c) {
+    public static boolean firstNonWhitespaceCharacterIs(String text, Character... c) {
+        Set<Character> characters = Set.of(c);
         for (int i = 0; i < text.length(); i++) {
             char charAt = text.charAt(i);
-            if (charAt != ' ') {
-                return Lists.fromArray(c).contains(charAt);
+            if (!Character.isWhitespace(charAt)) {
+                return characters.contains(charAt);
             }
         }
         return false;

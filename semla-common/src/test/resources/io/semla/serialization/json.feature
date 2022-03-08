@@ -78,7 +78,7 @@ Feature: a json serializer/deserializer
         "list": [1.0, 2.3],
         "arrayList": ["1","2","3"],
         "linkedList": [1,2,3],
-        "set": [0, .5],
+        "set": [0, 0.5],
         "linkedHashSet": ["a","b"],
         "treeSet": [1, 2],
         "map": null,
@@ -190,7 +190,7 @@ Feature: a json serializer/deserializer
       import java.util.*;
 
       public class AnonymousType {
-        public List list;
+        public List<?> list;
         public int[] missing;
         @Deserialize(When.NOT_NULL)
         public String value = "defaultValue";

@@ -1,6 +1,7 @@
 package io.semla.serialization.yaml;
 
 import io.semla.exception.DeserializationException;
+import io.semla.reflect.Types;
 import io.semla.serialization.Deserializer;
 import io.semla.serialization.Token;
 import io.semla.serialization.io.CharacterReader;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static io.semla.serialization.io.CharacterReader.EOF;
@@ -25,6 +27,7 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
     private static final Pattern BOOLEAN = Pattern.compile("(?i)y|yes|true|on|n|no|false|off");
     private static final Pattern TRUE = Pattern.compile("(?i)y|yes|true|on");
     private static final Pattern DOCUMENT_END = Pattern.compile("\\.\\.\\.");
+    private static final Pattern NAMED_TYPE = Pattern.compile("<(.*)>");
 
     public YamlDeserializer() {
         read(Boolean.class).as(Token.BOOLEAN, value -> TRUE.matcher(value).matches());
@@ -37,8 +40,10 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
 
     @Override
     protected String read(Context context) {
-        if (context.buffer().charAt(0) == '"' && context.buffer().charAt(context.buffer().length() - 1) == '"') {
-            context.buffer().deleteCharAt(0).deleteCharAt(context.buffer().length() - 1);
+        if (!context.buffer().isEmpty()) {
+            if (context.buffer().charAt(0) == '"' && context.buffer().charAt(context.buffer().length() - 1) == '"') {
+                context.buffer().deleteCharAt(0).deleteCharAt(context.buffer().length() - 1);
+            }
         }
 
         String value = context.buffer().toString();
@@ -71,6 +76,7 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
 
     public class Context extends Deserializer<Context>.Context {
 
+        private final LinkedList<String> stashedBuffers = new LinkedList<>();
         private final LinkedList<Integer> columns = new LinkedList<>();
         private final Map<String, Pair<Token, Object>> anchors = new LinkedHashMap<>();
         private Token lastPop;
@@ -206,6 +212,9 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                         buffer.append(c);
                         break;
                     case '!':
+                        if (currentBuffer.startsWith("--- ")) {
+                            resetBuffer();
+                        }
                         if (buffer.length() == 0) {
                             char next = reader().next();
                             while (!Character.isWhitespace(next) && next != EOF) {
@@ -230,11 +239,20 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                                         throw new DeserializationException("while including " + file + " @" + reader(), e);
                                     }
                                 } else {
-                                    try {
-                                        Class<?> clazz = Class.forName(tag);
-                                        explicitToken = Token.fromType(clazz);
-                                    } catch (ClassNotFoundException e) {
-                                        throw new DeserializationException("unknown class: " + tag + " @" + reader(), e);
+                                    Matcher namedType = NAMED_TYPE.matcher(tag);
+                                    if (namedType.matches()) {
+                                        buffer.append("!type");
+                                        stashedBuffers.add(namedType.group(1));
+                                        enqueue(Token.PROPERTY);
+                                        enqueue(Token.STRING);
+                                        return Token.OBJECT;
+                                    } else {
+                                        try {
+                                            Class<?> clazz = Class.forName(tag);
+                                            explicitToken = Token.fromType(clazz);
+                                        } catch (ClassNotFoundException e) {
+                                            throw new DeserializationException("unknown class: " + tag + " @" + reader(), e);
+                                        }
                                     }
                                 }
                             }
@@ -565,6 +583,9 @@ public class YamlDeserializer extends Deserializer<YamlDeserializer.Context> {
                     log.trace("resetting buffer: '" + buffer + "'");
                 }
                 buffer = new StringBuilder();
+            }
+            if (!stashedBuffers.isEmpty()) {
+                buffer.append(stashedBuffers.removeFirst());
             }
         }
 

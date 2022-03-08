@@ -14,13 +14,12 @@ public class SerializationSteps {
 
     private final ObjectSteps objectSteps;
 
-    public SerializationSteps( ObjectSteps objectSteps) {
+    public SerializationSteps(ObjectSteps objectSteps) {
         this.objectSteps = objectSteps;
     }
 
     @Before
-    public void before() {
-    }
+    public void before() {}
 
     @Then(Patterns.THAT + Patterns.VARIABLE + " gets (pretty )?serialized as this json:$")
     public void json_gets_serialized_as_this_json(String name, boolean pretty, String content) {
