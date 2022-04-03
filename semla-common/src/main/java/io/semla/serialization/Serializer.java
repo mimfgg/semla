@@ -36,7 +36,7 @@ import static java.util.Optional.ofNullable;
 public abstract class Serializer<ContextType extends Serializer<?>.Context> {
 
     private static final Map<Predicate<Type>, BiConsumer<Serializer<?>.Context, Object>> CUSTOM_WRITERS = new LinkedHashMap<>();
-    private final Map<Type, BiConsumer<ContextType, Object>> writers = new LinkedHashMap<>();
+    private final Map<Type, BiConsumer<ContextType, Object>> writers = Collections.synchronizedMap(new LinkedHashMap<>());
     private final Set<Option> defaultOptions = new LinkedHashSet<>();
 
     public Set<Option> defaultOptions() {

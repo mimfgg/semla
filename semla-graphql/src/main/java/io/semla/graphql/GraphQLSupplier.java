@@ -145,23 +145,23 @@ public class GraphQLSupplier implements Supplier<GraphQL> {
         return builder.build();
     }
 
-    protected <T> void addQueries(EntityModel<T> model, TypeRuntimeWiring.Builder queries) {
-        EntityManager<T> entityManager = factory.of(model.getType());
+    protected <K, T> void addQueries(EntityModel<T> model, TypeRuntimeWiring.Builder queries) {
+        EntityManager<K, T> entityManager = factory.of(model.getType());
         queries
                 .dataFetcher("get" + capitalize(model.singularName()), environment ->
-                        entityManager.get((Integer) environment.getArgument("id")))
+                        entityManager.get(environment.<K>getArgument("id")))
                 .dataFetcher("first" + capitalize(model.singularName()), environment ->
                         toSelect(entityManager, environment).first())
                 .dataFetcher("get" + capitalize(model.pluralName()), environment ->
-                        entityManager.get(environment.getArgument("ids")).values())
+                        entityManager.get(environment.<Collection<K>>getArgument("ids")).values())
                 .dataFetcher("list" + capitalize(model.pluralName()), environment ->
                         toSelect(entityManager, environment).list())
                 .dataFetcher("count" + capitalize(model.pluralName()), environment ->
                         toSelect(entityManager, environment).count());
     }
 
-    protected <T> void addMutations(EntityModel<T> model, TypeRuntimeWiring.Builder mutations) {
-        EntityManager<T> entityManager = factory.of(model.getType());
+    protected <K, T> void addMutations(EntityModel<T> model, TypeRuntimeWiring.Builder mutations) {
+        EntityManager<K, T> entityManager = factory.of(model.getType());
         mutations
                 .dataFetcher("create" + capitalize(model.singularName()), environment ->
                         entityManager.create(model.newInstanceWithValues(environment.getArgument(model.singularName()))))
@@ -174,12 +174,12 @@ public class GraphQLSupplier implements Supplier<GraphQL> {
                 .dataFetcher("patch" + capitalize(model.pluralName()), environment ->
                         toSelect(entityManager, environment).set(environment.getArgument("values")).patch())
                 .dataFetcher("delete" + capitalize(model.singularName()), environment ->
-                        entityManager.delete((Integer) environment.getArgument("id")))
+                        entityManager.delete(environment.<K>getArgument("id")))
                 .dataFetcher("delete" + capitalize(model.pluralName()), environment ->
-                        entityManager.delete(environment.getArgument("ids")));
+                        entityManager.delete(environment.<Collection<K>>getArgument("ids")));
     }
 
-    protected <T> Select<T> toSelect(EntityManager<T> entityManager, DataFetchingEnvironment dataFetchingEnvironment) {
+    protected <K, T> Select<T> toSelect(EntityManager<K, T> entityManager, DataFetchingEnvironment dataFetchingEnvironment) {
         Predicates<T> predicates = Predicates.of(entityManager.model().getType());
         if (dataFetchingEnvironment.containsArgument("where")) {
             Map<String, List<Map<String, Object>>> where = dataFetchingEnvironment.getArgument("where");

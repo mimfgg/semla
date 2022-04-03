@@ -35,7 +35,7 @@ import static io.semla.serialization.Token.*;
 public abstract class Deserializer<ContextType extends Deserializer<ContextType>.Context> {
 
     private static final Map<Predicate<Type>, BiFunction<Deserializer<?>.Context, Type, Object>> CUSTOM_READERS = new LinkedHashMap<>();
-    private final Map<Type, BiFunction<ContextType, Type, Object>> readers = new LinkedHashMap<>();
+    private final Map<Type, BiFunction<ContextType, Type, Object>> readers = Collections.synchronizedMap(new LinkedHashMap<>());
     private final Set<Option> defaultOptions = new LinkedHashSet<>();
 
     public Set<Option> defaultOptions() {

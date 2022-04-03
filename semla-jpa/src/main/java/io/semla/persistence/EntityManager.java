@@ -2,6 +2,7 @@ package io.semla.persistence;
 
 import io.semla.datasource.Datasource;
 import io.semla.query.*;
+import io.semla.util.concurrent.Async;
 
 import javax.persistence.PostLoad;
 import java.time.Duration;
@@ -9,31 +10,33 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
 import java.util.function.UnaryOperator;
 
 import static io.semla.query.Includes.defaultRemovesOrDeleteOf;
 import static io.semla.query.Includes.of;
 
-public class EntityManager<T> extends AbstractEntityManager<T> {
+public class EntityManager<K, T> extends AbstractEntityManager<K, T> {
 
     public EntityManager(Datasource<T> datasource, EntityManagerFactory entityManagerFactory) {
         super(datasource, entityManagerFactory);
     }
 
-    public Get<T> cached() {
-        return new Get<>(newContext(), model()).cached();
+    public Get<K, T> cached() {
+        return new Get<K, T>(newContext(), model()).cached();
     }
 
-    public Get<T> cachedFor(Duration ttl) {
-        return new Get<>(newContext(), model()).cachedFor(ttl);
+    public Get<K, T> cachedFor(Duration ttl) {
+        return cached().cachedFor(ttl);
     }
 
-    public Get<T> invalidateCache() {
-        return new Get<>(newContext(), model()).invalidateCache();
+    public Get<K, T> invalidateCache() {
+        return cached().invalidateCache();
     }
 
-    public Get<T>.Evict evictCache() {
-        return new Get<>(newContext(), model()).evictCache();
+    public Get<K, T>.Evict evictCache() {
+        return cached().evictCache();
     }
 
     public Create<T> newInstance() {
@@ -80,11 +83,11 @@ public class EntityManager<T> extends AbstractEntityManager<T> {
         return create(newContext(), entities, include.apply(of(model())));
     }
 
-    public Optional<T> get(Object key, UnaryOperator<Includes<T>> include) {
+    public Optional<T> get(K key, UnaryOperator<Includes<T>> include) {
         return get(newContext(), key, include.apply(of(model())));
     }
 
-    public <K> Map<K, T> get(Collection<K> keys, UnaryOperator<Includes<T>> include) {
+    public Map<K, T> get(Collection<K> keys, UnaryOperator<Includes<T>> include) {
         return get(newContext(), keys, include.apply(of(model())));
     }
 
@@ -96,11 +99,11 @@ public class EntityManager<T> extends AbstractEntityManager<T> {
         return update(newContext(), entities, include.apply(of(model())));
     }
 
-    public boolean delete(Object key, UnaryOperator<Includes<T>> include) {
+    public boolean delete(K key, UnaryOperator<Includes<T>> include) {
         return delete(newContext(), key, include.apply(of(model())));
     }
 
-    public long delete(Collection<?> keys, UnaryOperator<Includes<T>> include) {
+    public long delete(Collection<K> keys, UnaryOperator<Includes<T>> include) {
         return delete(newContext(), keys, include.apply(defaultRemovesOrDeleteOf(model())));
     }
 
@@ -171,5 +174,39 @@ public class EntityManager<T> extends AbstractEntityManager<T> {
         if (strictIndices) {
             predicates.enforceIndices();
         }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public AsyncHandler<K, T> async() {
+        return Async.asyncHandler(AsyncHandler.class, this);
+    }
+
+    public interface AsyncHandler<K, T> extends AbstractEntityManager.AsyncHandler<K, T> {
+
+        CompletionStage<T> create(T entity, UnaryOperator<Includes<T>> include);
+
+        <CollectionType extends Collection<T>> CompletionStage<CollectionType> create(CollectionType entities, UnaryOperator<Includes<T>> include);
+
+        CompletionStage<Optional<T>> get(K key, UnaryOperator<Includes<T>> include);
+
+        CompletionStage<Map<K, T>> get(Collection<K> keys, UnaryOperator<Includes<T>> include);
+
+        CompletionStage<T> update(T entity, UnaryOperator<Includes<T>> include);
+
+        <CollectionType extends Collection<T>> CompletionStage<CollectionType> update(CollectionType entities, UnaryOperator<Includes<T>> include);
+
+        CompletionStage<Boolean> delete(K key, UnaryOperator<Includes<T>> include);
+
+        CompletionStage<Long> delete(Collection<K> keys, UnaryOperator<Includes<T>> include);
+
+        CompletionStage<Optional<T>> first();
+
+        CompletionStage<Optional<T>> first(UnaryOperator<Includes<T>> include);
+
+        CompletionStage<List<T>> list();
+
+        CompletionStage<List<T>> list(UnaryOperator<Includes<T>> include);
+
     }
 }

@@ -2,10 +2,12 @@ package io.semla.query;
 
 import io.semla.model.EntityModel;
 import io.semla.persistence.PersistenceContext;
+import io.semla.util.concurrent.Async;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import java.util.function.UnaryOperator;
 
 import static io.semla.query.Includes.defaultEagersOf;
@@ -15,10 +17,6 @@ public class Select<T> extends PaginatedQuery<T, Select<T>> {
 
     public Select(PersistenceContext context, EntityModel<T> model) {
         super(context, model);
-    }
-
-    protected Select(PersistenceContext context, Predicates<T> predicates, Pagination<T> pagination) {
-        super(context, predicates, pagination);
     }
 
     public Optional<T> first() {
@@ -83,5 +81,48 @@ public class Select<T> extends PaginatedQuery<T, Select<T>> {
         public void count() {
             context.count(predicates);
         }
+
+        @SuppressWarnings("unchecked")
+        public AsyncHandler<T> async() {
+            return Async.asyncHandler(AsyncHandler.class, this);
+        }
+
+        public interface AsyncHandler<T> {
+
+            CompletionStage<Void> first();
+
+            CompletionStage<Void> first(UnaryOperator<Includes<T>> include);
+
+            CompletionStage<Void> list();
+
+            CompletionStage<Void> list(UnaryOperator<Includes<T>> include);
+
+            CompletionStage<Void> count();
+        }
     }
+
+    @SuppressWarnings("unchecked")
+    public AsyncHandler<T> async() {
+        return Async.asyncHandler(AsyncHandler.class, this);
+    }
+
+    public interface AsyncHandler<T> {
+
+        CompletionStage<Optional<T>> first();
+
+        CompletionStage<Optional<T>> first(UnaryOperator<Includes<T>> include);
+
+        CompletionStage<List<T>> list();
+
+        CompletionStage<List<T>> list(UnaryOperator<Includes<T>> include);
+
+        CompletionStage<Long> count();
+
+        CompletionStage<Long> delete();
+
+        CompletionStage<Long> delete(UnaryOperator<Includes<T>> includes);
+
+    }
+
+
 }

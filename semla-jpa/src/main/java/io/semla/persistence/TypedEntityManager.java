@@ -8,7 +8,6 @@ import io.semla.query.*;
 import io.semla.reflect.Proxy;
 import io.semla.reflect.Types;
 import io.semla.relation.Relation;
-import io.semla.util.Arrays;
 import io.semla.util.Lists;
 import io.semla.util.Plural;
 import io.semla.util.Strings;
@@ -41,7 +40,8 @@ import static io.semla.reflect.Types.wrap;
 import static io.semla.util.Unchecked.unchecked;
 
 @SuppressWarnings("unchecked")
-public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, PatchType, SelectType, PredicateTypes, IncludesType> extends AbstractEntityManager<T> {
+public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, PatchType, SelectType, PredicateTypes, IncludesType>
+    extends AbstractEntityManager<K, T> {
 
     private final Class<GetType> getType = rawTypeArgumentOf(this.getClass().getGenericSuperclass(), 2);
     private final Class<CreateType> createType = rawTypeArgumentOf(this.getClass().getGenericSuperclass(), 3);
@@ -50,14 +50,14 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
     private final Class<SelectType> selectType = rawTypeArgumentOf(this.getClass().getGenericSuperclass(), 6);
     private final Class<PredicateTypes> predicatesInterface = rawTypeArgumentOf(this.getClass().getGenericSuperclass(), 7);
     private final Class<IncludesType> includesType = rawTypeArgumentOf(this.getClass().getGenericSuperclass(), 8);
-    protected final EntityManager<T> entityManager;
+    protected final EntityManager<K, T> entityManager;
 
-    public TypedEntityManager(EntityManager<T> entityManager) {
+    public TypedEntityManager(EntityManager<K, T> entityManager) {
         super(entityManager.datasource, entityManager.entityManagerFactory);
         this.entityManager = entityManager;
     }
 
-    public EntityManager<T> unwrap() {
+    public EntityManager<K, T> unwrap() {
         return entityManager;
     }
 
@@ -65,7 +65,7 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
         Create<T> create = new Create<>(newContext(), model());
         return Proxy.of(createType, new Object[]{new CreateHandler(create)}, (createProxy, method, args) ->
             findMethod(create.getClass(), method.getName(), method.getParameterTypes())
-                .map(m -> invoke(create, method.getName(), Arrays.emptyIfNull(args)))
+                .map(m -> invoke(create, method.getName(), args))
                 .orElseGet(() -> {
                     create.with(method.getName(), args != null && args.length > 0 ? args[0] : new Object[0]);
                     return createProxy;
@@ -74,7 +74,7 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
     }
 
     protected GetType get() {
-        Get<T> get = new Get<>(newContext(), model());
+        Get<K, T> get = new Get<>(newContext(), model());
         return Proxy.of(getType, new Object[]{new GetHandler(get)}, (getProxy, method, args) -> {
             switch (method.getName()) {
                 case "cached":
@@ -87,7 +87,7 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
                     get.invalidateCache();
                     return getProxy;
                 default:
-                    return invoke(get, method.getName(), Arrays.emptyIfNull(args));
+                    return invoke(get, method.getName(), args);
             }
         });
     }
@@ -115,7 +115,7 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
                                     case "hasKeyNotIn" -> "notIn";
                                     default -> operatorMethod.getName();
                                 };
-                                return invoke(select.predicates().where(selectProxy, predicate.getName()), operator, Arrays.emptyIfNull(values));
+                                return invoke(select.predicates().where(selectProxy, predicate.getName()), operator, values);
                             })
                         );
                     case "orderedBy":
@@ -129,7 +129,7 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
                         select.limitTo((int) args[0]);
                         return selectProxy;
                     default:
-                        return invoke(select, method.getName(), Arrays.emptyIfNull(args));
+                        return invoke(select, method.getName(), args);
                 }
             }
         );
@@ -145,7 +145,7 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
                     )
                 );
             }
-            return invoke(patch, method.getName(), Arrays.emptyIfNull(args));
+            return invoke(patch, method.getName(), args);
         });
         return Proxy.of(setterInterface, (setterProxy, method, args) -> {
                 if ("where".equals(method.getName())) {
@@ -163,9 +163,9 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
 
     protected class GetHandler {
 
-        private final Get<T> get;
+        private final Get<K, T> get;
 
-        public GetHandler(Get<T> get) {
+        public GetHandler(Get<K, T> get) {
             this.get = get;
         }
 
@@ -502,255 +502,623 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
             constructorParameters.delete(constructorParameters.length() - 2, constructorParameters.length());
         }
 
-        StringBuilder source = new StringBuilder("package " + packageName + ";\n\n" +
-            "import io.semla.persistence.EntityManager;\n" +
-            "import io.semla.persistence.TypedEntityManager;\n" +
-            "import io.semla.relation.IncludeType;\n" +
-            "import io.semla.relation.IncludeTypes;\n\n" +
-            "import java.time.Duration;\n" +
-            "import java.util.List;\n" +
-            "import java.util.Map;\n" +
-            "import java.util.Collection;\n" +
-            "import java.util.Optional;\n" +
-            "import java.util.function.Consumer;\n" +
-            "import javax.annotation.Generated;\n\n" +
-            "@Generated(value = \"by semla.io\", date = \"" + Strings.toString(Instant.now()) + "\")\n" +
-            "public class " + className + " extends TypedEntityManager<" + wrappedKeyType + ", " + entityName + ", " + className + ".Get, " + className + ".Create, " +
-            "\n    " + className + ".Setter," + className + ".Patch, " + className + ".Select, " + className + ".PredicateHandler<?>, " + className + ".Includes> {\n\n" +
-            "    public " + className + "(EntityManager<" + entityName + "> entityManager) {\n" +
-            "        super(entityManager);\n    }\n\n" +
-            "    public " + className + ".Create new" + clazz.getSimpleName() + "(" + constructorParameters + ") {\n        return super.newInstance()" + constructionChain + ";\n    }\n\n" +
-            "    public PredicateHandler<Select> where() {\n        return select().and();\n    }\n\n" +
-            "    public Select orderedBy(Sort sort, Sort... sorts) {\n        return select().orderedBy(sort, sorts);\n    }\n\n" +
-            "    public Select startAt(int start) {\n        return select().startAt(start);\n    }\n\n" +
-            "    public Select limitTo(int limit) {\n        return select().limitTo(limit);\n    }\n\n");
+        StringBuilder source = new StringBuilder("""
+            package %1$s;
+
+            import io.semla.persistence.AbstractEntityManager;
+            import io.semla.persistence.EntityManager;
+            import io.semla.persistence.TypedEntityManager;
+            import io.semla.util.concurrent.Async;
+
+            import javax.annotation.Generated;
+            import java.time.Duration;
+            import java.util.Collection;
+            import java.util.List;
+            import java.util.Map;
+            import java.util.Optional;
+            import java.util.concurrent.CompletionStage;
+            import java.util.stream.Stream;
+            import java.util.function.Consumer;
+
+            @Generated(value = "by semla.io", date = "%2$s")
+            public class %3$s extends TypedEntityManager<%4$s, %5$s, %3$s.Get, %3$s.Create,
+                %3$s.Setter, %3$s.Patch, %3$s.Select, %3$s.PredicateHandler<?>, %3$s.Includes> {
+
+                public %3$s(EntityManager<%4$s, %5$s> entityManager) {
+                    super(entityManager);
+                }
+
+                public %3$s.Create new%6$s(%7$s) {
+                    return super.newInstance()%8$s;
+                }
+
+                public PredicateHandler<Select> where() {
+                    return select().and();
+                }
+
+                public Select orderedBy(Sort sort, Sort... sorts) {
+                    return select().orderedBy(sort, sorts);
+                }
+
+                public Select startAt(int start) {
+                    return select().startAt(start);
+                }
+
+                public Select limitTo(int limit) {
+                    return select().limitTo(limit);
+                }
+                
+                public AsyncHandler async() {
+                    return new AsyncHandler();
+                }
+
+            """.formatted(packageName, Strings.toString(Instant.now()), className, wrappedKeyType, entityName, clazz.getSimpleName(), constructorParameters, constructionChain));
 
         if (!model.relations().isEmpty()) {
-            source
-                .append("    @SafeVarargs\n")
-                .append("    public final Optional<").append(entityName).append("> get(").append(keyType).append(" ").append(key).append(", Consumer<Includes>... includes) {\n")
-                .append("        return get().get(").append(key).append(", includes);\n")
-                .append("    }\n\n")
-                .append("    @SafeVarargs\n")
-                .append("    public final Map<").append(wrappedKeyType).append(", ").append(entityName).append("> get(Collection<")
-                .append(wrappedKeyType).append("> ").append(keys).append(", Consumer<Includes>... includes) {\n")
-                .append("        return get().get(").append(keys).append(", includes);\n")
-                .append("    }\n\n")
-                .append("    @SafeVarargs\n")
-                .append("    public final Optional<").append(entityName).append("> first(Consumer<Includes>... includes) {\n")
-                .append("        return select().first(includes);\n")
-                .append("    }\n\n")
-                .append("    @SafeVarargs\n")
-                .append("    public final List<").append(entityName).append("> list(Consumer<Includes>... includes) {\n")
-                .append("        return select().list(includes);\n")
-                .append("    }\n\n")
-                .append("    @SafeVarargs\n")
-                .append("    public final ").append(entityName).append(" create(").append(entityName).append(" ").append(model.singularName()).append(", Consumer<Includes>... includes) {\n")
-                .append("        return handle().create(").append(model.singularName()).append(", includes);\n")
-                .append("    }\n\n")
-                .append("    @SafeVarargs\n")
-                .append("    public final <CollectionType extends Collection<").append(entityName).append(">> CollectionType create(CollectionType ").append(model.pluralName()).append(", Consumer<Includes>... includes) {\n")
-                .append("        return handle().create(").append(model.pluralName()).append(", includes);\n")
-                .append("    }\n\n")
-                .append("    @SafeVarargs\n")
-                .append("    public final ").append(entityName).append(" update(").append(entityName).append(" ").append(model.singularName()).append(", Consumer<Includes>... includes) {\n")
-                .append("        return handle().update(").append(model.singularName()).append(", includes);\n")
-                .append("    }\n\n")
-                .append("    @SafeVarargs\n")
-                .append("    public final <CollectionType extends Collection<").append(entityName).append(">> CollectionType update(CollectionType ").append(model.pluralName()).append(", Consumer<Includes>... includes) {\n")
-                .append("        return handle().update(").append(model.pluralName()).append(", includes);\n")
-                .append("    }\n\n")
-                .append("    @SafeVarargs\n")
-                .append("    public final boolean delete(").append(keyType).append(" ").append(key).append(", Consumer<Includes>... includes) {\n")
-                .append("        return handle().delete(").append(key).append(", includes);\n")
-                .append("    }\n\n")
-                .append("    @SafeVarargs\n")
-                .append("    public final long delete(Collection<").append(wrappedKeyType).append("> ").append(keys).append(", Consumer<Includes>... includes) {\n")
-                .append("        return handle().delete(").append(keys).append(", includes);\n")
-                .append("    }\n\n");
+            source.append("""
+                    @SafeVarargs
+                    public final Optional<%1$s> get(%2$s %3$s, Consumer<Includes>... includes) {
+                        return get().get(%3$s, includes);
+                    }
+
+                    @SafeVarargs
+                    public final Map<%4$s, %1$s> get(Collection<%4$s> %5$s, Consumer<Includes>... includes) {
+                        return get().get(%5$s, includes);
+                    }
+
+                    @SafeVarargs
+                    public final Optional<%1$s> first(Consumer<Includes>... includes) {
+                        return select().first(includes);
+                    }
+
+                    @SafeVarargs
+                    public final List<%1$s> list(Consumer<Includes>... includes) {
+                        return select().list(includes);
+                    }
+
+                    @SafeVarargs
+                    public final %1$s create(%1$s %6$s, Consumer<Includes>... includes) {
+                        return handle().create(%6$s, includes);
+                    }
+
+                    @SafeVarargs
+                    public final <CollectionType extends Collection<%1$s>> CollectionType create(CollectionType %7$s, Consumer<Includes>... includes) {
+                        return handle().create(%7$s, includes);
+                    }
+
+                    @SafeVarargs
+                    public final %1$s update(%1$s %6$s, Consumer<Includes>... includes) {
+                        return handle().update(%6$s, includes);
+                    }
+
+                    @SafeVarargs
+                    public final <CollectionType extends Collection<%1$s>> CollectionType update(CollectionType %7$s, Consumer<Includes>... includes) {
+                        return handle().update(%7$s, includes);
+                    }
+
+                    @SafeVarargs
+                    public final boolean delete(%2$s %3$s, Consumer<Includes>... includes) {
+                        return handle().delete(%3$s, includes);
+                    }
+
+                    @SafeVarargs
+                    public final long delete(Collection<%4$s> %5$s, Consumer<Includes>... includes) {
+                        return handle().delete(%5$s, includes);
+                    }
+                    
+                    public class AsyncHandler implements AbstractEntityManager.AsyncHandler<%4$s, %1$s> {
+                    
+                        @SafeVarargs
+                        public final CompletionStage<Optional<%1$s>> get(%2$s id, Consumer<Includes>... includes) {
+                            return Async.supplyBlocking(() -> %8$s.this.get(id, includes));
+                        }
+                
+                        @SafeVarargs
+                        public final CompletionStage<Map<%4$s, %1$s>> get(Collection<%4$s> ids, Consumer<Includes>... includes) {
+                            return Async.supplyBlocking(() -> %8$s.this.get(ids, includes));
+                        }
+                
+                        @SafeVarargs
+                        public final CompletionStage<Optional<%1$s>> first(Consumer<Includes>... includes) {
+                            return Async.supplyBlocking(() -> %8$s.this.first(includes));
+                        }
+                
+                        @SafeVarargs
+                        public final CompletionStage<List<%1$s>> list(Consumer<Includes>... includes) {
+                            return Async.supplyBlocking(() -> %8$s.this.list(includes));
+                        }
+                
+                        @SafeVarargs
+                        public final CompletionStage<%1$s> create(%1$s fruit, Consumer<Includes>... includes) {
+                            return Async.supplyBlocking(() -> %8$s.this.create(fruit, includes));
+                        }
+                
+                        @SafeVarargs
+                        public final <CollectionType extends Collection<%1$s>> CompletionStage<CollectionType> create(CollectionType fruits, Consumer<Includes>... includes) {
+                            return Async.supplyBlocking(() -> %8$s.this.create(fruits, includes));
+                        }
+                
+                        @SafeVarargs
+                        public final CompletionStage<%1$s> update(%1$s fruit, Consumer<Includes>... includes) {
+                            return Async.supplyBlocking(() -> %8$s.this.update(fruit, includes));
+                        }
+                
+                        @SafeVarargs
+                        public final <CollectionType extends Collection<%1$s>> CompletionStage<CollectionType> update(CollectionType fruits, Consumer<Includes>... includes) {
+                            return Async.supplyBlocking(() -> %8$s.this.update(fruits, includes));
+                        }
+                
+                        @SafeVarargs
+                        public final CompletionStage<Boolean> delete(%2$s id, Consumer<Includes>... includes) {
+                            return Async.supplyBlocking(() -> %8$s.this.delete(id, includes));
+                        }
+                
+                        @SafeVarargs
+                        public final CompletionStage<Long> delete(Collection<%4$s> ids, Consumer<Includes>... includes) {
+                            return Async.supplyBlocking(() -> %8$s.this.delete(ids, includes));
+                        }
+                """.formatted(entityName, keyType, key, wrappedKeyType, keys, model.singularName(), model.pluralName(), className));
         } else {
-            source
-                // no need for the other relationless methods, they are in the AbstractEntityManager class
-                .append("    public Optional<").append(entityName).append("> first() {\n")
-                .append("        return select().first();\n")
-                .append("    }\n\n")
-                .append("    public List<").append(entityName).append("> list() {\n")
-                .append("        return select().list();\n")
-                .append("    }\n\n");
+            // no need for the other relationless methods, they are in the AbstractEntityManager class
+            source.append("""
+                    public Optional<%1$s> first() {
+                        return select().first();
+                    }
+
+                    public List<%1$s> list() {
+                        return select().list();
+                    }
+                    
+                    public class AsyncHandler implements AbstractEntityManager.AsyncHandler<%3$s, %1$s> {
+                    
+                        public final CompletionStage<Optional<%1$s>> first() {
+                            return Async.supplyBlocking(() -> %2$s.this.first());
+                        }
+                
+                        public final CompletionStage<List<%1$s>> list() {
+                            return Async.supplyBlocking(() -> %2$s.this.list());
+                        }
+                """.formatted(entityName, className, wrappedKeyType));
         }
 
-        source
-            .append("    public Get cached() {\n")
-            .append("        return get().cached();\n")
-            .append("    }\n\n")
-            .append("    public Get cachedFor(Duration ttl) {\n")
-            .append("        return get().cachedFor(ttl);\n")
-            .append("    }\n\n")
-            .append("    public Get invalidateCache() {\n")
-            .append("        return get().invalidateCache();\n")
-            .append("    }\n\n")
-            .append("    public Get.Evict evictCache() {\n")
-            .append("        return get().evictCache();\n")
-            .append("    }\n\n");
+        source.append("""
+                                       
+                    @Override
+                    public CompletionStage<Optional<%1$s>> get(%4$s key) {
+                        return %8$s.super.async().get(key);
+                    }
+            
+                    @Override
+                    public CompletionStage<Map<%4$s, %1$s>> get(%4$s key, %4$s... keys) {
+                        return %8$s.super.async().get(key, keys);
+                    }
+            
+                    @Override
+                    public CompletionStage<Map<%4$s, %1$s>> get(List<%4$s> keys) {
+                        return %8$s.super.async().get(keys);
+                    }
+            
+                    @Override
+                    public CompletionStage<Long> count() {
+                        return %8$s.super.async().count();
+                    }
+            
+                    @Override
+                    public CompletionStage<%1$s> create(%1$s entity) {
+                        return %8$s.super.async().create(entity);
+                    }
+            
+                    @Override
+                    public CompletionStage<List<%1$s>> create(%1$s first, %1$s... rest) {
+                        return %8$s.super.async().create(first, rest);
+                    }
+            
+                    @Override
+                    public <CollectionType extends Collection<%1$s>> CompletionStage<CollectionType> create(CollectionType entities) {
+                        return %8$s.super.async().create(entities);
+                    }
+            
+                    @Override
+                    public CompletionStage<List<%1$s>> create(Stream<%1$s> stream) {
+                        return %8$s.super.async().create(stream);
+                    }
+            
+                    @Override
+                    public CompletionStage<%1$s> update(%1$s entity) {
+                        return %8$s.super.async().update(entity);
+                    }
+            
+                    @Override
+                    public CompletionStage<List<%1$s>> update(%1$s first, %1$s... rest) {
+                        return %8$s.super.async().update(first, rest);
+                    }
+            
+                    @Override
+                    public CompletionStage<List<%1$s>> update(Stream<%1$s> stream) {
+                        return %8$s.super.async().update(stream);
+                    }
+            
+                    @Override
+                    public <CollectionType extends Collection<%1$s>> CompletionStage<CollectionType> update(CollectionType entities) {
+                        return %8$s.super.async().update(entities);
+                    }
+            
+                    @Override
+                    public CompletionStage<Boolean> delete(%4$s key) {
+                        return %8$s.super.async().delete(key);
+                    }
+            
+                    @Override
+                    public CompletionStage<Long> delete(%4$s key, %4$s... keys) {
+                        return %8$s.super.async().delete(key, keys);
+                    }
+            
+                    @Override
+                    public CompletionStage<Long> delete(Collection<%4$s> keys) {
+                        return %8$s.super.async().delete(keys);
+                    }
+                }
+                
+                public Get cached() {
+                    return get().cached();
+                }
 
+                public Get cachedFor(Duration ttl) {
+                    return get().cachedFor(ttl);
+                }
 
-        source
-            .append("    public abstract static class Get {\n\n")
-            .append("        private final GetHandler handler;\n\n")
-            .append("        protected Get(GetHandler handler) {\n")
-            .append("            this.handler = handler;\n")
-            .append("        }\n\n");
+                public Get invalidateCache() {
+                    return get().invalidateCache();
+                }
+
+                public Get.Evict evictCache() {
+                    return get().evictCache();
+                }
+
+                public abstract static class Get {
+
+                    private final GetHandler handler;
+
+                    protected Get(GetHandler handler) {
+                        this.handler = handler;
+                    }
+                    
+                    public final AsyncHandler async() {
+                        return new AsyncHandler();
+                    }
+
+            """.formatted(entityName, keyType, key, wrappedKeyType, keys, model.singularName(), model.pluralName(), className));
         if (!model.relations().isEmpty()) {
-            source
-                .append("        @SafeVarargs\n")
-                .append("        public final Optional<").append(entityName).append("> get(").append(keyType).append(" ").append(key).append(", Consumer<Includes>... includes) {\n")
-                .append("            return handler.get(").append(key).append(", includes);\n")
-                .append("        }\n\n")
-                .append("        @SafeVarargs\n")
-                .append("        public final Map<").append(wrappedKeyType).append(", ").append(entityName).append("> get(Collection<")
-                .append(wrappedKeyType).append("> ").append(keys).append(", Consumer<Includes>... includes) {\n")
-                .append("            return handler.get(").append(keys).append(", includes);\n")
-                .append("        }\n\n");
+            source.append("""
+                        @SafeVarargs
+                        public final Optional<%1$s> get(%2$s %3$s, Consumer<Includes>... includes) {
+                            return handler.get(%3$s, includes);
+                        }
+
+                        @SafeVarargs
+                        public final Map<%4$s, %1$s> get(Collection<%4$s> %5$s, Consumer<Includes>... includes) {
+                            return handler.get(%5$s, includes);
+                        }
+                        
+                        public class AsyncHandler {
+                        
+                            @SafeVarargs
+                            public final CompletionStage<Optional<%1$s>> get(%2$s %3$s, Consumer<Includes>... includes) {
+                                return Async.supplyBlocking(() -> Get.this.get(%3$s, includes));
+                            }
+                
+                            @SafeVarargs
+                            public final CompletionStage<Map<%4$s, %1$s>> get(Collection<%4$s> %5$s, Consumer<Includes>... includes) {
+                                return Async.supplyBlocking(() -> Get.this.get(%5$s, includes));
+                            }
+                        }
+                """.formatted(entityName, keyType, key, wrappedKeyType, keys));
         } else {
-            source
-                .append("        public final Optional<").append(entityName).append("> get(").append(keyType).append(" ").append(key).append(") {\n")
-                .append("            return handler.get(").append(key).append(");\n")
-                .append("        }\n\n")
-                .append("        public final Map<").append(wrappedKeyType).append(", ").append(entityName).append("> get(Collection<")
-                .append(wrappedKeyType).append("> ").append(keys).append(") {\n")
-                .append("            return handler.get(").append(keys).append(");\n")
-                .append("        }\n\n");
+            source.append("""
+                        public final Optional<%1$s> get(%2$s %3$s) {
+                            return handler.get(%3$s);
+                        }
+
+                        public final Map<%4$s, %1$s> get(Collection<%4$s> %5$s) {
+                            return handler.get(%5$s);
+                        }
+                        
+                        public class AsyncHandler {
+                        
+                            public final CompletionStage<Optional<%1$s>> get(%2$s %3$s) {
+                                return Async.supplyBlocking(() -> Get.this.get(%3$s));
+                            }
+                
+                            public final CompletionStage<Map<%4$s, %1$s>> get(Collection<%4$s> %5$s) {
+                                return Async.supplyBlocking(() -> Get.this.get(%5$s));
+                            }
+                        }
+                """.formatted(entityName, keyType, key, wrappedKeyType, keys));
         }
-        source
-            .append("        public abstract Get cached();\n\n")
-            .append("        public abstract Get cachedFor(Duration ttl);\n\n")
-            .append("        public abstract Get invalidateCache();\n\n")
-            .append("        public final Evict evictCache() {\n")
-            .append("            return new Evict();\n")
-            .append("        }\n\n")
-            .append("        public class Evict {\n\n");
+        source.append("""
+                    
+                    public abstract Get cached();
+
+                    public abstract Get cachedFor(Duration ttl);
+
+                    public abstract Get invalidateCache();
+
+                    public final Evict evictCache() {
+                        return new Evict();
+                    }
+
+                    public class Evict {
+                    
+                        public final AsyncHandler async() {
+                            return new AsyncHandler();
+                        }
+
+            """);
         if (!model.relations().isEmpty()) {
-            source
-                .append("            @SafeVarargs\n")
-                .append("            public final void get(").append(keyType).append(" ").append(key).append(", Consumer<Includes>... includes) {\n")
-                .append("                handler.evictCache().get(").append(key).append(", includes);\n")
-                .append("            }\n\n")
-                .append("            @SafeVarargs\n")
-                .append("            public final void get(Collection<").append(wrappedKeyType).append("> ").append(keys).append(", Consumer<Includes>... includes) {\n")
-                .append("                handler.evictCache().get(").append(keys).append(", includes);\n")
-                .append("            }\n\n");
+            source.append("""
+                            @SafeVarargs
+                            public final void get(%1$s %2$s, Consumer<Includes>... includes) {
+                                handler.evictCache().get(%2$s, includes);
+                            }
+
+                            @SafeVarargs
+                            public final void get(Collection<%3$s> %4$s, Consumer<Includes>... includes) {
+                                handler.evictCache().get(%4$s, includes);
+                            }
+                            
+                            public class AsyncHandler {
+                            
+                                @SafeVarargs
+                                public final CompletionStage<Void> get(%1$s %2$s, Consumer<Includes>... includes) {
+                                    return Async.runBlocking(() -> Evict.this.get(%2$s, includes));
+                                }
+                
+                                @SafeVarargs
+                                public final CompletionStage<Void> get(Collection<%3$s> %4$s, Consumer<Includes>... includes) {
+                                    return Async.runBlocking(() -> Evict.this.get(%4$s, includes));
+                                }
+                            }
+                """.formatted(keyType, key, wrappedKeyType, keys));
         } else {
-            source
-                .append("            public final void get(").append(keyType).append(" ").append(key).append(") {\n")
-                .append("                handler.evictCache().get(").append(key).append(");\n")
-                .append("            }\n\n")
-                .append("            public final void get(Collection<").append(wrappedKeyType).append("> ").append(keys).append(") {\n")
-                .append("                handler.evictCache().get(").append(keys).append(");\n")
-                .append("            }\n\n");
+            source.append("""
+                            public final void get(%1$s %2$s) {
+                                handler.evictCache().get(%2$s);
+                            }
+
+                            public final void get(Collection<%3$s> %4$s) {
+                                handler.evictCache().get(%4$s);
+                            }
+                            
+                            public class AsyncHandler {
+                            
+                                public final CompletionStage<Void> get(%1$s %2$s) {
+                                    return Async.runBlocking(() -> Evict.this.get(%2$s));
+                                }
+                
+                                public final CompletionStage<Void> get(Collection<%3$s> %4$s) {
+                                    return Async.runBlocking(() -> Evict.this.get(%4$s));
+                                }
+                            }
+                """.formatted(keyType, key, wrappedKeyType, keys));
         }
 
-        source
-            .append("        }\n")
-            .append("    }\n\n");
+        source.append("""
+                    }
+                }
+                
+                public interface Properties<SelfType> {
+            """);
+        model.members().stream()
+            .filter(field -> new Column<>(field).insertable())
+            .forEach(field -> source.append("""
 
-        source.append("    public interface Properties<SelfType> {\n");
-        model.members().stream().filter(field -> new Column<>(field).insertable())
-            .forEach(field -> source.append("\n        SelfType ").append(field.getName())
-                .append("(").append(getTypeName(field.getGenericType())).append(" ").append(field.getName()).append(");\n")
+                        SelfType %1$s(%2$s %1$s);
+                """.formatted(field.getName(), getTypeName(field.getGenericType())))
             );
-        source.append("    }\n\n");
+        source.append("""
+                }
 
-        source
-            .append("    public abstract static class Create implements Properties<Create> {\n\n")
-            .append("        private final CreateHandler handler;\n\n")
-            .append("        protected Create(CreateHandler handler){\n")
-            .append("            this.handler = handler;\n")
-            .append("        }\n\n");
+                public abstract static class Create implements Properties<Create> {
+
+                    private final CreateHandler handler;
+
+                    protected Create(CreateHandler handler) {
+                        this.handler = handler;
+                    }
+                    
+                    public final AsyncHandler async() {
+                        return new AsyncHandler();
+                    }
+                    
+            """);
         if (!model.relations().isEmpty()) {
-            source
-                .append("        @SafeVarargs\n")
-                .append("        public final ").append(entityName).append(" create(Consumer<Includes>... includes) {\n")
-                .append("            return handler.create(includes);\n")
-                .append("        }\n");
+            source.append("""
+                        @SafeVarargs
+                        public final %1$s create(Consumer<Includes>... includes) {
+                            return handler.create(includes);
+                        }
+                        
+                        public class AsyncHandler {
+                        
+                            @SafeVarargs
+                            public final CompletionStage<%1$s> create(Consumer<Includes>... includes) {
+                                return Async.supplyBlocking(() -> Create.this.create(includes));
+                            }
+                        }
+                """.formatted(entityName));
         } else {
-            source
-                .append("        public ").append(entityName).append(" create() {\n")
-                .append("            return handler.create();\n")
-                .append("        }\n");
-        }
-        source.append("    }\n\n");
-
-        source.append("    public interface Setter extends Properties<Setter> {\n\n");
-        source.append("        PredicateHandler<Patch> where();\n");
-        source.append("    }\n\n");
-
-        source.append("    public interface Patch {\n\n        PredicateHandler<Patch> and();\n\n        long patch();\n    }\n\n");
-
-        source.append("    public abstract static class Select {\n\n" +
-            "        private final SelectHandler handler;\n\n" +
-            "        protected Select(SelectHandler handler) {\n" +
-            "            this.handler = handler;\n" + "        }\n\n");
-        if (!model.relations().isEmpty()) {
-            source.append("        @SafeVarargs\n" + "        public final Optional<").append(entityName).append("> first(Consumer<Includes>... includes) {\n")
-                .append("            return handler.first(includes);\n")
-                .append("        }\n\n")
-                .append("        @SafeVarargs\n").append("        public final List<").append(entityName).append("> list(Consumer<Includes>... includes) {\n")
-                .append("            return handler.list(includes);\n")
-                .append("        }\n\n")
-                .append("        @SafeVarargs\n").append("        public final long delete(Consumer<Includes>... includes) {\n")
-                .append("            return handler.delete(includes);\n")
-                .append("        }\n\n");
-        } else {
-            source.append("        public final Optional<").append(entityName).append("> first() {\n")
-                .append("            return handler.first();\n")
-                .append("        }\n\n")
-                .append("        public final List<").append(entityName).append("> list() {\n")
-                .append("            return handler.list();\n")
-                .append("        }\n\n")
-                .append("        public final long delete() {\n")
-                .append("            return handler.delete();\n")
-                .append("        }\n\n");
+            source.append("""
+                        public %1$s create() {
+                            return handler.create();
+                        }
+                        
+                        public class AsyncHandler {
+                        
+                            public final CompletionStage<%1$s> create() {
+                                return Async.supplyBlocking(() -> Create.this.create());
+                            }
+                        }
+                """.formatted(entityName));
         }
 
-        source
-            .append("        public abstract long count();\n\n")
-            .append("        public abstract PredicateHandler<Select> and();\n\n")
-            .append("        public abstract Select orderedBy(Sort sort, Sort... sorts);\n\n")
-            .append("        public abstract Select startAt(int start);\n\n")
-            .append("        public abstract Select limitTo(int limit);\n\n")
-            .append("        public abstract Select cached();\n\n")
-            .append("        public abstract Select cachedFor(Duration ttl);\n\n")
-            .append("        public abstract Select invalidateCache();\n\n")
-            .append("        public final Evict evictCache() {\n")
-            .append("             return new Evict();\n")
-            .append("        }\n\n")
-            .append("        public class Evict {\n\n");
-        if (!model.relations().isEmpty()) {
-            source
-                .append("            @SafeVarargs\n")
-                .append("            public final void first(Consumer<Includes>... includes) {\n")
-                .append("                handler.evictCache().first(includes);\n")
-                .append("            }\n\n")
-                .append("            @SafeVarargs\n")
-                .append("            public final void list(Consumer<Includes>... includes) {\n")
-                .append("                handler.evictCache().list(includes);\n")
-                .append("            }\n\n");
-        } else {
-            source
-                .append("            public final void first() {\n")
-                .append("                handler.evictCache().first();\n")
-                .append("            }\n\n")
-                .append("            public final void list() {\n")
-                .append("                handler.evictCache().list();\n")
-                .append("            }\n\n");
-        }
-        source.append("            public void count() {\n")
-            .append("                handler.evictCache().count();\n")
-            .append("            }\n")
-            .append("        }\n")
-            .append("    }\n\n");
+        source.append("""
+                }
+                
+                public interface Setter extends Properties<Setter> {
 
-        source.append("    public interface PredicateHandler<CallBack> {\n");
+                    PredicateHandler<Patch> where();
+                }
+
+                public interface Patch {
+
+                    PredicateHandler<Patch> and();
+
+                    long patch();
+                    
+                    io.semla.query.Patch.AsyncHandler<%s> async();
+                }
+
+                public abstract static class Select {
+
+                    private final SelectHandler handler;
+
+                    protected Select(SelectHandler handler) {
+                        this.handler = handler;
+                    }
+                    
+                    public final AsyncHandler async() {
+                        return new AsyncHandler();
+                    }
+
+            """.formatted(entityName));
+        if (!model.relations().isEmpty()) {
+            source.append("""
+                        @SafeVarargs
+                        public final Optional<%1$s> first(Consumer<Includes>... includes) {
+                            return handler.first(includes);
+                        }
+
+                        @SafeVarargs
+                        public final List<%1$s> list(Consumer<Includes>... includes) {
+                            return handler.list(includes);
+                        }
+
+                        @SafeVarargs
+                        public final long delete(Consumer<Includes>... includes) {
+                            return handler.delete(includes);
+                        }
+                        
+                        public class AsyncHandler {
+                        
+                            @SafeVarargs
+                            public final CompletionStage<Optional<%1$s>> first(Consumer<Includes>... includes) {
+                                return Async.supplyBlocking(() -> handler.first(includes));
+                            }
+                                
+                            @SafeVarargs
+                            public final CompletionStage<List<%1$s>> list(Consumer<Includes>... includes) {
+                                return Async.supplyBlocking(() -> handler.list(includes));
+                            }
+                                
+                            @SafeVarargs
+                            public final CompletionStage<Long> delete(Consumer<Includes>... includes) {
+                                return Async.supplyBlocking(() -> handler.delete(includes));
+                            }
+                """.formatted(entityName));
+        } else {
+            source.append("""
+                        public final Optional<%1$s> first() {
+                            return handler.first();
+                        }
+
+                        public final List<%1$s> list() {
+                            return handler.list();
+                        }
+
+                        public final long delete() {
+                            return handler.delete();
+                        }
+                        
+                        public class AsyncHandler {
+                        
+                            public final CompletionStage<Optional<%1$s>> first() {
+                                return Async.supplyBlocking(() -> handler.first());
+                            }
+                                
+                            public final CompletionStage<List<%1$s>> list() {
+                                return Async.supplyBlocking(() -> handler.list());
+                            }
+                                
+                            public final CompletionStage<Long> delete() {
+                                return Async.supplyBlocking(() -> handler.delete());
+                            }
+                """.formatted(entityName));
+        }
+
+        source.append("""
+                        
+                        public final CompletionStage<Long> count() {
+                            return Async.supplyBlocking(() -> Select.this.count());
+                        }
+                    }
+                    
+                    public abstract long count();
+
+                    public abstract PredicateHandler<Select> and();
+
+                    public abstract Select orderedBy(Sort sort, Sort... sorts);
+
+                    public abstract Select startAt(int start);
+
+                    public abstract Select limitTo(int limit);
+
+                    public abstract Select cached();
+
+                    public abstract Select cachedFor(Duration ttl);
+
+                    public abstract Select invalidateCache();
+
+                    public final Evict evictCache() {
+                        return new Evict();
+                    }
+
+                    public class Evict {
+
+            """);
+        if (!model.relations().isEmpty()) {
+            source.append("""
+                            @SafeVarargs
+                            public final void first(Consumer<Includes>... includes) {
+                                handler.evictCache().first(includes);
+                            }
+
+                            @SafeVarargs
+                            public final void list(Consumer<Includes>... includes) {
+                                handler.evictCache().list(includes);
+                            }
+                """);
+        } else {
+            source.append("""
+                            public final void first() {
+                                handler.evictCache().first();
+                            }
+
+                            public final void list() {
+                                handler.evictCache().list();
+                            }
+                """);
+        }
+        source.append("""
+                        
+                        public void count() {
+                            handler.evictCache().count();
+                        }
+                    }
+                }
+                
+                public interface PredicateHandler<CallBack> {
+            """);
+
         model.members().stream()
             .filter(member -> !indexedOnly || model.isIndexed(member))
             .forEach(member -> {
@@ -769,9 +1137,10 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
                 }
                 source.append(" ").append(member.getName()).append("();\n");
             });
-        source.append("    }\n\n");
 
         source.append("""
+                }
+                
                 public static class Includes {
 
                     private final IncludesHandler handler;
@@ -786,15 +1155,20 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
             .filter(TypedEntityManager::isManaged)
             .forEach(relation -> {
                 if (!relation.childModel().relations().isEmpty()) {
-                    source.append("        @SafeVarargs\n" +
-                            "        public final void ")
-                        .append(relation.member().getName()).append("(Consumer<").append(getTypeName(relation)).append(".Includes>... includes) {\n")
-                        .append("            handler.include(\"").append(relation.member().getName()).append("\", includes);\n" +
-                            "        }\n\n");
+                    source.append("""
+                                @SafeVarargs
+                                public final void %1$s(Consumer<%2$s.Includes>... includes) {
+                                    handler.include("%1$s", includes);
+                                }
+
+                        """.formatted(relation.member().getName(), getTypeName(relation)));
                 } else {
-                    source.append("        public final void ").append(relation.member().getName()).append("() {\n")
-                        .append("            handler.include(\"").append(relation.member().getName()).append("\");\n" +
-                            "        }\n\n");
+                    source.append("""
+                                public final void %1$s() {
+                                    handler.include("%1$s");
+                                }
+
+                        """.formatted(relation.member().getName()));
                 }
             });
 
@@ -804,9 +1178,6 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
                     }
                 }
 
-            """);
-
-        source.append("""
                 public static class Sort extends BaseSort<Sort> {
 
                     private Sort(String fieldName) {
@@ -814,12 +1185,18 @@ public abstract class TypedEntityManager<K, T, GetType, CreateType, SetterType, 
                     }
             """);
         model.members().forEach(field ->
-            source.append("\n        public static Sort ").append(field.getName())
-                .append("() {\n            return new Sort(\"").append(field.getName()).append("\");\n        }\n")
+            source.append("""
+
+                        public static Sort %1$s() {
+                            return new Sort("%1$s");
+                        }
+                """.formatted(field.getName()))
         );
 
-        source.append("    }\n");
-        source.append("}\n");
+        source.append("""
+                }
+            }
+            """);
 
         return source.toString();
     }

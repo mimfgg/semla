@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class KeyValueCachedEntityManagerTest {
 
     List<UUID> uuids = new ArrayList<>();
-    EntityManager<IndexedUser> indexedUsers;
+    EntityManager<UUID, IndexedUser> indexedUsers;
 
     @Before
     public void before() {
@@ -34,6 +34,15 @@ public class KeyValueCachedEntityManagerTest {
         indexedUsers.cached().get(uuids.get(0));
         indexedUsers.delete(uuids.get(0));
         indexedUsers.cachedFor(Duration.ofMinutes(1)).get(uuids.get(0)); // this should not throw
+        assertThat(indexedUsers.invalidateCache().cachedFor(Duration.ofMinutes(1)).get(uuids.get(0))).isEmpty();
+    }
+
+    @Test
+    public void async_getOne() {
+        indexedUsers.cached().async().get(uuids.get(0)).toCompletableFuture().join();
+        indexedUsers.delete(uuids.get(0));
+        indexedUsers.cachedFor(Duration.ofMinutes(1)).get(uuids.get(0)); // this should not throw
+        indexedUsers.evictCache().async().get(uuids.get(0)).toCompletableFuture().join();
         assertThat(indexedUsers.invalidateCache().cachedFor(Duration.ofMinutes(1)).get(uuids.get(0))).isEmpty();
     }
 

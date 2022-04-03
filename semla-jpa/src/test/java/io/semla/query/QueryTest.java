@@ -24,7 +24,7 @@ public class QueryTest {
             Player.with(1, "test", 9001),
             Player.with(2, "test2", 9002),
             Player.with(3, "test3", 9003)
-        ).in(newContext());
+        ).asynchronouslyIn(newContext()).toCompletableFuture().join();
     }
 
     @Test

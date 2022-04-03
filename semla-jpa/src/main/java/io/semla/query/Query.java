@@ -7,8 +7,10 @@ import io.semla.reflect.Member;
 import io.semla.reflect.Types;
 import io.semla.serialization.json.Json;
 import io.semla.util.*;
+import io.semla.util.concurrent.Async;
 
 import java.util.*;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -34,6 +36,10 @@ public class Query<T, ReturnType> {
 
     public ReturnType in(PersistenceContext context) {
         return function.apply(context);
+    }
+
+    public CompletionStage<ReturnType> asynchronouslyIn(PersistenceContext context) {
+        return Async.supplyBlocking(() -> in(context));
     }
 
     @Override

@@ -17,6 +17,7 @@ import io.semla.util.ImmutableMap;
 import io.semla.util.Lists;
 import io.semla.util.Maps;
 import io.semla.util.Strings;
+import io.semla.util.concurrent.Async;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +27,8 @@ import javax.validation.ConstraintViolationException;
 import javax.validation.Validator;
 import java.lang.annotation.Annotation;
 import java.util.*;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -33,7 +36,7 @@ import java.util.stream.Stream;
 
 import static io.semla.query.Includes.*;
 
-public abstract class AbstractEntityManager<T> {
+public abstract class AbstractEntityManager<K, T> {
 
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     protected final Map<Class<? extends Annotation>, List<Consumer<T>>> listeners = new LinkedHashMap<>();
@@ -48,21 +51,21 @@ public abstract class AbstractEntityManager<T> {
         strictIndices = datasource.model().getType().isAnnotationPresent(StrictIndices.class);
         validator = entityManagerFactory.injector().getInstance(Validator.class);
         Stream.of(PrePersist.class, PostPersist.class, PostLoad.class, PreUpdate.class, PostUpdate.class, PreRemove.class, PostRemove.class)
-                .forEach(annotation -> {
-                    if (model().getType().isAnnotationPresent(EntityListeners.class)) {
-                        listeners.put(annotation, Stream.of((Class<?>[]) model().getType().getAnnotation(EntityListeners.class).value())
-                                .map(entityManagerFactory.injector()::getInstance)
-                                .flatMap(listener -> Methods.findAnnotatedWith(listener.getClass(), annotation)
-                                        .map(methodInvocator -> (Consumer<T>) (e -> methodInvocator.invoke(listener, e))))
-                                .collect(Collectors.toList()));
-                    } else {
-                        List<Consumer<T>> matchingListeners = Methods.findAnnotatedWith(model().getType(), annotation)
-                                .map(methodInvocator -> (Consumer<T>) methodInvocator::invoke).collect(Collectors.toList());
-                        if (!matchingListeners.isEmpty()) {
-                            listeners.put(annotation, matchingListeners);
-                        }
+            .forEach(annotation -> {
+                if (model().getType().isAnnotationPresent(EntityListeners.class)) {
+                    listeners.put(annotation, Stream.of((Class<?>[]) model().getType().getAnnotation(EntityListeners.class).value())
+                        .map(entityManagerFactory.injector()::getInstance)
+                        .flatMap(listener -> Methods.findAnnotatedWith(listener.getClass(), annotation)
+                            .map(methodInvocator -> (Consumer<T>) (e -> methodInvocator.invoke(listener, e))))
+                        .collect(Collectors.toList()));
+                } else {
+                    List<Consumer<T>> matchingListeners = Methods.findAnnotatedWith(model().getType(), annotation)
+                        .map(methodInvocator -> (Consumer<T>) methodInvocator::invoke).collect(Collectors.toList());
+                    if (!matchingListeners.isEmpty()) {
+                        listeners.put(annotation, matchingListeners);
                     }
-                });
+                }
+            });
     }
 
     protected PersistenceContext newContext() {
@@ -73,31 +76,32 @@ public abstract class AbstractEntityManager<T> {
         return datasource.model();
     }
 
-    public Optional<T> get(Object key) {
+    public Optional<T> get(K key) {
         return get(newContext(), key, defaultEagersOf(model()));
     }
 
     protected Optional<T> get(PersistenceContext context, Object key, Includes<T> includes) {
         return execute(() -> Query.get(key, includes), () ->
-                datasource.get(key)
-                        .map(context.entityContext()::remapOrCache)
-                        .map(entity -> includes.fetchOn(entity, context))
-                        .map(entity -> invokeListener(entity, PostLoad.class))
+            datasource.get(key)
+                .map(context.entityContext()::remapOrCache)
+                .map(entity -> includes.fetchOn(entity, context))
+                .map(entity -> invokeListener(entity, PostLoad.class))
         );
     }
 
-    public final Map<Object, T> get(Object key, Object... keys) {
+    @SafeVarargs
+    public final Map<K, T> get(K key, K... keys) {
         return get(Lists.of(key, keys));
     }
 
-    public <K> Map<K, T> get(Collection<K> keys) {
+    public Map<K, T> get(Collection<K> keys) {
         return get(newContext(), keys, defaultEagersOf(model()));
     }
 
-    protected <K> Map<K, T> get(PersistenceContext context, Collection<K> keys, Includes<T> includes) {
+    protected Map<K, T> get(PersistenceContext context, Collection<K> keys, Includes<T> includes) {
         return execute(() -> Query.get(keys, includes), () -> {
             Map<K, T> entitiesByKey = datasource.get(keys).entrySet().stream()
-                    .collect(Maps.collect(Map.Entry::getKey, e -> context.entityContext().remapOrCache(e.getValue())));
+                .collect(Maps.collect(Map.Entry::getKey, e -> context.entityContext().remapOrCache(e.getValue())));
             if (!entitiesByKey.isEmpty()) {
                 includes.fetchOn(entitiesByKey.values(), context);
                 entitiesByKey.values().forEach(entity -> invokeListener(entity, PostLoad.class));
@@ -200,18 +204,18 @@ public abstract class AbstractEntityManager<T> {
             datasource.update(entities);
             includes.createOrUpdateOn(entities, context);
             model().version().ifPresent(version ->
-                    entities.forEach(entity -> version.member().setOn(entity, version.member().<Integer>getOn(entity) + 1))
+                entities.forEach(entity -> version.member().setOn(entity, version.member().<Integer>getOn(entity) + 1))
             );
             entities.forEach(entity -> invokeListener(entity, PostUpdate.class));
             return entities;
         });
     }
 
-    public boolean delete(Object key) {
+    public boolean delete(K key) {
         return delete(newContext(), key, defaultRemovesOrDeleteOf(model()));
     }
 
-    protected boolean delete(PersistenceContext context, Object key, Includes<T> includes) {
+    protected boolean delete(PersistenceContext context, K key, Includes<T> includes) {
         return execute(() -> Query.delete(key, includes), () -> {
             model().relations().forEach(relation -> addDetachIfMissing(includes, relation));
             if (listeners.containsKey(PreRemove.class) || listeners.containsKey(PostRemove.class) || !includes.relations().isEmpty()) {
@@ -229,20 +233,21 @@ public abstract class AbstractEntityManager<T> {
 
     protected <R> void addDetachIfMissing(Includes<T> includes, Relation<T, R> relation) {
         if (Types.isAssignableToOneOf(relation.getClass(), InverseOneToOneRelation.class, JoinedRelation.class, OneToManyRelation.class)
-                && !includes.relations().containsKey(relation)) {
+            && !includes.relations().containsKey(relation)) {
             includes.include(relation);
         }
     }
 
-    public long delete(Object key, Object... keys) {
+    @SafeVarargs
+    public final long delete(K key, K... keys) {
         return delete(Lists.of(key, keys));
     }
 
-    public long delete(Collection<?> keys) {
+    public long delete(Collection<K> keys) {
         return delete(newContext(), keys, defaultRemovesOrDeleteOf(model()));
     }
 
-    protected long delete(PersistenceContext context, Collection<?> keys, Includes<T> includes) {
+    protected long delete(PersistenceContext context, Collection<K> keys, Includes<T> includes) {
         return execute(() -> Query.delete(keys, includes), () -> {
             if (!includes.relations().isEmpty()) {
                 includes.deleteOn(get(context, keys, Includes.of(model())).values(), context);
@@ -289,5 +294,44 @@ public abstract class AbstractEntityManager<T> {
 
         }
         return supplier.get();
+    }
+
+    @SuppressWarnings("unchecked")
+    public AsyncHandler<K, T> async() {
+        return Async.asyncHandler(AsyncHandler.class, this);
+    }
+
+    @SuppressWarnings("unchecked")
+    public interface AsyncHandler<K, T> {
+
+        CompletionStage<Optional<T>> get(K key);
+
+        CompletionStage<Map<K, T>> get(K key, K... keys);
+
+        CompletionStage<Map<K, T>> get(List<K> keys);
+
+        CompletionStage<Long> count();
+
+        CompletionStage<T> create(T entity);
+
+        CompletionStage<List<T>> create(T first, T... rest);
+
+        <CollectionType extends Collection<T>> CompletionStage<CollectionType> create(CollectionType entities);
+
+        CompletionStage<List<T>> create(Stream<T> stream);
+
+        CompletionStage<T> update(T entity);
+
+        CompletionStage<List<T>> update(T first, T... rest);
+
+        CompletionStage<List<T>> update(Stream<T> stream);
+
+        <CollectionType extends Collection<T>> CompletionStage<CollectionType> update(CollectionType entities);
+
+        CompletionStage<Boolean> delete(K key);
+
+        CompletionStage<Long> delete(K key, K... keys);
+
+        CompletionStage<Long> delete(Collection<K> keys);
     }
 }

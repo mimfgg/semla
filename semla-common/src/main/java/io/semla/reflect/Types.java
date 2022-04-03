@@ -20,6 +20,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -29,6 +30,7 @@ import java.util.stream.Stream;
 
 import static io.semla.util.Arrays.toArray;
 import static io.semla.util.Unchecked.unchecked;
+import static java.util.Optional.ofNullable;
 import static org.burningwave.core.assembler.StaticComponentContainer.Modules;
 
 @SuppressWarnings("unchecked")
@@ -50,9 +52,9 @@ public final class Types {
         .put(boolean.class, Boolean.class)
         .put(char.class, Character.class)
         .build();
-    private static final Map<Predicate<Class<?>>, BiFunction<Class<?>, Object, Object>> CUSTOM_UNWRAPPERS = new LinkedHashMap<>();
-    private static final Map<Class<?>, Map<Class<? extends Annotation>, Optional<Class<?>>>> ANNOTATED_SUPER_CLASSES = new LinkedHashMap<>();
-    private static final Map<Class<?>, Map<String, Map<String, Class<?>>>> SUB_TYPES = new LinkedHashMap<>();
+    private static final Map<Predicate<Class<?>>, BiFunction<Class<?>, Object, Object>> CUSTOM_UNWRAPPERS = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Map<Class<? extends Annotation>, Optional<Class<?>>>> ANNOTATED_SUPER_CLASSES = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Map<String, Map<String, Class<?>>>> SUB_TYPES = new ConcurrentHashMap<>();
 
     public static <E> E safeNull(Type type, E value) {
         return safeNull(rawTypeOf(type), value);
@@ -78,7 +80,7 @@ public final class Types {
     }
 
     public static Optional<Type> optionalTypeArgumentOf(Type type, int argumentIndex) {
-        return Optional.ofNullable(typeArgumentOf(type, argumentIndex));
+        return ofNullable(typeArgumentOf(type, argumentIndex));
     }
 
     public static <E> Class<E> rawTypeArgumentOf(Type type) {
@@ -254,7 +256,7 @@ public final class Types {
 
     public static Optional<Class<?>> getParentClassAnnotatedWith(Class<?> clazz, Class<? extends Annotation> annotationClass) {
         return ANNOTATED_SUPER_CLASSES
-            .computeIfAbsent(clazz, c -> new LinkedHashMap<>())
+            .computeIfAbsent(clazz, c -> new ConcurrentHashMap<>())
             .computeIfAbsent(annotationClass, a -> {
                 Class<?> current = clazz;
                 while (true) {
@@ -392,6 +394,35 @@ public final class Types {
             }
         }
         return target;
+    }
+
+    public static int computeInheritanceDistanceBetween(Class<?>[] fromClasses, Class<?>[] toClasses) {
+        if (fromClasses.length != toClasses.length) {
+            throw new IllegalArgumentException("%s and %s don't have the same size!".formatted(Arrays.toString(fromClasses), Arrays.toString(toClasses)));
+        }
+        return IntStream.range(0, fromClasses.length)
+            .map(i -> computeInheritanceDistanceBetween(fromClasses[i], toClasses[i]))
+            .min()
+            .orElse(0);
+    }
+
+    public static int computeInheritanceDistanceBetween(Class<?> fromClass, Class<?> toClass) {
+        if (!Types.isAssignableTo(fromClass, toClass)) {
+            return Short.MAX_VALUE;
+        }
+        if (fromClass.equals(toClass)) {
+            return 0;
+        }
+        return Integer.min(
+            ofNullable(fromClass.getSuperclass())
+                .filter(superClass -> !superClass.equals(Object.class))
+                .map(superClass -> computeInheritanceDistanceBetween(superClass, toClass) + 1)
+                .orElse((int) Byte.MAX_VALUE),
+            Stream.of(fromClass.getInterfaces())
+                .map(iface -> computeInheritanceDistanceBetween(iface, toClass) + 1)
+                .min(Integer::compare)
+                .orElse((int) Byte.MAX_VALUE)
+        );
     }
 
     public record ParameterizedTypeBuilder(Class<?> rawType) {

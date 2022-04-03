@@ -2,7 +2,10 @@ package io.semla.util;
 
 import io.semla.reflect.Fields;
 
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+
+import static java.util.Optional.ofNullable;
 
 @SuppressWarnings("unchecked")
 public final class Unchecked {
@@ -15,7 +18,11 @@ public final class Unchecked {
     }
 
     public static <T extends Throwable, E> E rethrow(Throwable throwable, UnaryOperator<Throwable> rethrower) throws T {
-        throw (T) rethrower.apply(throwable);
+        throw (T) ofNullable(rethrower.apply(throwable)).orElse(throwable);
+    }
+
+    public static <R> Supplier<R> uncheckedSupplier(Throwables.Supplier<R> supplier) {
+        return () -> unchecked(supplier);
     }
 
     public static <R> R unchecked(Throwables.Supplier<R> supplier) {
@@ -29,6 +36,10 @@ public final class Unchecked {
             rethrow(t, rethrower);
         }
         throw new RuntimeException("unreachable");
+    }
+
+    public static Runnable uncheckedRunnable(Throwables.Runnable runnable) {
+        return () -> unchecked(runnable);
     }
 
     public static void unchecked(Throwables.Runnable runnable) {

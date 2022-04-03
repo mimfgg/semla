@@ -28,7 +28,7 @@ public class TypedEntityManagerFactory extends TypedFactory<TypedEntityManager<?
     public TypedEntityManager<?, ?, ?, ?, ?, ?, ?, ?, ?> create(Type type, Annotation[] annotations) {
         return typedEntityManagersByType.computeIfAbsent(type, t -> {
             Class<? extends TypedEntityManager<?, ?, ?, ?, ?, ?, ?, ?, ?>> managerType = rawTypeOf(type);
-            EntityManager<?> entityManager = entityManagerFactory.of(rawTypeArgumentOf(managerType.getGenericSuperclass(), 1));
+            EntityManager<?, ?> entityManager = entityManagerFactory.of(rawTypeArgumentOf(managerType.getGenericSuperclass(), 1));
             return unchecked(() -> managerType.getConstructor(EntityManager.class).newInstance(entityManager));
         });
     }

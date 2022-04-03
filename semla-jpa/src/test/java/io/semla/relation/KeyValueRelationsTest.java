@@ -39,7 +39,7 @@ public class KeyValueRelationsTest {
 
     @Test
     public void fetchOneParentWithItsChildren() {
-        Author author1 = authors.get(1, author -> author.books()).get();
+        Author author1 = authors.get(1L, AuthorManager.Includes::books).get();
         assertThatauthor1BooksAreFetched(author1);
         author1 = authors.unwrap().get(1L, author -> author.include("books")).get();
         Assertions.assertThat(author1.name).isEqualTo("author1");

@@ -106,11 +106,11 @@ public class EntitySteps {
         return semla.get().getInstance(typeReference);
     }
 
-    public <T> EntityManager<T> entityManagerOf(String entityName) {
+    public <K, T> EntityManager<K, T> entityManagerOf(String entityName) {
         return entityManagerOf(Model.getClassBy(objects.resolve(entityName)));
     }
 
-    public static <T> EntityManager<T> entityManagerOf(Class<T> clazz) {
+    public static <K, T> EntityManager<K, T> entityManagerOf(Class<T> clazz) {
         return factory().of(clazz);
     }
 
@@ -162,11 +162,11 @@ public class EntitySteps {
     }
 
     @Given("^th(?:is|ose|ese) ([^ ]+) entit(?:ies|y):$")
-    public <T> void those_entities(String entityName, Object entities) {
+    public <K, T> void those_entities(String entityName, Object entities) {
         if (entities instanceof DataTable) {
             List<Map<String, Object>> list = ((DataTable) entities).asMaps(String.class, Object.class);
             if (!list.isEmpty()) {
-                EntityManager<T> manager = entityManagerOf(entityName);
+                EntityManager<K, T> manager = entityManagerOf(entityName);
                 manager.create(list.stream().map(values -> manager.model().newInstanceWithValues(values)).collect(Collectors.toList()));
             }
         } else {

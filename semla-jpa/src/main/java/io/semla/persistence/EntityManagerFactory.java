@@ -14,9 +14,9 @@ import java.util.Map;
 import static io.semla.reflect.Types.rawTypeArgumentOf;
 
 @Singleton
-public class EntityManagerFactory extends TypedFactory<EntityManager<?>> {
+public class EntityManagerFactory extends TypedFactory<EntityManager<?, ?>> {
 
-    private final Map<Type, EntityManager<?>> entityManagersByType = new LinkedHashMap<>();
+    private final Map<Type, EntityManager<?, ?>> entityManagersByType = new LinkedHashMap<>();
 
     private final Injector injector;
     private final DatasourceFactory datasourceFactory;
@@ -28,8 +28,8 @@ public class EntityManagerFactory extends TypedFactory<EntityManager<?>> {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> EntityManager<T> of(Class<T> clazz) {
-        return (EntityManager<T>) entityManagersByType.computeIfAbsent(clazz,
+    public <K, T> EntityManager<K, T> of(Class<T> clazz) {
+        return (EntityManager<K, T>) entityManagersByType.computeIfAbsent(clazz,
             type -> new EntityManager<>(datasourceFactory.of(clazz), this)
         );
     }
@@ -39,8 +39,8 @@ public class EntityManagerFactory extends TypedFactory<EntityManager<?>> {
     }
 
     @Override
-    public EntityManager<?> create(Type type, Annotation[] annotations) {
-        return of(rawTypeArgumentOf(type));
+    public EntityManager<?, ?> create(Type type, Annotation[] annotations) {
+        return of(rawTypeArgumentOf(type, 1));
     }
 
     public Injector injector() {

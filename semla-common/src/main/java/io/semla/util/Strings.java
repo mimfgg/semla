@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.Temporal;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -27,10 +28,10 @@ import static io.semla.reflect.Types.isAssignableToOneOf;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Strings {
 
-    private static final Map<Class<?>, BiFunction<Object, Set<Object>, String>> STRINGIFIERS = new LinkedHashMap<>();
-    private static final Map<Predicate<Class<?>>, BiFunction<Object, Set<Object>, String>> CUSTOM_STRINGIFIERS = new LinkedHashMap<>();
-    private static final Map<Class<?>, Function<String, ?>> PARSERS = new LinkedHashMap<>();
-    private static final Map<Predicate<Class<?>>, BiFunction<String, Class<?>, Object>> CUSTOM_PARSERS = new LinkedHashMap<>();
+    private static final Map<Class<?>, BiFunction<Object, Set<Object>, String>> STRINGIFIERS = new ConcurrentHashMap<>();
+    private static final Map<Predicate<Class<?>>, BiFunction<Object, Set<Object>, String>> CUSTOM_STRINGIFIERS = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, Function<String, ?>> PARSERS = new ConcurrentHashMap<>();
+    private static final Map<Predicate<Class<?>>, BiFunction<String, Class<?>, Object>> CUSTOM_PARSERS = new ConcurrentHashMap<>();
 
     public static int getClosingBracketIndex(String value, int start, char opening, char closing) {
         int bracketDepth = 0;

@@ -3,6 +3,8 @@ package io.semla.reflect;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -69,7 +71,7 @@ public final class Methods {
 
     @SuppressWarnings("unchecked")
     private static <E, R> R invoke(Class<?> clazz, E instance, String name, Object... parameters) {
-        Class<?>[] parameterTypes = Stream.of(parameters)
+        Class<?>[] parameterTypes = Stream.of(io.semla.util.Arrays.emptyIfNull(parameters))
             .map(value -> value != null ? value.getClass() : Object.class)
             .toArray(Class<?>[]::new);
         return (R) unchecked(() -> getMethod(clazz, name, parameterTypes).invoke(instance, parameters));
@@ -83,10 +85,13 @@ public final class Methods {
 
     public static Optional<Method> findMethod(Class<?> clazz, String name, Class<?>... parameterTypes) {
         return ofNullable(byName(clazz).computeIfAbsent(
-            getMethodSignature(clazz, name, parameterTypes),
-            methodSignature -> byName(clazz).values().stream()
-                .filter(method -> isApplicableMethod(method, name, parameterTypes))
-                .findFirst().orElse(null))
+                getMethodSignature(clazz, name, parameterTypes),
+                methodSignature -> byName(clazz).values().stream()
+                    .filter(method -> isApplicableMethod(method, name, parameterTypes))
+                    .min(Comparator.comparingInt(m ->
+                        Types.computeInheritanceDistanceBetween(parameterTypes, m.getParameterTypes())
+                    )).orElse(null)
+            )
         );
     }
 

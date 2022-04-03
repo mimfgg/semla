@@ -29,7 +29,7 @@ public class PersistenceContext {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> EntityManager<T> entityManagerOf(T entity) {
+    private <K, T> EntityManager<K, T> entityManagerOf(T entity) {
         return entityManagerFactory.of((Class<T>) entity.getClass());
     }
 
@@ -68,8 +68,11 @@ public class PersistenceContext {
     }
 
     public <K, T> Map<K, T> get(Collection<K> keys, Includes<T> includes) {
-        return cachingStrategy.ifApplicable(() -> factory().injector().getInstance(Cache.class), () -> Query.get(keys, includes).toString(),
-            includes.model().getMapType(), () -> entityManagerFactory.of(includes.model().getType()).get(this, keys, includes)
+        return cachingStrategy.ifApplicable(
+            () -> factory().injector().getInstance(Cache.class),
+            () -> Query.get(keys, includes).toString(),
+            includes.model().getMapType(),
+            () -> entityManagerFactory.<K, T>of(includes.model().getType()).get(this, keys, includes)
         );
     }
 
@@ -79,16 +82,16 @@ public class PersistenceContext {
         );
     }
 
-    public <T> boolean delete(Object key, Includes<T> includes) {
-        return entityManagerFactory.of(includes.model().getType()).delete(this, key, includes);
+    public <K, T> boolean delete(K key, Includes<T> includes) {
+        return entityManagerFactory.<K, T>of(includes.model().getType()).delete(this, key, includes);
     }
 
     public <T> long delete(Predicates<T> predicates, Pagination<T> pagination, Includes<T> includes) {
         return entityManagerFactory.of(predicates.model().getType()).delete(this, predicates, pagination, includes);
     }
 
-    public <T> long delete(Collection<?> keys, Includes<T> includes) {
-        return entityManagerFactory.of(includes.model().getType()).delete(this, keys, includes);
+    public <K, T> long delete(Collection<K> keys, Includes<T> includes) {
+        return entityManagerFactory.<K, T>of(includes.model().getType()).delete(this, keys, includes);
     }
 
     public <T> T update(T entity, Includes<T> includes) {

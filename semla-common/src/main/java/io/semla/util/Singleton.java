@@ -54,7 +54,7 @@ public class Singleton<T> implements Supplier<T> {
      */
     @SuppressWarnings("unchecked")
     public static <T> Singleton<T> named(String name, Supplier<T> supplier) {
-        return (Singleton<T>) GLOBAL.computeIfAbsent(name, ignore -> {
+        return (Singleton<T>) GLOBAL.computeIfAbsent(name, __ -> {
             log.trace("creating new value for {}", name);
             return Singleton.lazy(supplier);
         });

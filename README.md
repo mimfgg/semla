@@ -58,6 +58,8 @@ Get it from maven central:
 * `io.semla.datasource.Datasource<T>` is the low level datasource translating the query to the vendor API
 * `io.semla.persistence.EntityManager<T>` is the class implementing all the query logic
 * `io.semla.persistence.EntityManagerFactory` is the class generating the EntityManagers
+* `io.semla.persistence.PersistenceContext` is local to a user query and will keep track of which entities and relations
+  have been already fetched.
 
 Semla comes with a plugin to generate typed EntityManagers extending `io.semla.persistence.TypedEntityManager` and
 having type-safe methods for all the properties of your types.
@@ -368,6 +370,32 @@ Relations can be traversed in both directions. For example, we can fetch all the
  List<User> users = userManager.where().name().is("bob")
    .first(user -> user.group(group -> group.users()))
    .get().group.users;
+```
+
+#### Asynchronous Queries
+
+Semla will expose an `async()` method whenever it can be applied, usually just before the method you would otherwise call.
+The type return by the `async()` method should contain the same methods and parameters than their synchronous equivalent, 
+but they will all return a `CompletionStage` of the result. 
+
+For example:
+```java
+ userManager.where().name().is("bob")
+   .async()
+   .list(user -> user.group(group -> group.users()))
+   .thenAccept(users -> ...)
+ userManager.async().get(1).thenApply(user -> ...)
+ CompletionStage<Long> count = userManager.async().count();
+```
+
+By default, all the asynchronous queries will be run on the common `ForkJoinPool`. 
+Not to run into thread depletion when running blocking calls, semla uses the 
+[ManagedBlocker](https://docs.oracle.com/javase/7/docs/api/java/util/concurrent/ForkJoinPool.ManagedBlocker.html) interface
+so that the ForkJoinPool elastically extends until 256 threads before queueing the extra jobs.
+
+This behaviour can be tweaked by providing your own `ExecutorService` with:
+```java
+ Async.setDefaultExecutorService(yourExecutorService)
 ```
 
 #### Predicates and query language

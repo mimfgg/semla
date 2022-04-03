@@ -87,10 +87,10 @@ public class RelationsTest {
     @Test
     public void includeASecondDegreeParentAndAMatchingGrandChild() {
         Fruit apple = fruits.where().name().is("apple").first(fruit ->
-                fruit.genus(genus ->
-                        genus.family(family ->
-                                family.genuses(allGenuses ->
-                                        allGenuses.fruits())))).get();
+            fruit.genus(genus ->
+                genus.family(family ->
+                    family.genuses(allGenuses ->
+                        allGenuses.fruits())))).get();
         Assertions.assertThat(apple.genus).isNotNull();
         Assertions.assertThat(apple.genus.family).isNotNull();
         Assertions.assertThat(apple.genus.family.name).isEqualTo("Rosaceae");
@@ -158,7 +158,7 @@ public class RelationsTest {
 
     @Test
     public void rawManualCascade() {
-        EntityManager<Family> familyManager = EntitySteps.entityManagerOf(Family.class);
+        EntityManager<Integer, Family> familyManager = EntitySteps.entityManagerOf(Family.class);
         // preventing the cascade remove to kick in
         assertThat(familyManager.where("name").is("Musaceae").delete(Includes::none)).isEqualTo(1);
         assertThat(genuses.where().name().is("musa").first().get().family).isNull();

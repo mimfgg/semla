@@ -2,18 +2,15 @@ package io.semla.util;
 
 import org.junit.Test;
 
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class PairTest {
 
     @Test
     public void test() {
-        assertThatThrownBy(() -> Pair.of(null, null)).hasMessage("left/key cannot be null");
         Pair<String, Object> pair = Pair.of("key", null);
         pair.setValue("value");
         assertThat(pair.getValue()).isEqualTo("value");

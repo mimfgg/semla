@@ -84,4 +84,17 @@ public class TypesTest {
         assertThat(Types.getCommonSuperClass(Lists.of(1, "a"))).isEqualTo(Object.class);
         assertThat(Types.getCommonSuperClass(Lists.of(1, 2.1d))).isEqualTo(Number.class);
     }
+
+    @Test
+    public void testInheritanceDistance() {
+        assertThat(Types.computeInheritanceDistanceBetween(Object.class, Object.class)).isEqualTo(0);
+        assertThat(Types.computeInheritanceDistanceBetween(List.class, Object.class)).isEqualTo(127);
+        assertThat(Types.computeInheritanceDistanceBetween(ArrayList.class, List.class)).isEqualTo(1);
+        assertThat(Types.computeInheritanceDistanceBetween(ArrayList.class, Collection.class)).isEqualTo(2);
+        assertThat(Types.computeInheritanceDistanceBetween(ArrayList.class, Object.class)).isEqualTo(128);
+        assertThat(Types.computeInheritanceDistanceBetween(LinkedHashMap.class, Cloneable.class)).isEqualTo(2);
+        assertThatThrownBy(() -> Types.computeInheritanceDistanceBetween(new Class<?>[]{ArrayList.class}, new Class<?>[]{}))
+            .hasMessage("[class java.util.ArrayList] and [] don't have the same size!");
+        assertThat(Types.computeInheritanceDistanceBetween(new Class<?>[]{ArrayList.class}, new Class<?>[]{List.class})).isEqualTo(1);
+    }
 }

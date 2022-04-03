@@ -11,9 +11,6 @@ public class Pair<L, R> implements Map.Entry<L, R> {
     private R right;
 
     protected Pair(L left, R right) {
-        if (left == null) {
-            throw new IllegalArgumentException("left/key cannot be null");
-        }
         this.left = left;
         this.right = right;
     }

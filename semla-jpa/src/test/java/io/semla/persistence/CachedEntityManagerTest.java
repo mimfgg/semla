@@ -22,6 +22,8 @@ public class CachedEntityManagerTest extends KeyValueCachedEntityManagerTest {
         indexedUsers.delete(uuids.get(0));
         indexedUsers.where("name").is("bob").cachedFor(Duration.ofMinutes(3)).first().get(); // this should not throw
         indexedUsers.where("name").is("bob").evictCache().first();
+        indexedUsers.where("name").is("bob").evictCache().async().first()
+            .toCompletableFuture().join();
         assertThat(indexedUsers.where("name").is("bob").cached().first()).isEmpty();
     }
 
@@ -39,6 +41,8 @@ public class CachedEntityManagerTest extends KeyValueCachedEntityManagerTest {
         indexedUsers.delete(uuids.get(0));
         assertThat(indexedUsers.where("name").contains("o").cachedFor(Duration.ofMinutes(3)).list().size()).isEqualTo(2);
         indexedUsers.where("name").contains("o").evictCache().list();
+        indexedUsers.where("name").contains("o").evictCache().async().list()
+            .toCompletableFuture().join();
         assertThat(indexedUsers.where("name").contains("o").cachedFor(Duration.ofMinutes(3)).list().size()).isEqualTo(1);
     }
 
@@ -59,5 +63,4 @@ public class CachedEntityManagerTest extends KeyValueCachedEntityManagerTest {
         indexedUsers.where("name").contains("o").evictCache().count();
         assertThat(indexedUsers.where("name").contains("o").cachedFor(Duration.ofMinutes(1)).count()).isEqualTo(1);
     }
-
 }

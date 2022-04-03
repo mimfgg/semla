@@ -31,7 +31,7 @@ public class SemlaTest {
         Semla semla = Semla.configure()
             .withDatasource(InMemoryDatasource.configure().create(EntityModel.of(Player.class)))
             .create();
-        EntityManager<Player> players = semla.getInstance(EntityManagerFactory.class).of(Player.class);
+        EntityManager<Integer, Player> players = semla.getInstance(EntityManagerFactory.class).of(Player.class);
         Player bob = players.create(Player.with(1, "bob", 100));
     }
 
@@ -40,7 +40,7 @@ public class SemlaTest {
         Semla semla = Semla.configure()
             .withDatasourceOf(Player.class).as(InMemoryDatasource.configure())
             .create();
-        EntityManager<Player> players = semla.getInstance(EntityManagerFactory.class).of(Player.class);
+        EntityManager<Integer, Player> players = semla.getInstance(EntityManagerFactory.class).of(Player.class);
         Player bob = players.create(Player.with(1, "bob", 100));
     }
 
@@ -53,7 +53,7 @@ public class SemlaTest {
             )
             .create();
 
-        EntityManager<User> users = semla.getInstance(EntityManagerFactory.class).of(User.class);
+        EntityManager<Integer, User> users = semla.getInstance(EntityManagerFactory.class).of(User.class);
 
         User bob = users.newInstance().with("name", "bob").create();
         Assert.assertEquals("myTest", bob.applicationName);
@@ -81,7 +81,7 @@ public class SemlaTest {
         Semla semla = Semla.configure()
             .withDefaultDatasource(InMemoryDatasource::new)
             .create();
-        EntityManager<ValidatedEntity> manager = semla.getInstance(EntityManagerFactory.class).of(ValidatedEntity.class);
+        EntityManager<Integer, ValidatedEntity> manager = semla.getInstance(EntityManagerFactory.class).of(ValidatedEntity.class);
 
         assertThatThrownBy(() -> manager.newInstance().with("age", -2).create())
             .hasMessageContainingAll("age: must be greater than or equal to 0", "name: must not be null");

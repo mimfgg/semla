@@ -3,6 +3,8 @@ package io.semla.reflect;
 import io.semla.serialization.annotations.Deserialize;
 import org.junit.Test;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,6 +35,31 @@ public class MethodsTest {
         assertThat(Methods.<String>invoke(new TestParentClass(), "protectedOverridenMethod")).isEqualTo("protectedOriginalMethod");
 
         assertThat(Methods.findMethod(Annotations.defaultOf(Deserialize.class).getClass(), "value")).isPresent();
+    }
+
+    @Test
+    public void findOverloadedMethods() {
+        ClassWithOverloadedMethods instance = new ClassWithOverloadedMethods();
+        assertThat(Methods.<String>invoke(instance, "testWith", "test")).isEqualTo("test");
+        assertThat(Methods.<List<String>>invoke(instance, "testWith", List.of("test"))).isEqualTo(List.of("test"));
+        assertThat(Methods.<Object>invoke(instance, "testWith", 1)).isEqualTo(1);
+    }
+
+    public static class ClassWithOverloadedMethods {
+
+        public <CollectionType extends Collection<String>> CollectionType testWith(CollectionType list) {
+            return list;
+        }
+
+        public Object testWith(Object object) {
+            assertThat(object).isNotInstanceOf(Collection.class);
+            assertThat(object).isNotInstanceOf(String.class);
+            return object;
+        }
+
+        public String testWith(String string) {
+            return string;
+        }
     }
 
     @Test
@@ -93,6 +120,7 @@ public class MethodsTest {
         }
     }
 
-    public static class EmptyTopClass extends TestClass {}
+    public static class EmptyTopClass extends TestClass {
+    }
 
 }

@@ -16,10 +16,6 @@ public abstract class ContextualQuery<T> {
         this.model = model;
     }
 
-    public PersistenceContext context() {
-        return context;
-    }
-
     public EntityModel<T> model() {
         return model;
     }

@@ -4,8 +4,10 @@ import io.semla.model.EntityModel;
 import io.semla.persistence.PersistenceContext;
 import io.semla.reflect.Member;
 import io.semla.reflect.Types;
+import io.semla.util.concurrent.Async;
 
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 public class Patch<T> extends PaginatedQuery<T, Patch<T>> {
 
@@ -37,5 +39,16 @@ public class Patch<T> extends PaginatedQuery<T, Patch<T>> {
 
     public long patch() {
         return context.patch(values, predicates, pagination);
+    }
+
+    @SuppressWarnings("unchecked")
+    public AsyncHandler<T> async() {
+        return Async.asyncHandler(AsyncHandler.class, this);
+    }
+
+    public interface AsyncHandler<T> {
+
+        CompletionStage<Long> patch();
+
     }
 }
