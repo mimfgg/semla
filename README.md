@@ -375,7 +375,7 @@ Relations can be traversed in both directions. For example, we can fetch all the
 #### Asynchronous Queries
 
 Semla will expose an `async()` method whenever it can be applied, usually just before the method you would otherwise call.
-The type return by the `async()` method should contain the same methods and parameters than their synchronous equivalent, 
+The type returned by the `async()` method should contain the same methods and parameters than their synchronous equivalent, 
 but they will all return a `CompletionStage` of the result. 
 
 For example:
@@ -397,6 +397,8 @@ This behaviour can be tweaked by providing your own `ExecutorService` with:
 ```java
  Async.setDefaultExecutorService(yourExecutorService)
 ```
+
+*Note: if you provide your own instance of a ForkJoinPool, this one will also be extended to follow the demand of blocking threads, the parallelism parameter will not be honored*
 
 #### Predicates and query language
 
