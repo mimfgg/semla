@@ -132,19 +132,27 @@ Or directly a specific datasource:
 ```
 
 Semla can easily mix different datasources and recursively query them. You can even write a Datasource for your favorite
-DB flavour if it's not already supported!
+vendor if it's not already supported!
 
-By default, the following datasources are included in the core library:
+By default, the following implementations are included in the library: 
+
+- Postgresql
+- MySQL
+- MongoDB
+- Redis
+- Memcached
+
+As well as some useful datasources:
 
 - InMemoryDatasource: useful for prototyping, it is a non-expiring in-memory relational datasource backed by a HashMap.
-- KeyValueDatasource: NoSQL interface to extend in other Datasources (like memcached or redis)
 - SoftKeyValueDatasource: SoftHashMap backed datasource that can be used for caching.
+- KeyValueDatasource: NoSQL interface to extend in other Datasources (like memcached or redis)
 - CachedDatasource: 2 layers datasource using a KeyValueDatasource as a cache layer
 - MasterSlaveDatasource: "write one, read all" replicated datasource, to use for example with a Mysql cluster.
 - ReadOneWriteAllDatasource: when you want replication to be handled by Semla.
 - ShardedDatasource: shards on primary key and automatically rebalances if a shard is added.
 
-Semla creates a model of each type it manages, mostly holding instances of everything obtained through reflection. If
+Semla will create a model for each type it manages, mostly holding instances of everything obtained through reflection. If
 the type is annotated with `javax.persistence.Entity`, it will create an `io.semla.model.EntityModel` that will also
 contain information about the relational and column annotations present on the type.
 
